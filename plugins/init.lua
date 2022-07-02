@@ -172,7 +172,6 @@ return {
       vim.g.simple_todo_map_keys = false
     end,
   },
-  ["wakatime/vim-wakatime"] = { event = "BufEnter" },
   ["ziontee113/syntax-tree-surfer"] = {
     cmd = {
       "STSSwapUpNormal",
