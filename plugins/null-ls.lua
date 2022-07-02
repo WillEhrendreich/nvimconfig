@@ -12,6 +12,17 @@ return {
     null_ls.builtins.diagnostics.shellcheck,
   },
   on_attach = function(client)
+if vim.api.nvim_call_function('has', {'nvim-0.8'}) == 1 then
+    if client.server_capabilities.document_formatting then
+      vim.api.nvim_create_autocmd("BufWritePre", {
+        desc = "Auto format before save",
+        pattern = "<buffer>",
+        callback = function()
+          vim.lsp.buf.format()
+        end,
+      })
+    end
+else
     if client.resolved_capabilities.document_formatting then
       vim.api.nvim_create_autocmd("BufWritePre", {
         desc = "Auto format before save",
@@ -21,5 +32,6 @@ return {
         end,
       })
     end
+  end
   end,
 }
