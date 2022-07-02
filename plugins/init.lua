@@ -27,7 +27,7 @@ return {
   ["echasnovski/mini.nvim"] = {
     event = "VimEnter",
     config = function()
-      require "user.plugins.mini"()
+      require "user.plugins.mini" ()
     end,
   },
   ["ethanholz/nvim-lastplace"] = {
@@ -68,6 +68,19 @@ return {
       require("typescript").setup(require "user.plugins.typescript")
     end,
   },
+  ["luisiacc/gruvbox-baby"] = {},
+  ["ionide/ionide-vim"] = {
+  },
+  ["omnisharp/omnisharp-roslyn"] = {
+    after = "nvim-lsp-installer",
+  },
+  ["samsung/netcoredbg"] = {
+    --after ="mfussenegger/nvim-dap",
+  },
+  ["github/copilot.vim"] = {
+
+    event = "InsertEnter"
+  },
   ["kdheepak/cmp-latex-symbols"] = {
     after = "nvim-cmp",
     config = function()
@@ -96,7 +109,7 @@ return {
       vim.g.send_disable_mapping = true
     end,
   },
-  ["nanotee/sqls.nvim"] = { module = "sqls" },
+  -- ["nanotee/sqls.nvim"] = { module = "sqls" },
   ["phaazon/hop.nvim"] = {
     cmd = { "HopChar1", "HopChar2", "HopLine", "HopPattern", "HopWord" },
     branch = "v1",
@@ -172,6 +185,17 @@ return {
       vim.g.simple_todo_map_keys = false
     end,
   },
+  ["christianchiarulli/nvim-gps"]={
+    branch = "text_hl"
+  },
+  ["nvim-neotest/neotest"] =
+    {
+      requires = { 
+      "nvim-lua/plenary.nvim",
+      "nvim-neotest/neotest-plenary",
+      "nvim-treesitter/nvim-treesitter",
+      "antoinemadec/FixCursorHold.nvim"},
+    },
   ["ziontee113/syntax-tree-surfer"] = {
     cmd = {
       "STSSwapUpNormal",
