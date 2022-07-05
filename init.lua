@@ -3,6 +3,8 @@ return {
   colorscheme = "duskfox",
   lsp = require "user.lsp",
   polish = function()
+    vim.g["test#csharp#runner"] = "dotnettest"
+    vim.g["test#strategy"] = "neovim"
     vim.filetype.add {
       pattern = {
         ["/tmp/neomutt.*"] = "markdown",
