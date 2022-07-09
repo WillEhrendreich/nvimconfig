@@ -10,6 +10,7 @@ return {
       require("nightfox").setup(require "user.plugins.nightfox")
     end,
   },
+  ["adelarsq/neofsharp.vim"] = {},
   ["danymat/neogen"] = {
     module = "neogen",
     cmd = "Neogen",
