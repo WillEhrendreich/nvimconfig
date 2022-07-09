@@ -26,3 +26,13 @@ vim.api.nvim_create_autocmd({ "BufEnter", "TermOpen" }, {
     vim.b.miniindentscope_disable = vim.tbl_contains({ "help", "terminal", "nofile", "prompt" }, vim.bo.buftype)
   end,
 })
+
+vim.api.nvim_create_augroup("fsharpComments", { clear = true })
+vim.api.nvim_create_autocmd({ "FileType"  }, {
+  desc = "changes comment style for fsharp",
+  pattern = "*.fs,*.fsx,*.fsi",
+  group = "fsharpComments",
+  callback = function()
+      vim.api.nvim_command("set commentstring=//%s")
+  end,
+})
