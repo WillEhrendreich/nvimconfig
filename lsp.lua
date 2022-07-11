@@ -1,4 +1,4 @@
-local getDotNetRoot = function(filepath)
+local getGitRoot = function(filepath)
   local lsp = require 'lspconfig'
   local root = lsp.util.find_git_ancestor(filepath)
   return root
@@ -44,7 +44,7 @@ return {
     },
 
     omnisharp = {
-      root_dir = getDotNetRoot,
+      root_dir = getGitRoot,
       log_level = 2,
       settings =
       {
@@ -104,19 +104,11 @@ return {
       },
     },
     ionide = {
-      root_dir = getDotNetRoot,
+      root_dir = getGitRoot,
+
     },
-    sumneko_lua = {
-      on_attach = function(client)
-        client.server_capabilities.document_formatting = false
-        print("sumneko lua attaching to " ..
-          vim.fn.expand("%") ..
-          " and document formatting is set to " .. vim.inspect(client.server_capabilities.document_formatting))
-      end,
-    },
+   
     yamlls = {
-
-
       settings = {
         yaml = {
           schemas = {
