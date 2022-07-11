@@ -17,39 +17,42 @@ return {
       ["r"] = { "<cmd>SendHere<cr>", "Set REPL" },
       ["."] = { "<cmd>cd %:p:h<cr>", "Set CWD" },
 
-      a = {
-        name = "Annotate",
-        ["<cr>"] = {
-          function()
-            require("neogen").generate()
-          end,
-          "Current",
-        },
-        c = {
-          function()
-            require("neogen").generate { type = "class" }
-          end,
-          "Class",
-        },
-        f = {
-          function()
-            require("neogen").generate { type = "func" }
-          end,
-          "Function",
-        },
-        t = {
-          function()
-            require("neogen").generate { type = "type" }
-          end,
-          "Type",
-        },
-        F = {
-          function()
-            require("neogen").generate { type = "file" }
-          end,
-          "File",
-        },
-      },
+      a = { function ()
+         vim.lsp.buf.code_action()
+      end, "Code Action" },
+      -- a = {
+      --   name = "Annotate",
+      --   ["<cr>"] = {
+      --     function()
+      --       require("neogen").generate()
+      --     end,
+      --     "Current",
+      --   },
+      --   c = {
+      --     function()
+      --       require("neogen").generate { type = "class" }
+      --     end,
+      --     "Class",
+      --   },
+      --   f = {
+      --     function()
+      --       require("neogen").generate { type = "func" }
+      --     end,
+      --     "Function",
+      --   },
+      --   t = {
+      --     function()
+      --       require("neogen").generate { type = "type" }
+      --     end,
+      --     "Type",
+      --   },
+      --   F = {
+      --     function()
+      --       require("neogen").generate { type = "file" }
+      --     end,
+      --     "File",
+      --   },
+      -- },
 
       f = {
         name = "Telescope",
