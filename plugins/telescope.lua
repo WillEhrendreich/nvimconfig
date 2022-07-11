@@ -4,7 +4,7 @@ local fb_actions = require("telescope").extensions.file_browser.actions
 local hop = telescope.extensions.hop
 return {
   defaults = {
-    selection_caret = "  ",
+    -- selection_caret = "  ",
     layout_config = {
       width = 0.90,
       height = 0.85,
