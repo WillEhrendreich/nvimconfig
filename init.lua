@@ -1,16 +1,12 @@
 return {
   updater = { skip_prompts = true },
-  colorscheme = "duskfox",
+  colorscheme = "terafox",
   lsp = require "user.lsp",
   polish = function()
     vim.g["test#csharp#runner"] = "dotnettest"
     vim.g["test#fsharp#runner"] = "dotnettest"
     vim.g["test#strategy"] = "neovim"
-    vim.filetype.add {
-      pattern = {
-        ["/tmp/neomutt.*"] = "markdown",
-      },
-    }
+    require "user.globalCommands"
     require "user.autocmds"
   end,
 }
