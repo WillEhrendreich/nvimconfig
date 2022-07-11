@@ -10,6 +10,7 @@ return {
       require("nightfox").setup(require "user.plugins.nightfox")
     end,
   },
+  ["nvim-telescope/telescope-dap.nvim"] = {},
   ["adelarsq/neofsharp.vim"] = {},
   ["danymat/neogen"] = {
     module = "neogen",
