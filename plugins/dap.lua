@@ -5,6 +5,11 @@ return function()
     command = "/usr/bin/python",
     args = { "-m", "debugpy.adapter" },
   }
+  dap.adapters.coreclr = {
+    type = 'executable',
+    command = '/path/to/dotnet/netcoredbg/netcoredbg',
+    args = {'--interpreter=vscode'}
+  }
   dap.configurations.python = {
     {
       type = "python",
@@ -12,6 +17,30 @@ return function()
       name = "Launch file",
     },
   }
+
+  dap.configurations.cs = {
+    {
+      type = "netcoredbg",
+      name = "launch - netcoredbg",
+      request = "launch",
+      program = function()
+        local cwd = vim.fn.getcwd()
+        local d = vim.fn.fnamemodify(cwd, ":t")
+        return vim.fn.input('Path to dll: ', cwd .. '/bin/Debug/' .. d .. '.dll', 'file')
+      end,
+    },
+    {
+      type = "netcoredbg",
+      name = "attach - netcoredbg",
+      request = "attach",
+      processId = function()
+        local pid = require('dap.utils').pick_process()
+        vim.fn.setenv('NETCOREDBG_ATTACH_PID', pid)
+        return pid
+      end,
+    },
+  }
+ 
   dap.configurations.lua = {
     {
       type = 'nlua',
