@@ -7,7 +7,7 @@ return function()
   }
   dap.adapters.coreclr = {
     type = 'executable',
-    command = 'C:/.local/shar/nvim-data/site/pack/packer/start/netcoredbg/netcoredbg',
+    command = 'C:/.local/share/nvim-data/site/pack/packer/start/netcoredbg/netcoredbg',
     args = {'--interpreter=vscode'}
   }
   dap.configurations.python = {
