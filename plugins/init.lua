@@ -10,8 +10,25 @@ return {
       require("nightfox").setup(require "user.plugins.nightfox")
     end,
   },
-  ["nvim-telescope/telescope-dap.nvim"] = {},
-  ["adelarsq/neofsharp.vim"] = {},
+  ["noralambda/fsproj-edit.nvim"] =
+    { 
+      -- config =function() require("fsproj-edit").setup({}) end,
+    },
+  ["bfredl/nvim-luadev"]= {},
+  ["rafcamlet/nvim-luapad"]= {
+    after = "antoinemadec/FixCursorHold",
+    -- config = function() require("nvim-luapad").setup({}) end,
+  },
+  ["nvim-telescope/telescope-dap.nvim"] = {
+
+    after = "telescope.nvim",
+    -- config = function()
+      -- require("telescope").load_extension "dap"
+    -- end,
+  },
+  ["adelarsq/neofsharp.vim"] = {
+    -- config = require "neofsharp.vim".setup() end,
+  },
   ["danymat/neogen"] = {
     module = "neogen",
     cmd = "Neogen",
