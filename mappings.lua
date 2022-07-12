@@ -18,8 +18,6 @@ return {
     ["<C-s>"] = false,
     ["<"] = false,
     [">"] = false,
-    ["<esc>"] = false,
-    ["jk"] = false,
     ["<leader>c"] = false,
     ["<leader>h"] = false,
     ["<C-\\>"] = false,
@@ -35,30 +33,10 @@ return {
     ["<leader>sn"] = false,
     ["<leader>sr"] = false,
     -- resize with arrows
-    ["<Up>"] = {
-      function()
-        require("smart-splits").resize_up(2)
-      end,
-      desc = "Resize split up",
-    },
-    ["<Down>"] = {
-      function()
-        require("smart-splits").resize_down(2)
-      end,
-      desc = "Resize split down",
-    },
-    ["<Left>"] = {
-      function()
-        require("smart-splits").resize_left(2)
-      end,
-      desc = "Resize split left",
-    },
-    ["<Right>"] = {
-      function()
-        require("smart-splits").resize_right(2)
-      end,
-      desc = "Resize split right",
-    },
+    ["<Up>"] = { function() require("smart-splits").resize_up(2) end, desc = "Resize split up" },
+    ["<Down>"] = { function() require("smart-splits").resize_down(2) end, desc = "Resize split down" },
+    ["<Left>"] = { function() require("smart-splits").resize_left(2) end, desc = "Resize split left" },
+    ["<Right>"] = { function() require("smart-splits").resize_right(2) end, desc = "Resize split right" },
     -- navigating wrapped lines
     j = { "gj", desc = "Navigate down" },
     k = { "gk", desc = "Navigate down" },
@@ -86,6 +64,8 @@ return {
   },
   -- terminal mappings
   t = {
+    ["<esc>"] = false,
+    ["jk"] = false,
     ["<c-q>"] = { "<c-\\><c-n>", desc = "Terminal normal mode" },
     ["<esc><esc>"] = { "<c-\\><c-n>:q<cr>", desc = "Terminal quit" },
   },
