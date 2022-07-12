@@ -12,3 +12,12 @@ R = function(name)
     return require(name)
 end
 
+TRY = function(module, Ok, NotOk)
+
+  local ok, _ = pcall(require,module)
+  if ok then
+    Ok()
+  else  
+    NotOk()
+  end
+end
