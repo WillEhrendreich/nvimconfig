@@ -5,11 +5,6 @@ return function()
     command = "/usr/bin/python",
     args = { "-m", "debugpy.adapter" },
   }
-  dap.adapters.coreclr = {
-    type = 'executable',
-    command = 'C:/.local/share/nvim-data/site/pack/packer/start/netcoredbg/netcoredbg',
-    args = {'--interpreter=vscode'}
-  }
   dap.configurations.python = {
     {
       type = "python",
@@ -18,6 +13,11 @@ return function()
     },
   }
 
+  dap.adapters.coreclr = {
+    type = 'executable',
+    command = 'C:/.local/share/nvim-data/site/pack/packer/start/netcoredbg/netcoredbg',
+    args = {'--interpreter=vscode'}
+  }
   dap.configurations.cs = {
     {
       type = "netcoredbg",
