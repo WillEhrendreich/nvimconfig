@@ -24,7 +24,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "TermOpen" }, {
 })
 
 vim.api.nvim_create_augroup("fsharpComments", { clear = true })
-vim.api.nvim_create_autocmd({ "FileType"  }, {
+vim.api.nvim_create_autocmd({ "FileType"  , "BufEnter"}, {
   desc = "changes comment style for fsharp",
   pattern = "*.fs,*.fsx,*.fsi",
   group = "fsharpComments",
@@ -33,6 +33,26 @@ vim.api.nvim_create_autocmd({ "FileType"  }, {
   end,
 })
 
+vim.api.nvim_create_augroup("projCommands", { clear = true })
+vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead", "BufEnter"}, {
+  desc = "changes comment style for proj files",
+  pattern = "*proj",
+  group = "projCommands",
+  callback = function()
+      vim.api.nvim_command("set filetype=xml")
+  end,
+})
+vim.api.nvim_create_autocmd({ "FileType"  }, {
+  desc = "changes comment style, folding for proj files",
+  pattern = "*proj",
+  group = "projCommands",
+  callback = function()
+      vim.api.nvim_command("set commentstring=<!--%s-->")
+      vim.api.nvim_command("let g:xml_syntax_folding=1")
+      vim.api.nvim_command("setlocal foldmethod=syntax")
+      vim.api.nvim_command("setlocal foldlevelstart=999  foldminlines=0")
+      end,
+})
 vim.api.nvim_create_augroup("xamlCommands", { clear = true })
 vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
   desc = "changes comment style for xaml",

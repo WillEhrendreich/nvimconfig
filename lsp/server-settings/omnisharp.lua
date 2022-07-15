@@ -3,47 +3,7 @@ local getGitRoot = function(filepath)
   local root = lsp.util.find_git_ancestor(filepath)
   return root
 end
-
 return {
-  servers = {
-    "clangd",
-    "cmake",
-    -- "cssls",
-    "html",
-    -- "intelephense",
-    "jsonls",
-    "pyright",
-    -- "sqls",
-    "ionide",
-    "omnisharp",
-    "sumneko_lua",
-    -- "texlab",
-    "tsserver",
-    "yamlls",
-  },
-  plugins = {
-    ["nvim-lsp-installer"] = {
-      ensure_installed = {
-        "omnisharp",
-        "fsautocomplete",
-      },
-    },
-  },
-
-  skip_setup = { "tsserver", "clangd", "fsautocomplete" },
-  ["server-settings"] = {
-    clangd = { capabilities = { offsetencoding = "utf-8" } },
-    pyright = {
-      settings = {
-        python = {
-          analysis = {
-            typecheckingmode = "on",
-          },
-        },
-      },
-    },
-
-    omnisharp = {
       root_dir = getGitRoot,
       log_level = 2,
       settings =
@@ -102,42 +62,5 @@ return {
           },
         },
       },
-    },
-    ionide = {
-      root_dir = getGitRoot,
+    }
 
-    },
-   
-    yamlls = {
-      settings = {
-        yaml = {
-          schemas = {
-            ["http://json.schemastore.org/github-workflow"] = ".github/workflows/*.{yml,yaml}",
-            ["http://json.schemastore.org/github-action"] = ".github/action.{yml,yaml}",
-            ["http://json.schemastore.org/ansible-stable-2.9"] = "roles/tasks/*.{yml,yaml}",
-          },
-        },
-      },
-    },
-    -- sqls = {
-    --   on_attach = function(client, bufnr)
-    --     if client.name == "sqls" then
-    --       require("sqls").on_attach(client, bufnr)
-    --     end
-    --   end,
-    -- },
-
-    -- texlab = {
-    --   settings = {
-    --     texlab = {
-    --       build = { onsave = true },
-    --       forwardsearch = {
-    --         executable = "zathura",
-    --         args = { "--synctex-forward", "%l:1:%f", "%p" },
-    --       },
-    --     },
-    --   },
-    -- },
-    --
-  },
-}

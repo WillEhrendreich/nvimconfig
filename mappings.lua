@@ -20,7 +20,7 @@ return {
     [">"] = false,
     ["<leader>c"] = false,
     ["<leader>h"] = false,
-    ["<C-\\>"] = false,
+    -- ["<C-\\>"] = false,
     ["<leader>fh"] = false,
     ["<leader>fm"] = false,
     ["<leader>fn"] = false,
@@ -32,7 +32,12 @@ return {
     ["<leader>sm"] = false,
     ["<leader>sn"] = false,
     ["<leader>sr"] = false,
+    ["<C-h>"] = { function() require("smart-splits").move_cursor_left() end, desc = "Move to left split" },
+    ["<C-j>"] = { function() require("smart-splits").move_cursor_down() end, desc = "Move to below split" },
+    ["<C-k>"] = { function() require("smart-splits").move_cursor_up() end, desc = "Move to above split" },
+    ["<C-l>"] = { function() require("smart-splits").move_cursor_right() end, desc = "Move to right split" },
     -- resize with arrows
+
     ["<Up>"] = { function() require("smart-splits").resize_up(2) end, desc = "Resize split up" },
     ["<Down>"] = { function() require("smart-splits").resize_down(2) end, desc = "Resize split down" },
     ["<Left>"] = { function() require("smart-splits").resize_left(2) end, desc = "Resize split left" },

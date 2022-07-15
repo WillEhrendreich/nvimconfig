@@ -1,0 +1,4 @@
+--return {
+--config =function()
+--require("user.plugins.nvim-gps.config") end,
+--}

@@ -1,1 +1,1 @@
-require("telescope").load_extension "project"
+require'telescope'.extensions.project.project{ display_type = 'full' }

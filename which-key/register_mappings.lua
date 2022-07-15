@@ -3,12 +3,12 @@ local utils = require "user.utils"
 return {
   n = {
     ["<leader>"] = {
-      ["c"] = { function() MiniBufremove.delete() end, "Bye Buffer" },
-      ["C"] = { "<cmd>bdelete<cr>", "Close Buffer" },
+      ["c"] = { function() require("mini.bufremove").delete() end, "Bye Buffer" },
+ --     ["C"] = { "<cmd>bdelete<cr>", "Close Buffer" },
       ["N"] = { "<cmd>tabnew<cr>", "New Buffer" },
       ["H"] = { "<cmd>set hlsearch!<cr>", "Toggle Highlight" },
       ["<cr>"] = { '<esc>/<++><cr>"_c4l', "Next Template" },
-      ["z"] = { "<cmd>ZenMode<cr>", "Zen Mode" },
+   --   ["z"] = { "<cmd>ZenMode<cr>", "Zen Mode" },
       ["r"] = { "<cmd>SendHere<cr>", "Set REPL" },
       ["."] = { "<cmd>cd %:p:h<cr>", "Set CWD" },
 

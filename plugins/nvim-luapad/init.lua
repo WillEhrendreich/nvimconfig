@@ -1,0 +1,3 @@
+--return {
+-- after = "antoinemadec/FixCursorHold.nvim",
+-- config = function() require("user.plugins.nvim-luapad.config") end,}

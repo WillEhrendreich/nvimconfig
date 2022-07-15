@@ -3,6 +3,8 @@ return {
     "bash",
     "bibtex",
     "c",
+    "c_sharp",
+    -- "fsharp",
     "cmake",
     "comment",
     "cpp",
