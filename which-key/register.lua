@@ -3,15 +3,11 @@ local utils = require "user.utils"
 return {
   n = {
     ["<leader>"] = {
-      ["c"] = { function() MiniBufremove.delete() end, "Bye Buffer" },
-      ["C"] = { "<cmd>bdelete<cr>", "Close Buffer" },
-      ["N"] = { "<cmd>tabnew<cr>", "New Buffer" },
-      ["H"] = { "<cmd>set hlsearch!<cr>", "Toggle Highlight" },
+      b = { "<cmd>read !getbib -c<cr>", "Get Bib" },
+      r = { "<cmd>SendHere<cr>", "Set REPL" },
+      N = { "<cmd>tabnew<cr>", "New Buffer" },
       ["<cr>"] = { '<esc>/<++><cr>"_c4l', "Next Template" },
-      ["z"] = { "<cmd>ZenMode<cr>", "Zen Mode" },
-      ["r"] = { "<cmd>SendHere<cr>", "Set REPL" },
       ["."] = { "<cmd>cd %:p:h<cr>", "Set CWD" },
-      ["P"] = { function() utils.toggle_presence() end, "Toggle Presence" },
 
       a = {
         name = "Annotate",
@@ -20,6 +16,13 @@ return {
         f = { function() require("neogen").generate { type = "func" } end, "Function" },
         t = { function() require("neogen").generate { type = "type" } end, "Type" },
         F = { function() require("neogen").generate { type = "file" } end, "File" },
+      },
+
+      d = {
+        name = "Diff View",
+        ["<cr>"] = { "<cmd>DiffviewOpen<cr>", "Open DiffView" },
+        h = { "<cmd>DiffviewFileHistory %<cr>", "Open DiffView File History" },
+        H = { "<cmd>DiffviewFileHistory<cr>", "Open DiffView Branch History" },
       },
 
       f = {
@@ -91,57 +94,10 @@ return {
         f = { "<cmd>TexlabForward<cr>", "Forward Search" },
       },
 
-      d = {
-        name = "Document",
-        n = { "<cmd>enew<cr>", "New File" },
-        s = { "<cmd>setlocal spell!<cr>", "Toggle Spelling" },
-        t = { "<cmd>TableModeToggle<cr>", "Toggle Table Mode" },
-        p = { "<cmd>setlocal paste!<cr>", "Toggle Paste" },
-        b = { "<cmd>read !getbib -c<cr>", "Get Bib" },
-        c = { function() utils.vim_opt_toggle("conceallevel", 2, 0, "Conceal") end, "Toggle Conceal" },
-        w = { function() utils.vim_opt_toggle("wrap", true, false, "Soft Wrap") end, "Toggle Soft Wrapping" },
-        W = { function() utils.vim_opt_toggle("textwidth", 80, 0, "Hard Wrap") end, "Toggle Hard Wrapping" },
-        m = { function() require("nabla").popup() end, "Preview Math" },
-      },
-
-      h = {
-        name = "Hop",
-        c = { "<cmd>HopChar1<cr>", "Character" },
-        C = { "<cmd>HopChar2<cr>", "2 Characters" },
-        l = { "<cmd>HopLine<cr>", "Line" },
-        p = { "<cmd>HopPattern<cr>", "Pattern" },
-        w = { "<cmd>HopWord<cr>", "Word" },
-      },
-
       s = {
         name = "Surf",
         s = { "<cmd>STSSelectMasterNode<cr>", "Surf" },
         S = { "<cmd>STSSelectCurrentNode<cr>", "Surf Node" },
-      },
-
-      n = {
-        name = "Notes",
-        b = { function() require "zk.commands" "ZkBacklinks"() end, "Backlink Picker" },
-        d = { function() require "zk.commands" "ZkCd"() end, "Change Directory" },
-        r = { function() require "zk.commands" "ZkIndex"() end, "Refresh Index" },
-        l = { function() require "zk.commands" "ZkLinks"() end, "Link Picker" },
-        s = { function() require("zk.commands").get "ZkNotes" { sort = { "modified" } } end, "Search" },
-        n = {
-          function() require("zk.commands").get "ZkNew" { dir = "personal", title = vim.fn.input "Title: " } end,
-          "New Personal Note",
-        },
-        N = {
-          function() require("zk.commands").get "ZkNew" { dir = "work", title = vim.fn.input "Title: " } end,
-          "New Work Note",
-        },
-        t = { function() require("zk.commands").get "ZkTags"() end, "Tags" },
-        i = { "<Plug>(simple-todo-new-list-item)", "Insert Todo" },
-        I = { "<Plug>(simple-todo-new-list-item-start-of-line)", "Convert to Todo" },
-        o = { "<Plug>(simple-todo-below)", "Insert Todo Below" },
-        O = { "<Plug>(simple-todo-above)", "Insert Todo Above" },
-        x = { "<Plug>(simple-todo-mark-as-done)", "Mark Done" },
-        X = { "<Plug>(simple-todo-mark-as-undone)", "Mark Undone" },
-        ["<tab>"] = { "<Plug>(simple-todo-mark-switch)", "Toggle Todo" },
       },
 
       x = {
@@ -238,39 +194,6 @@ return {
   },
   v = {
     ["<leader>"] = {
-      h = {
-        name = "Hop",
-        c = { "<cmd>HopChar1<cr>", "Character" },
-        C = { "<cmd>HopChar2<cr>", "2 Characters" },
-        l = { "<cmd>HopLine<cr>", "Line" },
-        p = { "<cmd>HopPattern<cr>", "Pattern" },
-        w = { "<cmd>HopWord<cr>", "Word" },
-      },
-
-      n = {
-        name = "Notes",
-        s = { ":'<,'>lua require('zk.commands').get('ZkMatch')()<cr>", "Search" },
-        n = {
-          ":'<,'>lua require('zk.commands').get('ZkNewFromTitleSelection')({ dir = 'personal' })<cr>",
-          "New Personal Note From Title",
-        },
-        N = {
-          ":'<,'>lua require('zk.commands').get('ZkNewFromTitleSelection')({ dir = 'work' })<cr>",
-          "New Work Note From Title",
-        },
-        W = {
-          ":'<,'>lua require('zk.commands').get('ZkNewFromContentSelection')({ dir = 'work', title = vim.fn.input('Title: ') })<cr>",
-          "New Work Note From Content",
-        },
-        C = {
-          ":'<,'>lua require('zk.commands').get('ZkNewFromContentSelection')({ dir = 'personal', title = vim.fn.input('Title: ') })<cr>",
-          "New Personal Note From Content",
-        },
-        x = { "<Plug>(simple-todo-mark-as-done)", "Mark Done" },
-        X = { "<Plug>(simple-todo-mark-as-undone)", "Mark Undone" },
-        ["<tab>"] = { "<Plug>(simple-todo-mark-switch)", "Toggle Todo" },
-      },
-
       x = {
         name = "Debugger",
         e = { function() require("dapui").eval() end, "Evaluate Line" },
