@@ -18,6 +18,13 @@ local mappings = {
     ["<leader>sm"] = false,
     ["<leader>sn"] = false,
     ["<leader>sr"] = false,
+    ["<leader><leader>x"] = {
+      function()
+        vim.cmd "write! %"
+        vim.cmd "source %"
+      end,
+      desc = "Save And Source current File",
+    },
     -- navigating wrapped lines
     j = { "gj", desc = "Navigate down" },
     k = { "gk", desc = "Navigate down" },
@@ -42,8 +49,8 @@ local mappings = {
   },
   i = {
     -- type template string
-    ["<C-CR>"] = { "<++>", desc = "Insert template string" },
-    ["<S-Tab>"] = { "<C-V><Tab>", desc = "Tab character" },
+    -- ["<C-CR>"] = { "<++>", desc = "Insert template string" },
+    -- ["<S-Tab>"] = { "<C-V><Tab>", desc = "Tab character" },
   },
   v = {
     -- navigating wrapped lines

@@ -1,6 +1,7 @@
 local telescope = require "telescope"
 local actions = require "telescope.actions"
-local fb_actions = require("telescope").extensions.file_browser.actions
+local exists, safeFB = pcall(require("telescope").extensions.file_browser)
+-- local fb_actions = require("telescope").extensions.file_browser.actions
 local hop = telescope.extensions.hop
 return {
   defaults = {
@@ -44,10 +45,10 @@ return {
     file_browser = {
       mappings = {
         i = {
-          ["<C-z>"] = fb_actions.toggle_hidden,
+          -- ["<C-z>"] = fb_actions.toggle_hidden,
         },
         n = {
-          z = fb_actions.toggle_hidden,
+          -- z = fb_actions.toggle_hidden,
         },
       },
     },

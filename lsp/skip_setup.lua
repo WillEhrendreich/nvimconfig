@@ -1,1 +1,5 @@
-return { "tsserver", "clangd" }
+return {
+  "fsautocomplete",
+  "tsserver",
+  "clangd",
+}

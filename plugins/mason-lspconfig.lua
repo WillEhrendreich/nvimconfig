@@ -1,6 +1,7 @@
 return {
-  automatic_installation = true,
+  automatic_installation = false,
   ensure_installed = {
+    "fsautocomplete",
     "clangd",
     "cmake",
     "cssls",

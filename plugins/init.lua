@@ -1,10 +1,12 @@
+--local fssetup = function() require("mason-lspconfig").fsautocomplete.setup {} end
+
+-- local ionsetup = require "ionide"
 return {
-  ["ionide/ionide-vim"] = {
-    config = function() require "ionide" end,
-  },
+
+  ["folke/neodev.nvim"] = {},
   ["goolord/alpha-nvim"] = { disable = true },
   ["max397574/better-escape.nvim"] = { disable = true },
-  ["numToStr/Comment.nvim"] = { disable = true },
+  ["numToStr/Comment.nvim"] = {},
   -- ["dhruvasagar/vim-table-mode"] = require "user.plugins.vim-table-mode",
   -- ["echasnovski/mini.nvim"] = require "user.plugins.mini",
   -- ["folke/zen-mode.nvim"] = require "user.plugins.zen-mode",
@@ -108,4 +110,18 @@ return {
     },
     config = function() require "user.plugins.syntax-tree-surfer" end,
   },
+  ["ahmedkhalf/project.nvim"] = {
+    event = "BufRead",
+    -- config = function() require "user.plugins.project" end,
+  },
+  ["WillEhrendreich/ionide-vim"] = {
+    after = "mason-lspconfig.nvim",
+    -- config = {},
+    -- config = function()
+    -- require("ionide").setup { require "user.lsp.server-settings.ionide" }
+    --require("ionide").setup {},
+    -- cmd = { "dotnet", "fsautocomplete", "--adaptive-lsp-server-enabled" },
+    -- end,
+  },
+  ["adelarsq/neofsharp.vim"] = {},
 }

@@ -1,0 +1,18 @@
+return {
+  "ionide",
+  "clangd",
+--  "cmake",
+ -- "cssls",
+  "html",
+--  "intelephense",
+  "jsonls",
+--  "pyright",
+  "sqls",
+  -- "fsautocomplete",
+  "omnisharp",
+  "sumneko_lua",
+  "texlab",
+  "tsserver",
+  "yamlls",
+  "marksman",
+}

@@ -8,4 +8,8 @@ return function()
     },
   }
   require "user.autocmds"
+  require "user.globalCommands"
+
+
+
 end

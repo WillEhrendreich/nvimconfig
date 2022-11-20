@@ -1,4 +1,4 @@
 return {
-  channel = "nightly",
+  channel = "dap",
   skip_prompts = true,
 }

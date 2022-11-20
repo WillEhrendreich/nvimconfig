@@ -1,7 +1,31 @@
 return {
-  auto_install = vim.fn.executable "tree-sitter" == 1,
-  highlight = { disable = { "help" } },
+  highlight = {
+    enable = true,
+    disable = function(lang, buf)
+      local max_filesize = 100 * 1024 -- 100 KB
+      local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
+      if lang == "fsharp" or ok and stats and stats.size > max_filesize then return true end
+    end,
+    additional_vim_regex_highlighting = function(lang, _) return lang == "fsharp" end,
+  },
+  -- highlight = { disable = { "help" } },
+  context_commentstring = {
+    enable = true,
+    enable_autocmd = false,
+  },
+  rainbow = {
+    enable = true,
+    disable = { "html" },
+    extended_mode = false,
+    max_file_lines = nil,
+  },
+  autotag = { enable = true },
+  incremental_selection = { enable = true },
+  -- indent = { enable = false },
   indent = { enable = true, disable = { "python" } },
+
+  auto_install = vim.fn.executable "tree-sitter" == 1,
+  ensure_installed = "all",
   matchup = { enable = true },
   textobjects = {
     select = {

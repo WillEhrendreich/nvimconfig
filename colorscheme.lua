@@ -1,1 +1,1 @@
-return "duskfox"
+return "terafox"
