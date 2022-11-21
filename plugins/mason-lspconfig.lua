@@ -1,5 +1,4 @@
 return {
-  automatic_installation = false,
   ensure_installed = {
     "fsautocomplete",
     "clangd",

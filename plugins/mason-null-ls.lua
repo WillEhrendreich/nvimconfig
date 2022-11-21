@@ -1,7 +1,5 @@
 return {
-  automatic_installation = true,
   ensure_installed = {
-    "gitsigns",
     "shellcheck",
     "stylua",
     --    "black",

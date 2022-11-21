@@ -19,7 +19,9 @@ return {
   -- ["akinsho/git-conflict.nvim"] = require "user.plugins.git-conflict",
   -- ["andymass/vim-matchup"] = { after = "nvim-treesitter" },
   ["arsham/indent-tools.nvim"] = {
-    requires = "arsham/arshlib.nvim",
+    opt = true,
+    setup = function() table.insert(astronvim.file_plugins, "indent-tools.nvim") end,
+    requires = { "arsham/arshlib.nvim", module = "arshlib" },
     config = function() require "user.plugins.indent-tools" end,
   },
   ["danymat/neogen"] = {
@@ -28,11 +30,18 @@ return {
     cmd = "Neogen",
     config = function() require "user.plugins.neogen" end,
   },
-  ["EdenEast/nightfox.nvim"] = { config = function() require "user.plugins.nightfox" end },
-  ["ethanholz/nvim-lastplace"] = { config = function() require "user.plugins.nvim-lastplace" end },
+  ["EdenEast/nightfox.nvim"] = {
+    module = "nightfox",
+    event = "ColorScheme",
+    config = function() require "user.plugins.nightfox" end,
+  },
+  ["ethanholz/nvim-lastplace"] = {
+    opt = true,
+    setup = function() table.insert(astronvim.file_plugins, "nvim-lastplace") end,
+    config = function() require "user.plugins.nvim-lastplace" end,
+  },
   ["hrsh7th/cmp-calc"] = { after = "nvim-cmp", config = function() require "user.plugins.cmp-calc" end },
   ["hrsh7th/cmp-emoji"] = { after = "nvim-cmp", config = function() require "user.plugins.cmp-emoji" end },
-  ["hrsh7th/cmp-omni"] = { after = "nvim-cmp", config = function() require "user.plugins.cmp-omni" end },
   ["jayp0521/mason-nvim-dap.nvim"] = {
     after = { "mason.nvim", "nvim-dap" },
     config = function() require "user.plugins.mason-nvim-dap" end,
@@ -45,17 +54,13 @@ return {
     after = "mason-lspconfig.nvim",
     config = function() require "user.plugins.typescript" end,
   },
-  ["junegunn/vim-easy-align"] = {},
+  ["junegunn/vim-easy-align"] = { opt = true, setup = function() table.insert(astronvim.file_plugins, "vim-easy-align") end },
   ["kdheepak/cmp-latex-symbols"] = {
     after = "nvim-cmp",
     config = function() require "user.plugins.cmp-latex-symbols" end,
   },
-  ["machakann/vim-sandwich"] = {},
-  ["mfussenegger/nvim-dap"] = {},
-  ["mtikekar/nvim-send-to-term"] = {
-    cmd = "SendHere",
-    config = function() require "user.plugins.nvim-send-to-term" end,
-  },
+  ["machakann/vim-sandwich"] = { opt = true, setup = function() table.insert(astronvim.file_plugins, "vim-sandwich") end },
+  ["mfussenegger/nvim-dap"] = { opt = true, setup = function() table.insert(astronvim.file_plugins, "nvim-dap" )end },
   ["mxsdev/nvim-dap-vscode-js"] = {
     after = "mason-nvim-dap.nvim",
     config = function() require "user.plugins.nvim-dap-vscode-js" end,
@@ -89,7 +94,8 @@ return {
   },
   ["rcarriga/nvim-dap-ui"] = { after = "nvim-dap", config = function() require "user.plugins.dapui" end },
   ["sindrets/diffview.nvim"] = {
-    cmd = { "DiffviewOpen", "DiffviewFileHistory" },
+    opt = true,
+    setup = function() table.insert(astronvim.git_plugins, "diffview.nvim") end,
     config = function() require "user.plugins.diffview" end,
   },
   ["theHamsta/nvim-dap-virtual-text"] = {
@@ -97,18 +103,7 @@ return {
     config = function() require "user.plugins.nvim-dap-virtual-text" end,
   },
   ["ziontee113/syntax-tree-surfer"] = {
-    cmd = {
-      "STSSwapUpNormal",
-      "STSSwapDownNormal",
-      "STSSelectCurrentNode",
-      "STSSelectMasterNode",
-      "STSSelectParentNode",
-      "STSSelectChildNode",
-      "STSSelectPrevSiblingNode",
-      "STSSelectNextSiblingNode",
-      "STSSwapNextVisual",
-      "STSSwapPrevVisual",
-    },
+    module = "syntax-tree-surfer",
     config = function() require "user.plugins.syntax-tree-surfer" end,
   },
   ["ahmedkhalf/project.nvim"] = {
