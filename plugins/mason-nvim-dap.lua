@@ -6,7 +6,7 @@ vim.g.dotnet_build_project = function()
   if vim.g["dotnet_last_proj_path"] ~= nil then default_path = vim.g["dotnet_last_proj_path"] end
   local path = vim.fn.input("Path to your *proj file ", default_path, "file")
   vim.g["dotnet_last_proj_path"] = path
-  local cmd = "dotnet build -c Debug " .. path
+  local cmd = "dotnet build -c Debug " .. path .. '" 2> /tmp/dap-debug-nvim-dotnet.log'
   -- local cmd = "dotnet build -c Debug " .. path .. " > /dev/null"
   print ""
   print("Cmd to execute: " .. cmd)
@@ -25,8 +25,7 @@ vim.g.dotnet_get_dll_path = function()
   if vim.g["dotnet_last_dll_path"] == nil then
     vim.g["dotnet_last_dll_path"] = request()
   else
-    if
-      vim.fn.confirm("Do you want to change the path to dll?\n" .. vim.g["dotnet_last_dll_path"], "&yes\n&no", 2) == 1
+    if vim.fn.confirm("Do you want to change the path to dll?\n" .. vim.g["dotnet_last_dll_path"], "&yes\n&no", 2) == 1
     then
       vim.g["dotnet_last_dll_path"] = request()
     end
@@ -57,7 +56,7 @@ require("mason-nvim-dap").setup_handlers {
   function(source_name)
     -- all sources with no handler get passed here
     -- Keep original functionality of `automatic_setup = true`
-    require "mason-nvim-dap.automatic_setup"(source_name)
+    require "mason-nvim-dap.automatic_setup" (source_name)
   end,
 
   coreclr = function(source_name)
