@@ -54,13 +54,19 @@ return {
     after = "mason-lspconfig.nvim",
     config = function() require "user.plugins.typescript" end,
   },
-  ["junegunn/vim-easy-align"] = { opt = true, setup = function() table.insert(astronvim.file_plugins, "vim-easy-align") end },
+  ["junegunn/vim-easy-align"] = {
+    opt = true,
+    setup = function() table.insert(astronvim.file_plugins, "vim-easy-align") end,
+  },
   ["kdheepak/cmp-latex-symbols"] = {
     after = "nvim-cmp",
     config = function() require "user.plugins.cmp-latex-symbols" end,
   },
-  ["machakann/vim-sandwich"] = { opt = true, setup = function() table.insert(astronvim.file_plugins, "vim-sandwich") end },
-  ["mfussenegger/nvim-dap"] = { opt = true, setup = function() table.insert(astronvim.file_plugins, "nvim-dap" )end },
+  ["machakann/vim-sandwich"] = {
+    opt = true,
+    setup = function() table.insert(astronvim.file_plugins, "vim-sandwich") end,
+  },
+  ["mfussenegger/nvim-dap"] = { opt = true, setup = function() table.insert(astronvim.file_plugins, "nvim-dap") end },
   ["mxsdev/nvim-dap-vscode-js"] = {
     after = "mason-nvim-dap.nvim",
     config = function() require "user.plugins.nvim-dap-vscode-js" end,
@@ -112,6 +118,8 @@ return {
   },
   ["WillEhrendreich/ionide-vim"] = {
     after = "mason-lspconfig.nvim",
+    commit = "25144fb",
+
     -- config = {},
     -- config = function()
     -- require("ionide").setup { require "user.lsp.server-settings.ionide" }
@@ -128,28 +136,28 @@ return {
   },
   ["adelarsq/neofsharp.vim"] = {},
   ["lewis6991/hover.nvim"] = {
- config = function()
-         require("hover").setup {
-                     init = function()
-                                     -- Require providers
-                                                     require("hover.providers.lsp")
-                                                                     -- require('hover.providers.gh')
-                                                                                     -- require('hover.providers.jira')
-                                                                                                      require('hover.providers.man')
-                                                                                                                      -- require('hover.providers.dictionary')
-                                                                                                                                 end,
-                                                                                                                                             preview_opts = {
-                                                                                                                                                             border = nil
-                                                                                                                                                                         },
-                                                                                                                                                                                     -- Whether the contents of a currently open hover window should be moved
-                                                                                                                                                                                                 -- to a :h preview-window when pressing the hover keymap.
-                                                                                                                                                                                                             preview_window = false,
-                                                                                                                                                                                                                         title = true
-                                                                                                                                                                                                                                 }
+    config = function()
+      require("hover").setup {
+        init = function()
+          -- Require providers
+          require "hover.providers.lsp"
+          -- require('hover.providers.gh')
+          -- require('hover.providers.jira')
+          require "hover.providers.man"
+          -- require('hover.providers.dictionary')
+        end,
+        preview_opts = {
+          border = nil,
+        },
+        -- Whether the contents of a currently open hover window should be moved
+        -- to a :h preview-window when pressing the hover keymap.
+        preview_window = false,
+        title = true,
+      }
 
-                                                                                                                                                                                                                                         -- Setup keymaps
-                                                                                                                                                                                                                                                 vim.keymap.set("n", "K", require("hover").hover, {desc = "hover.nvim"})
-                                                                                                                                                                                                                                                         vim.keymap.set("n", "gK", require("hover").hover_select, {desc = "hover.nvim (select)"})
-                                                                                                                                                                                                                                                             end
+      -- Setup keymaps
+      vim.keymap.set("n", "K", require("hover").hover, { desc = "hover.nvim" })
+      vim.keymap.set("n", "gK", require("hover").hover_select, { desc = "hover.nvim (select)" })
+    end,
   },
 }
