@@ -18,6 +18,13 @@ local mappings = {
     ["<leader>sm"] = false,
     ["<leader>sn"] = false,
     ["<leader>sr"] = false,
+    ["<leader>i"] = {
+      function()
+        local w = vim.fn.expand "<cword>"
+        print("inverting " .. w)
+        require("nvim-toggler").toggle(w)
+      end,
+    },
     ["<leader><leader>x"] = {
       function()
         vim.cmd "write! %"
@@ -128,9 +135,9 @@ local mappings = {
 for _, char in ipairs { "_", ".", ":", ",", ";", "|", "/", "\\", "*", "+", "%", "`", "?" } do
   for _, mode in ipairs { "x", "o" } do
     mappings[mode]["i" .. char] =
-      { string.format(":<C-u>silent! normal! f%sF%slvt%s<CR>", char, char, char), desc = "between " .. char }
+    { string.format(":<C-u>silent! normal! f%sF%slvt%s<CR>", char, char, char), desc = "between " .. char }
     mappings[mode]["a" .. char] =
-      { string.format(":<C-u>silent! normal! f%sF%svf%s<CR>", char, char, char), desc = "around " .. char }
+    { string.format(":<C-u>silent! normal! f%sF%svf%s<CR>", char, char, char), desc = "around " .. char }
   end
 end
 

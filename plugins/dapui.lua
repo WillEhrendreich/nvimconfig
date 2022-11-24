@@ -1,5 +1,6 @@
 local dap, dapui = require "dap", require "dapui"
 dapui.setup {
+  icons = { expanded = "", collapsed = "", current_frame = "" },
   floating = { border = "rounded" },
 }
 -- add listeners to auto open DAP UI

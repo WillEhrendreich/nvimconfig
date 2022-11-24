@@ -1,5 +1,6 @@
 local telescope = require "telescope"
 local actions = require "telescope.actions"
+astronvim.conditional_func(telescope.load_extension, pcall(require, "file_browser"), "file_browser")
 local exists, safeFB = pcall(require("telescope").extensions.file_browser)
 -- local fb_actions = require("telescope").extensions.file_browser.actions
 local hop = telescope.extensions.hop

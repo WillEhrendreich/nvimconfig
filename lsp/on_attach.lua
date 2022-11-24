@@ -7,15 +7,16 @@ local replaceSeps = function(p) return p:gsub("\\", "/") end
 return function(client, bufnr)
   local capabilities = client.server_capabilities
   -- vim.notify(client.name .. " is running on_attach")
-  local root = replaceSeps(vim.lsp.buf.list_workspace_folders()[1])
-  local cwd = replaceSeps(vim.fn.getcwd())
+  local root = replaceSeps(vim.lsp.buf.list_workspace_folders()[1]) .. "/"
+  local cwd = replaceSeps(vim.fn.getcwd()) .. "/"
   -- if client.name == "ionide" or client.name == "omnisharp" or client.name == "fsautocomplete" then
   if root and cwd ~= root then
-    if vim.fn.confirm(
-      "Do you want to change the current working directory to lsp root?\nROOT: " .. root .. "\nCWD : " .. cwd .. "\n",
-      "&yes\n&no",
-      2
-    ) == 1
+    if
+      vim.fn.confirm(
+        "Do you want to change the current working directory to lsp root?\nROOT: " .. root .. "\nCWD : " .. cwd .. "\n",
+        "&yes\n&no",
+        2
+      ) == 1
     then
       vim.cmd("cd " .. root)
       vim.notify("CWD : " .. root)
@@ -63,9 +64,10 @@ return function(client, bufnr)
     )
     local autoformat = astronvim.lsp.formatting.format_on_save
     local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
-    if autoformat.enabled
-        and (tbl_isempty(autoformat.allow_filetypes or {}) or tbl_contains(autoformat.allow_filetypes, filetype))
-        and (tbl_isempty(autoformat.ignore_filetypes or {}) or not tbl_contains(autoformat.ignore_filetypes, filetype))
+    if
+      autoformat.enabled
+      and (tbl_isempty(autoformat.allow_filetypes or {}) or tbl_contains(autoformat.allow_filetypes, filetype))
+      and (tbl_isempty(autoformat.ignore_filetypes or {}) or not tbl_contains(autoformat.ignore_filetypes, filetype))
     then
       local autocmd_group = "auto_format_" .. bufnr
       vim.api.nvim_create_augroup(autocmd_group, { clear = true })
@@ -139,15 +141,16 @@ return function(client, bufnr)
         -- check if cursor is on an empty column
         local row, col = cursor[1] - 1, cursor[2]
         local line = vim.api.nvim_buf_get_lines(0, row, row + 1, true)[1]
-        if line
-            and (
+        if
+          line
+          and (
             #line == 0
-                or line:sub(col + 1, col + 1):match "^%s+$"
-                or line:sub(col + 1, col + 1):match "let"
-                or line:sub(col + 1, col + 1):match "="
-                or line:sub(col + 1, col + 1):match "/\\W"
+            or line:sub(col + 1, col + 1):match "^%s+$"
+            or line:sub(col + 1, col + 1):match "let"
+            or line:sub(col + 1, col + 1):match "="
+            or line:sub(col + 1, col + 1):match "/\\W"
 
-            )
+          )
         then
           return
         end

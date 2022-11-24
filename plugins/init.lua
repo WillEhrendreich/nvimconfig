@@ -79,6 +79,7 @@ return {
   ["nvim-telescope/telescope-file-browser.nvim"] = {
     after = "telescope.nvim",
     opt = false,
+    module = "telescope-file-browser",
     config = function() require "user.plugins.telescope-file-browser" end,
   },
   ["nvim-telescope/telescope-hop.nvim"] = {
@@ -158,6 +159,31 @@ return {
       -- Setup keymaps
       vim.keymap.set("n", "K", require("hover").hover, { desc = "hover.nvim" })
       vim.keymap.set("n", "gK", require("hover").hover_select, { desc = "hover.nvim (select)" })
+    end,
+  },
+  ["nguyenvukhang/nvim-toggler"] = {
+    config = function()
+      require("nvim-toggler").setup {
+        inverses = {
+          ["bad"] = "good",
+        },
+        remove_default_keybinds = true,
+      }
+    end,
+  },
+
+  ["tyru/open-browser.vim"] = {
+    commands = function()
+      return {
+        {
+          desc = "Smart search link/word under cursor",
+          cmd = "<Plug>(openbrowser-smart-search)",
+          keys = {
+            { "n", "gx", { noremap = true } },
+            { "v", "gx", { noremap = true } },
+          },
+        },
+      }
     end,
   },
 }
