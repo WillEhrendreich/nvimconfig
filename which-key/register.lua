@@ -3,26 +3,30 @@ local utils = require "user.utils"
 return {
   n = {
     ["<leader>"] = {
-      b = { "<cmd>read !getbib -c<cr>", "Get Bib" },
-      r = { "<cmd>SendHere<cr>", "Set REPL" },
+      -- b = { "<cmd>read !getbib -c<cr>", "Get Bib" },
+
+      I = {
+        name = "Invert Word under Cursor",
+      },
+      -- r = { "<cmd>SendHere<cr>", "Set REPL" },
       N = { "<cmd>tabnew<cr>", "New Buffer" },
-      ["<cr>"] = { '<esc>/<++><cr>"_c4l', "Next Template" },
+      -- ["<cr>"] = { '<esc>/<++><cr>"_c4l', "Next Template" },
       ["."] = { "<cmd>cd %:p:h<cr>", "Set CWD" },
 
-      a = {
-        name = "Annotate",
-        ["<cr>"] = { function() require("neogen").generate() end, "Current" },
-        c = { function() require("neogen").generate { type = "class" } end, "Class" },
-        f = { function() require("neogen").generate { type = "func" } end, "Function" },
-        t = { function() require("neogen").generate { type = "type" } end, "Type" },
-        F = { function() require("neogen").generate { type = "file" } end, "File" },
-      },
-
+      -- a = {
+      --   name = "Annotate",
+      --   ["<cr>"] = { function() require("neogen").generate() end, "Current" },
+      --   c = { function() require("neogen").generate { type = "class" } end, "Class" },
+      --   f = { function() require("neogen").generate { type = "func" } end, "Function" },
+      --   t = { function() require("neogen").generate { type = "type" } end, "Type" },
+      --   F = { function() require("neogen").generate { type = "file" } end, "File" },
+      -- },
+      --
       f = {
         name = "Telescope",
         ["?"] = { "<cmd>Telescope help_tags<cr>", "Find Help" },
         ["'"] = { "<cmd>Telescope marks<cr>", "Marks" },
-        B = { "<cmd>Telescope bibtex<cr>", "BibTeX" },
+        -- B = { "<cmd>Telescope bibtex<cr>", "BibTeX" },
         e = { "<cmd>Telescope file_browser<cr>", "Explorer" },
         h = { "<cmd>Telescope oldfiles<cr>", "History" },
         k = { "<cmd>Telescope keymaps<cr>", "Keymaps" },
@@ -36,55 +40,87 @@ return {
 
       m = {
         name = "Compiler",
-        k = {
-          function()
-            vim.cmd "silent! write"
-            local filename = vim.fn.expand "%:t"
-            utils.async_run(
-              { "compiler", vim.fn.expand "%:p" },
-              function() utils.quick_notification("Compiled " .. filename) end
-            )
-          end,
-          "Compile",
-        },
-        a = {
-          function()
-            vim.notify "Autocompile Started"
-            utils.async_run(
-              { "autocomp", vim.fn.expand "%:p" },
-              function() utils.quick_notification "Autocompile stopped" end
-            )
-          end,
-          "Auto Compile",
-        },
+        -- k = {
+        --   function()
+        --     vim.cmd "silent! write"
+        --     local filename = vim.fn.expand "%:t"
+        --     utils.async_run(
+        --       { "compiler", vim.fn.expand "%:p" },
+        --       function() utils.quick_notification("Compiled " .. filename) end
+        --     )
+        --   end,
+        --   "Compile",
+        -- },
+        -- a = {
+        --   function()
+        --     vim.notify "Autocompile Started"
+        --     utils.async_run(
+        --       { "autocomp", vim.fn.expand "%:p" },
+        --       function() utils.quick_notification "Autocompile stopped" end
+        --     )
+        --   end,
+        --   "Auto Compile",
+        -- },
         v = { function() vim.fn.jobstart { "opout", vim.fn.expand "%:p" } end, "View Output" },
+        -- b = {
+        --   function()
+        --     local filename = vim.fn.expand "%:t"
+        --     utils.async_run({
+        --       "pandoc",
+        --       vim.fn.expand "%",
+        --       "--pdf-engine=xelatex",
+        --       "--variable",
+        --       "urlcolor=blue",
+        --       "-t",
+        --       "beamer",
+        --       "-o",
+        --       vim.fn.expand "%:r" .. ".pdf",
+        --     }, function() utils.quick_notification("Compiled " .. filename) end)
+        --   end,
+        --   "Compile Beamer",
+        -- },
         b = {
           function()
-            local filename = vim.fn.expand "%:t"
-            utils.async_run({
-              "pandoc",
-              vim.fn.expand "%",
-              "--pdf-engine=xelatex",
-              "--variable",
-              "urlcolor=blue",
-              "-t",
-              "beamer",
-              "-o",
-              vim.fn.expand "%:r" .. ".pdf",
-            }, function() utils.quick_notification("Compiled " .. filename) end)
+            local isDotnet = function()
+              for k, v in pairs(vim.lsp.get_active_clients()) do
+                if v.name == "omnisharp" or v.name == "ionide" or v.name == "fsautocomlete" then return true end
+                return false
+              end
+            end
+            if isDotnet() then
+              local proj = vim.g.dotnet_get_project_path()
+              local build = function()
+                vim.cmd("w " .. vim.fn.expand "%")
+                print("attempting to build " .. proj)
+                -- utils.async_run {
+                return vim.g.dotnet_build_project(proj)
+                -- }
+              end
+              local bok, b = pcall(build)
+
+              if bok then
+                if b == 0 then
+                  if vim.fn.confirm("Build Successful, run now?", "&yes\n&no", 2) == 1 then
+                    vim.g.dotnet_run(proj, "release")
+                  end
+                else
+                  print "Build Not Successful.. check log."
+                end
+              end
+            end
           end,
-          "Compile Beamer",
+          "Build Dotnet project",
         },
-        p = {
-          function()
-            local pdf_path = vim.fn.expand "%:r" .. ".pdf"
-            if vim.fn.filereadable(pdf_path) == 1 then vim.fn.jobstart { "pdfpc", pdf_path } end
-          end,
-          "Present Output",
-        },
+        -- p = {
+        --   function()
+        --     local pdf_path = vim.fn.expand "%:r" .. ".pdf"
+        --     if vim.fn.filereadable(pdf_path) == 1 then vim.fn.jobstart { "pdfpc", pdf_path } end
+        --   end,
+        --   "Present Output",
+        -- },
         l = { function() utils.toggle_qf() end, "Logs" },
-        t = { "<cmd>TexlabBuild<cr>", "LaTeX" },
-        f = { "<cmd>TexlabForward<cr>", "Forward Search" },
+        -- t = { "<cmd>TexlabBuild<cr>", "LaTeX" },
+        -- f = { "<cmd>TexlabForward<cr>", "Forward Search" },
       },
 
       s = {
@@ -109,6 +145,13 @@ return {
         u = { function() require("dapui").toggle() end, "Toggle Debugger UI" },
         w = { function() require("dapui").float_element "watches" end, "Watches" },
         x = { function() require("dap.ui.widgets").hover() end, "Inspect" },
+      },
+      t = {
+        name = "Tests",
+        s = { function() require("neotest").summary.toggle() end, "Neotest: Open test summary window" },
+        f = { function() require("neotest").run.run(vim.fn.expand "%") end, "Neotest: Run tests in file" },
+        n = { function() require("neotest").run.run() end, "Neotest: Run nearest test" },
+        d = { function() require("neotest").run.run { strategy = "dap" } end, "Neotest: Debug nearest test" },
       },
     },
     ["]"] = {
@@ -173,6 +216,7 @@ return {
           "Go to Statement",
         },
       },
+      n = {},
     },
   },
   i = {

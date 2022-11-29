@@ -10,7 +10,7 @@ function astronvim.system_open(path)
     vim.fn.jobstart({ "xdg-open", path }, { detach = true })
   else
     -- if any other operating system notify the user that there is currently no support
-    vim.fn.jobstart({ "openbrowser-smart-search", path }, { detach = true })
+    vim.cmd.OpenBrowserSmartSearch(path)
     -- astronvim.notify("System open is not supported on this OS!", "error")
   end
 end

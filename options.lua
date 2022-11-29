@@ -1,5 +1,6 @@
 return {
   opt = {
+    runtimepath = vim.opt.runtimepath + "c:/neovim/*",
     updatetime = 4000,
     expandtab = true,
     autoindent = true,

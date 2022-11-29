@@ -18,13 +18,17 @@ local mappings = {
     ["<leader>sm"] = false,
     ["<leader>sn"] = false,
     ["<leader>sr"] = false,
-    ["<leader>i"] = {
+    -- define new mappings
+
+    -- toggle inverses
+    ["<leader>I"] = {
       function()
         local w = vim.fn.expand "<cword>"
         print("inverting " .. w)
         require("nvim-toggler").toggle(w)
       end,
     },
+    -- save and source current file
     ["<leader><leader>x"] = {
       function()
         vim.cmd "write! %"
@@ -39,7 +43,7 @@ local mappings = {
     ["\\"] = { "<cmd>split<cr>", desc = "Horizontal split" },
     ["|"] = { "<cmd>vsplit<cr>", desc = "Vertical split" },
     -- better increment/decrement
-    ["-"] = { "<c-x>", desc = "Descrement number" },
+    ["_"] = { "<c-x>", desc = "Descrement number" },
     ["+"] = { "<c-a>", desc = "Increment number" },
     -- resize with arrows
     ["<Up>"] = { function() require("smart-splits").resize_up(2) end, desc = "Resize split up" },
@@ -84,7 +88,7 @@ local mappings = {
   x = {
     -- better increment/decrement
     ["+"] = { "g<C-a>", desc = "Increment number" },
-    ["-"] = { "g<C-x>", desc = "Descrement number" },
+    ["_"] = { "g<C-x>", desc = "Descrement number" },
     -- line text-objects
     ["il"] = { "g_o^", desc = "Inside line text object" },
     ["al"] = { "$o^", desc = "Around line text object" },

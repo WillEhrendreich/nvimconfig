@@ -19,8 +19,9 @@ end
 -- add runtime
 add "$VIMRUNTIME"
 
+add "c:/Neovim/*"
 -- add your config
-add "c:/.config/nvim"
+add "c:/.config/nvim/*"
 
 -- add plugins
 -- if you're not using packer, then you might need to change the paths below
@@ -44,11 +45,18 @@ return {
       },
       completion = { callSnippet = "Both" },
       diagnostics = { globals = { "vim", "astronvim", "astronvim_installation", "packer_plugins", "bit" } },
+      format = {
+        defaultConfig = {
+          indent_style = "space",
+          indent_size = "2",
+        },
+      },
       workspace = {
         maxPreload = 2000,
         preloadFileSize = 50000,
         library = {
           vim.api.nvim_get_runtime_file("", true),
+          "C:/neovim/*",
           astronvim.install.home .. "/lua",
           vim.fn.expand "$NVIMCONFIG",
           vim.fn.expand "$NVIMCONFIG/lua",

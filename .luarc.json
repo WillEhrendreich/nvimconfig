@@ -8,6 +8,7 @@
         "astronvim"
     ],
     "Lua.workspace.library": [
-        "~/.config/nvim/lua"
+        "c:/.config/nvim/lua",
+        "c:/neovim/"
     ]
 }

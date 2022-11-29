@@ -1,5 +1,7 @@
 return {
+
   nvim_lsp = 1000,
+  nvim_lua = 900,
   omni = 800,
   luasnip = 750,
   emoji = 700,
