@@ -1,23 +1,7 @@
-# AstroNvim User Configuration
+This is my personal nvim config files. 
 
-My personal user config for AstroVim
+Heavily borrowed and adapted from Astronvim, but I wanted the whole config in one place, or at least moreso.
 
-## Installation
+As a result,this is everything, no longer split between main config and user specific option overrides. 
 
-- Install AstroNvim
-
-```sh
-git clone https://github.com/AstroNvim/AstroNvim.git ~/.config/nvim
-```
-
-- Install these user settings
-
-```sh
-git clone https://code.mehalter.com/AstroNvim_user ~/.config/nvim/lua/user
-```
-
-- Initialize AstroVim
-
-```sh
-nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
-```
+I could't accomplish what I wanted to with the first way, I wanted to have more control and a faster iteration loop and more discoverability.

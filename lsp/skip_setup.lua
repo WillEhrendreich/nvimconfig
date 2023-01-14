@@ -1,5 +1,0 @@
-return {
-  "fsautocomplete",
-  "tsserver",
-  "clangd",
-}
