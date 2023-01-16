@@ -1495,11 +1495,16 @@ else
     -- local on_attach_override = user_plugin_opts("lsp.on_attach", nil, false)
     -- conditional_func(on_attach_override, true, client, bufnr)
 
-    function GetDirForFilename(s)
+    local upperDriveLetter = function(p)
+      local stringArg = p or ""
+      return (stringArg:gsub("^%l", string.upper))
+    end
+
+    local function GetDirForFilename(s)
       return vim.fs.dir(s)
     end
 
-    function FileRowColumnToPlusRegister()
+    local function FileRowColumnToPlusRegister()
       local fileAbs = vim.api.nvim_buf_get_name(0)
       local fname = vim.fs.basename(fileAbs)
       local line_col_pair = vim.api.nvim_win_get_cursor(0) -- row is 1, column is 0 indexed
@@ -1512,30 +1517,30 @@ else
     -- vim.notify(client.name .. " is running on_attach")
     if not vim.tbl_contains(ignore_lsp, client.name) then
       -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
-      local find_lsp_root = function(ignore_lsp, bufnr)
+      local find_lsp_root = function(ignored_lsp_servers, bufnr)
         -- Get lsp client for current buffer
-        local result = append_slash(vim.fs.normalize(vim.fs.dirname(vim.fn.expand("%"))))
+        local result = vim.fn.expand("%:p:h")
         local buf_ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
         local clients = vim.lsp.get_active_clients({
           bufnr = bufnr
         })
-        ignore_lsp = ignore_lsp or {}
+        local i= ignored_lsp_servers or {}
         for _, c in pairs(clients) do
           local filetypes = c.config.filetypes
           if filetypes and vim.tbl_contains(filetypes, buf_ft) then
-            if not vim.tbl_contains(ignore_lsp, c.name) then
+            if not vim.tbl_contains(i, c.name) then
               result = nil
-              result = append_slash(vim.fs.normalize(c.config.root_dir))
+              result = c.config.root_dir
             end
           end
         end
-        return result
+        return upperDriveLetter(vim.fs.normalize(append_slash(result)))
       end
 
       -- local buf = vim.api.nvim_buf_get_name(bufnr)
       local root = find_lsp_root(ignore_lsp, bufnr)
       -- astronvim.notify(root)
-      local cwd = append_slash(vim.fs.normalize(vim.fn.getcwd()))
+      local cwd = append_slash(vim.fs.normalize(upperDriveLetter(vim.fn.getcwd())))
       -- if client.name == "ionide" or client.name == "omnisharp" or client.name == "fsautocomplete" then
       if root and cwd ~= root then
 
