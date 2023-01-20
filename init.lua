@@ -1011,270 +1011,7 @@ else
 
   -- return git
 
-
-
-
-
   --#endregion_git
-
-
-
-  ---------------------------------------------------------------------------------------------------
-  ---------------------------------------------------------------------------------------------------
-  ---------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-  --- updater
-  -- I Do not want to utilize the updater.. I'm combining everything together on my own.-------------
-
-
-
-
-
-  ---------------------------------------------------------------------------------------------------
-  ---------------------------------------------------------------------------------------------------
-  ---------------------------------------------------------------------------------------------------
-  ---------------------------------------------------------------------------------------------------
-  --#region_updater
-  -- require "core.utils.updater"
-
-  -- --- Updater settings overridden with any user provided configuration
-  -- local options = astronvim.user_plugin_opts("updater", {
-  --   remote = "origin",
-  --   channel = "stable",
-  --   show_changelog = true,
-  --   auto_quit = true,
-  -- })
-
-  -- -- set the install channel
-  -- if options.branch then options.channel = "nightly" end
-  -- if astronvim.install.is_stable ~= nil then options.channel = astronvim.install.is_stable and "stable" or "nightly" end
-
-  -- astronvim.updater = { options = options }
-  -- -- if the channel is stable or the user has chosen to pin the system plugins
-  -- if options.pin_plugins == nil and options.channel == "stable" or options.pin_plugins then
-  --   -- load the current packer snapshot from the installation home location
-  --   local loaded, snapshot = pcall(fn.readfile, astronvim.install.home .. "/lazy-snapshot.json")
-  --   if loaded then
-  --     -- decode the snapshot JSON and save it to a variable
-  --     loaded, snapshot = pcall(fn.json_decode, snapshot)
-  --     astronvim.updater.snapshot = type(snapshot) == "table" and snapshot or nil
-  --   end
-  --   -- if there is an error loading the snapshot, print an error
-  --   if not loaded then vim.api.nvim_err_writeln "Error loading packer snapshot" end
-  -- end
-
-  -- --- Get the current AstroNvim version
-  -- -- @param quiet boolean to quietly execute or send a notification
-  -- -- @return the current AstroNvim version string
-  -- function astronvim.updater.version(quiet)
-  --   local version = astronvim.install.version or git.current_version(false)
-  --   if version and not quiet then astronvim.notify("Version: " .. version) end
-  --   return version
-  -- end
-
-  -- --- Get the full AstroNvim changelog
-  -- -- @param quiet boolean to quietly execute or display the changelog
-  -- -- @return the current AstroNvim changelog table of commit messages
-  -- function astronvim.updater.changelog(quiet)
-  --   local summary = {}
-  --   vim.list_extend(summary, git.pretty_changelog(git.get_commit_range()))
-  --   if not quiet then astronvim.echo(summary) end
-  --   return summary
-  -- end
-
-  -- --- Attempt an update of AstroNvim
-  -- -- @param target the target if checking out a specific tag or commit or nil if just pulling
-  -- local function attempt_update(target)
-  --   -- if updating to a new stable version or a specific commit checkout the provided target
-  --   if options.channel == "stable" or options.commit then
-  --     return git.checkout(target, false)
-  --     -- if no target, pull the latest
-  --   else
-  --     return git.pull(false)
-  --   end
-  -- end
-
-  -- --- Cancelled update message
-  -- local cancelled_message = { { "Update cancelled", "WarningMsg" } }
-
-  -- --- Sync Packer and then update Mason
-  -- function astronvim.updater.update_packages()
-  --   require("lazy").sync { wait = true }
-  --   astronvim.mason.update_all()
-  -- end
-
-  -- --- AstroNvim's updater function
-  -- function astronvim.updater.update()
-  --   -- if the git command is not available, then throw an error
-  --   if not git.available() then
-  --     astronvim.notify(
-  --       "git command is not available, please verify it is accessible in a command line. This may be an issue with your PATH",
-  --       "error"
-  --     )
-  --     return
-  --   end
-
-  --   -- if installed with an external package manager, disable the internal updater
-  --   if not git.is_repo() then
-  --     astronvim.notify("Updater not available for non-git installations", "error")
-  --     return
-  --   end
-  --   -- set up any remotes defined by the user if they do not exist
-  --   for remote, entry in pairs(options.remotes and options.remotes or {}) do
-  --     local url = git.parse_remote_url(entry)
-  --     local current_url = git.remote_url(remote, false)
-  --     local check_needed = false
-  --     if not current_url then
-  --       git.remote_add(remote, url)
-  --       check_needed = true
-  --     elseif
-  --       current_url ~= url
-  --       and astronvim.confirm_prompt {
-  --         { "Remote " },
-  --         { remote, "Title" },
-  --         { " is currently set to " },
-  --         { current_url, "WarningMsg" },
-  --         { "\nWould you like us to set it to " },
-  --         { url, "String" },
-  --         { "?" },
-  --       }
-  --     then
-  --       git.remote_update(remote, url)
-  --       check_needed = true
-  --     end
-  --     if check_needed and git.remote_url(remote, false) ~= url then
-  --       vim.api.nvim_err_writeln("Error setting up remote " .. remote .. " to " .. url)
-  --       return
-  --     end
-  --   end
-  --   local is_stable = options.channel == "stable"
-  --   if is_stable then
-  --     options.branch = "main"
-  --   elseif not options.branch then
-  --     options.branch = "nightly"
-  --   end
-  --   -- fetch the latest remote
-  --   if not git.fetch(options.remote) then
-  --     vim.api.nvim_err_writeln("Error fetching remote: " .. options.remote)
-  --     return
-  --   end
-  --   -- switch to the necessary branch only if not on the stable channel
-  --   if not is_stable then
-  --     local local_branch = (options.remote == "origin" and "" or (options.remote .. "_")) .. options.branch
-  --     if git.current_branch() ~= local_branch then
-  --       astronvim.echo {
-  --         { "Switching to branch: " },
-  --         { options.remote .. "/" .. options.branch .. "\n\n", "String" },
-  --       }
-  --       if not git.checkout(local_branch, false) then
-  --         git.checkout("-b " .. local_branch .. " " .. options.remote .. "/" .. options.branch, false)
-  --       end
-  --     end
-  --     -- check if the branch was switched to successfully
-  --     if git.current_branch() ~= local_branch then
-  --       vim.api.nvim_err_writeln("Error checking out branch: " .. options.remote .. "/" .. options.branch)
-  --       return
-  --     end
-  --   end
-  --   local source = git.local_head() -- calculate current commit
-  --   local target -- calculate target commit
-  --   if is_stable then -- if stable get tag commit
-  --     local version_search = options.version or "latest"
-  --     options.version = git.latest_version(git.get_versions(version_search))
-  --     if not options.version then -- continue only if stable version is found
-  --       vim.api.nvim_err_writeln("Error finding version: " .. version_search)
-  --       return
-  --     end
-  --     target = git.tag_commit(options.version)
-  --   elseif options.commit then -- if commit specified use it
-  --     target = git.branch_contains(options.remote, options.branch, options.commit) and options.commit or nil
-  --   else -- get most recent commit
-  --     target = git.remote_head(options.remote, options.branch)
-  --   end
-  --   if not source or not target then -- continue if current and target commits were found
-  --     vim.api.nvim_err_writeln "Error checking for updates"
-  --     return
-  --   elseif source == target then
-  --     astronvim.echo { { "No updates available", "String" } }
-  --     return
-  --   elseif -- prompt user if they want to accept update
-  --     not options.skip_prompts
-  --     and not astronvim.confirm_prompt {
-  --       { "Update available to ", "Title" },
-  --       { is_stable and options.version or target, "String" },
-  --       { "\nUpdating requires a restart, continue?" },
-  --     }
-  --   then
-  --     astronvim.echo(cancelled_message)
-  --     return
-  --   else -- perform update
-  --     -- calculate and print the changelog
-  --     local changelog = git.get_commit_range(source, target)
-  --     local breaking = git.breaking_changes(changelog)
-  --     local breaking_prompt = { { "Update contains the following breaking changes:\n", "WarningMsg" } }
-  --     vim.list_extend(breaking_prompt, git.pretty_changelog(breaking))
-  --     vim.list_extend(breaking_prompt, { { "\nWould you like to continue?" } })
-  --     if #breaking > 0 and not options.skip_prompts and not astronvim.confirm_prompt(breaking_prompt) then
-  --       astronvim.echo(cancelled_message)
-  --       return
-  --     end
-  --     -- attempt an update
-  --     local updated = attempt_update(target)
-  --     -- check for local file conflicts and prompt user to continue or abort
-  --     if
-  --       not updated
-  --       and not options.skip_prompts
-  --       and not astronvim.confirm_prompt {
-  --         { "Unable to pull due to local modifications to base files.\n", "ErrorMsg" },
-  --         { "Reset local files and continue?" },
-  --       }
-  --     then
-  --       astronvim.echo(cancelled_message)
-  --       return
-  --       -- if continued and there were errors reset the base config and attempt another update
-  --     elseif not updated then
-  --       git.hard_reset(source)
-  --       updated = attempt_update(target)
-  --     end
-  --     -- if update was unsuccessful throw an error
-  --     if not updated then
-  --       vim.api.nvim_err_writeln "Error ocurred performing update"
-  --       return
-  --     end
-  --     -- print a summary of the update with the changelog
-  --     local summary = {
-  --       { "AstroNvim updated successfully to ", "Title" },
-  --       { git.current_version(), "String" },
-  --       { "!\n", "Title" },
-  --       {
-  --         options.auto_quit and "AstroNvim will now quit.\n\n" or "Please restart.\n\n",
-  --         "WarningMsg",
-  --       },
-  --     }
-  --     if options.show_changelog and #changelog > 0 then
-  --       vim.list_extend(summary, { { "Changelog:\n", "Title" } })
-  --       vim.list_extend(summary, git.pretty_changelog(changelog))
-  --     end
-  --     astronvim.echo(summary)
-
-  --     -- if the user wants to auto quit, create an autocommand to quit AstroNvim on the update completing
-  --     if options.auto_quit then
-  --       vim.api.nvim_create_autocmd("User", { pattern = "AstroUpdateComplete", command = "quitall" })
-  --     end
-
-  --     astronvim.event "UpdateComplete"
-  --   end
-  -- end
-  --#endregion_updater
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
@@ -1430,10 +1167,8 @@ else
   local is_available = astronvim.is_available
   local setup_handlers = nil
   -- user_plugin_opts("lsp.setup_handlers", nil, false)
-  -- astronvim.lsp.configs["ionide"] = require("ionide").setup({cmd = { "fsautocomplete", "--adaptive-lsp-server-enabled", "--project-graph-enabled", "-v" },})
   local skip_setup = {
     "fsautocomplete",
-    -- "ionide",
     "tsserver",
     "clangd",
   }
@@ -1442,19 +1177,16 @@ else
   -- astronvim.user_plugin_opts("lsp.formatting", { format_on_save = { enabled = true }, disabled = {} })
   { format_on_save = {
     enabled = true,
-
     disabled = {
       "ionide",
       "null-ls",
       "lemminx"
     },
-
     ignore_filetypes = {
       "fsharp",
       "fsharp_project",
       "xml"
     },
-
   },
   }
 
@@ -1471,9 +1203,12 @@ else
     return not (vim.tbl_contains(disabled, client.name) or (type(filter) == "function" and not filter(client)))
   end
 
-  function append_slash(str)
-    if string.sub(str, -1) ~= "/" then
-      str = str .. "/"
+
+  local function append_slash(str)
+    if str and (not str == "") then
+      if string.sub(str, -1) ~= "/" then
+        return str .. "/"
+      end
     end
     return str
   end
@@ -1508,7 +1243,17 @@ else
     end
 
     local function GetDirForFilename(s)
-      return vim.fs.dir(s)
+      return vim.fs.dirname(s)
+    end
+
+    local function getDirForBufnr(bufnr)
+      local fileAbs = vim.api.nvim_buf_get_name(bufnr)
+      return vim.fs.dirname(fileAbs)
+    end
+
+    local function getBaseFilenameForBufnr(bufnr)
+      local fileAbs = vim.api.nvim_buf_get_name(bufnr)
+      return vim.fs.basename(fileAbs)
     end
 
     local function FileRowColumnToPlusRegister()
@@ -1526,39 +1271,65 @@ else
       -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
       local find_lsp_root = function(ignored_lsp_servers, bufnr)
         -- Get lsp client for current buffer
-        local result = vim.fn.expand("%:p:h")
-
+        local bufDir = getDirForBufnr(bufnr)
         local buf_ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
+        local result
         local clients = vim.lsp.get_active_clients({
           bufnr = bufnr
         })
         local i = ignored_lsp_servers or {}
         for _, c in pairs(clients) do
+          local cname = c.name
+          -- astronvim.notify("client name is " .. (cname or "not found"))
+
+          local bufname = vim.api.nvim_buf_get_name(bufnr)
+          -- astronvim.notify("buf name is " .. (bufname or "not found"))
+          local lspConfigForClient = require 'lspconfig.configs'[cname]
+
+          -- astronvim.notify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
           local filetypes = c.config.filetypes
           if filetypes and vim.tbl_contains(filetypes, buf_ft) then
             if not vim.tbl_contains(i, c.name) then
-              result = nil
-              result = c.config.root_dir
+              -- local rootDirFunction = lspConfigForClient.get_root_dir
+
+              -- astronvim.notify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
+              local activeConfigRootDir = c.config.root_dir
+
+              -- local rootresult
+              -- astronvim.notify("active root dir is " .. (activeConfigRootDir or "not found"))
+              -- if rootDirFunction then
+              -- rootresult = rootDirFunction(bufname)
+              -- if rootresult and not rootresult == nil and not rootresult == "" then astronvim.notify("result of rootDirFunction is: "
+              --     ..
+              --     upperDriveLetter(vim.fs.normalize(append_slash(rootresult))))
+              -- end
+              -- end
+              if activeConfigRootDir then
+                astronvim.notify("active root dir is " .. (activeConfigRootDir or "not found"))
+                result = upperDriveLetter(vim.fs.normalize(append_slash(activeConfigRootDir)))
+                -- else
+                -- result = upperDriveLetter(vim.fs.normalize(append_slash(rootresult) )))
+              end
+
             end
           end
         end
-        return upperDriveLetter(vim.fs.normalize(append_slash(result)))
+
+        -- return upperDriveLetter(vim.fs.normalize(append_slash(result or bufDir)))
+        return result
       end
-
-      -- local buf = vim.api.nvim_buf_get_name(bufnr)
       local root = find_lsp_root(ignore_lsp, bufnr)
-      -- astronvim.notify(root)
-      local cwd = append_slash(vim.fs.normalize(upperDriveLetter(vim.fn.getcwd())))
-      -- if client.name == "ionide" or client.name == "omnisharp" or client.name == "fsautocomplete" then
+      -- astronvim.notify("lsp root should have found root of : " .. root)
+      local cwd = upperDriveLetter(vim.fs.normalize(append_slash(vim.fn.getcwd())))
+      if not root then
+        astronvim.notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
+        root = vim.cmd.expand("%:p:h")
+      end
       -- astronvim.notify("i have the root and cwd now.. but ill check the number of buffers.. ")
-      local bufs = vim.tbl_filter(function(x) return vim.api.nvim_buf_is_loaded(x) end, vim.api.nvim_list_bufs())
 
-      local bufcount = vim.tbl_count(bufs)
-      -- astronvim.notify(bufcount .. "buffers in the list")
+      local shouldAsk = vim.tbl_count(vim.fn.getbufinfo { buflisted = true }) > 1
       if root and cwd ~= root then
-        local shouldAsk = bufcount > 2
         if shouldAsk == true then
-
           -- astronvim.notify("at this point the buffers say i should ask about setting root.. " .. vim.inspect(shouldAsk))
           if vim.fn.confirm(
             "Do you want to change the current working directory to lsp root?\nROOT: "
@@ -1570,12 +1341,12 @@ else
             2
           ) == 1
           then
-            vim.cmd("tcd " .. root)
+            vim.cmd("cd " .. root)
             astronvim.notify("CWD : " .. root)
           end
         else
 
-          vim.cmd("tcd " .. root)
+          vim.cmd("cd " .. root)
           astronvim.notify("CWD : " .. root)
         end
         vim.g["dotnet_last_proj_path"] = root
@@ -1583,6 +1354,7 @@ else
         vim.g["dotnet_last_dll_path"] = root .. "/bin/debug/"
       end
     end
+
     local lsp_mappings = {
       n = {
         ["<leader>ld"] = { function() vim.diagnostic.open_float() end, desc = "Hover diagnostics" },
@@ -1647,142 +1419,151 @@ else
     end
 
     if capabilities.hoverProvider then
-      lsp_mappings.n["K"] = { function() vim.lsp.buf.hover() end, desc = "Hover symbol details" }
-    end
-
-    if capabilities.implementationProvider then
-      lsp_mappings.n["gI"] = { function() vim.lsp.buf.implementation() end, desc = "Implementation of current symbol" }
-    end
-
-    if capabilities.referencesProvider then
-      lsp_mappings.n["gr"] = { function() vim.lsp.buf.references() end, desc = "References of current symbol" }
-    end
-
-    if capabilities.renameProvider then
-      lsp_mappings.n["<leader>lr"] = { function() vim.lsp.buf.rename() end, desc = "Rename current symbol" }
-    end
-
-    if capabilities.signatureHelpProvider then
-      lsp_mappings.n["<leader>lh"] = { function() vim.lsp.buf.signature_help() end, desc = "Signature help" }
-    end
-
-    if capabilities.typeDefinitionProvider then
-      lsp_mappings.n["gT"] = { function() vim.lsp.buf.type_definition() end, desc = "Definition of current type" }
-    end
-
-    -- original version from Astrovim --
-    --
-    -- if capabilities.documentHighlightProvider then
-    --   local highlight_name = vim.fn.printf("lsp_document_highlight_%d", bufnr)
-    --   vim.api.nvim_create_augroup(highlight_name, {})
-    --   vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-    --     group = highlight_name,
-    --     buffer = bufnr,
-    --     callback = function() vim.lsp.buf.document_highlight() end,
-    --   })
-    --   vim.api.nvim_create_autocmd("CursorMoved", {
-    --     group = highlight_name,
-    --     buffer = bufnr,
-    --     callback = function() vim.lsp.buf.clear_references() end,
-    --   })
-    -- end
-    --
-
-    if capabilities.documentHighlightProvider then
-      local highlight_name = vim.fn.printf("lsp_document_highlight_%d", bufnr)
-      vim.api.nvim_create_augroup(highlight_name, { clear = true })
-      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-        group = highlight_name,
-        buffer = bufnr,
-        callback = function()
-          local cursor = vim.api.nvim_win_get_cursor(0)
-          -- check if cursor is on an empty column
-          local row, col = cursor[1] - 1, cursor[2]
-          local line = vim.api.nvim_buf_get_lines(0, row, row + 1, true)[1]
-          if line
-              and (
-              #line == 0
-                  or line:sub(col + 1, col + 1):match "^%s+$"
-                  or line:sub(col + 1, col + 1):match "let"
-                  or line:sub(col + 1, col + 1):match "="
-                  or line:sub(col + 1, col + 1):match "-"
-                  or line:sub(col + 1, col + 1):match ">"
-                  or line:sub(col + 1, col + 1):match "<"
-                  or line:sub(col + 1, col + 1):match "/\\W"
-
-              )
-          then
-            return
-          end
-
-          vim.lsp.buf.document_highlight()
-        end,
-      })
-      vim.api.nvim_create_autocmd("CursorMoved", {
-        group = highlight_name,
-        buffer = bufnr,
-        callback = function() vim.lsp.buf.clear_references() end,
-      })
-    end
-
-    if capabilities.codeLensProvider then
-      local group_name = "codelens_" .. bufnr
-      vim.api.nvim_create_augroup(group_name, { clear = true })
-      -- default Astrovim version
-      --vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
-      vim.api.nvim_create_autocmd({ "LSPAttach", "BufEnter", "BufWritePost", "InsertLeave" }, {
-        --vim.api.nvim_create_autocmd({ "BufWrite" }, {
-        group = group_name,
-        callback = function() vim.lsp.codelens.refresh() end,
-        buffer = bufnr,
-      })
-    end
-
-    if capabilities.implementationProvider then
-      lsp_mappings.n["gI"] = { function() vim.lsp.buf.implementation() end, desc = "Implementation of current symbol" }
-    end
-
-    if capabilities.referencesProvider then
-      lsp_mappings.n["gr"] = { function() vim.lsp.buf.references() end, desc = "References of current symbol" }
-      lsp_mappings.n["<leader>lR"] = { function() vim.lsp.buf.references() end, desc = "Search references" }
-    end
-
-    if capabilities.renameProvider then
-      lsp_mappings.n["<leader>lr"] = { function() vim.lsp.buf.rename() end, desc = "Rename current symbol" }
-    end
-
-    if capabilities.signatureHelpProvider then
-      lsp_mappings.n["<leader>lh"] = { function() vim.lsp.buf.signature_help() end, desc = "Signature help" }
-    end
-
-    if capabilities.typeDefinitionProvider then
-      lsp_mappings.n["gT"] = { function() vim.lsp.buf.type_definition() end, desc = "Definition of current type" }
-    end
-
-    if capabilities.workspaceSymbolProvider then
-      lsp_mappings.n["<leader>lG"] = { function() vim.lsp.buf.workspace_symbol() end, desc = "Search workspace symbols" }
-    end
-
-    if is_available "telescope.nvim" then -- setup telescope mappings if available
-      if lsp_mappings.n.gd then lsp_mappings.n.gd[1] = function() require("telescope.builtin").lsp_definitions() end end
-      if lsp_mappings.n.gI then
-        lsp_mappings.n.gI[1] = function() require("telescope.builtin").lsp_implementations() end
+      if is_available("hover") then
+        lsp_mappings.n["K"] = { require 'hover'.hover(), desc = "Hover symbol details" }
+      else
+        lsp_mappings.n["K"] = { function() vim.lsp.buf.hover() end, desc = "Hover symbol details" }
       end
-      if lsp_mappings.n.gr then lsp_mappings.n.gr[1] = function() require("telescope.builtin").lsp_references() end end
-      if lsp_mappings.n["<leader>lR"] then
-        lsp_mappings.n["<leader>lR"][1] = function() require("telescope.builtin").lsp_references() end
+
+      if capabilities.implementationProvider then
+        lsp_mappings.n["gI"] = { function() vim.lsp.buf.implementation() end, desc = "Implementation of current symbol" }
       end
-      if lsp_mappings.n.gT then
-        lsp_mappings.n.gT[1] = function() require("telescope.builtin").lsp_type_definitions() end
+
+      if capabilities.referencesProvider then
+        lsp_mappings.n["gr"] = { function() vim.lsp.buf.references() end, desc = "References of current symbol" }
       end
-      if lsp_mappings.n["<leader>lG"] then
-        lsp_mappings.n["<leader>lG"][1] = function() require("telescope.builtin").lsp_workspace_symbols() end
+
+      if capabilities.renameProvider then
+        lsp_mappings.n["<leader>lr"] = { function() vim.lsp.buf.rename() end, desc = "Rename current symbol" }
       end
+
+      if capabilities.signatureHelpProvider then
+        lsp_mappings.n["<leader>lh"] = { function() vim.lsp.buf.signature_help() end, desc = "Signature help" }
+      end
+
+      if capabilities.typeDefinitionProvider then
+        lsp_mappings.n["gT"] = { function() vim.lsp.buf.type_definition() end, desc = "Definition of current type" }
+      end
+
+      -- original version from Astrovim --
+      --
+      -- if capabilities.documentHighlightProvider then
+      --   local highlight_name = vim.fn.printf("lsp_document_highlight_%d", bufnr)
+      --   vim.api.nvim_create_augroup(highlight_name, {})
+      --   vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+      --     group = highlight_name,
+      --     buffer = bufnr,
+      --     callback = function() vim.lsp.buf.document_highlight() end,
+      --   })
+      --   vim.api.nvim_create_autocmd("CursorMoved", {
+      --     group = highlight_name,
+      --     buffer = bufnr,
+      --     callback = function() vim.lsp.buf.clear_references() end,
+      --   })
+      -- end
+      --
+
+      if capabilities.documentHighlightProvider then
+        local highlight_name = vim.fn.printf("lsp_document_highlight_%d", bufnr)
+        vim.api.nvim_create_augroup(highlight_name, { clear = true })
+        vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+          group = highlight_name,
+          buffer = bufnr,
+          callback = function()
+            -- local cursor = vim.api.nvim_win_get_cursor(0)
+            -- -- check if cursor is on an empty column
+            -- local row, col = cursor[1] - 1, cursor[2]
+            -- local line = vim.api.nvim_buf_get_lines(0, row, row + 1, true)[1]
+            -- if line
+            --     and (
+            --     #line == 0
+            --         or line:sub(col + 1, col + 1):match "^%s+$"
+            --         or line:sub(col + 1, col + 1):match "let"
+            --         or line:sub(col + 1, col + 1):match "="
+            --         or line:sub(col + 1, col + 1):match "-"
+            --         or line:sub(col + 1, col + 1):match ">"
+            --         or line:sub(col + 1, col + 1):match "<"
+            --         or line:sub(col + 1, col + 1):match "/\\W"
+            --
+            --     )
+            -- then
+            --   return
+            -- end
+            --
+            vim.lsp.buf.document_highlight()
+          end,
+        })
+        vim.api.nvim_create_autocmd("CursorMoved", {
+          group = highlight_name,
+          buffer = bufnr,
+          callback = function() vim.lsp.buf.clear_references() end,
+        })
+      end
+
+      if capabilities.codeLensProvider then
+        vim.defer_fn(function()
+          astronvim.notify("now calling first codelens refresh..")
+          vim.lsp.codelens.refresh()
+        end, 4000)
+
+        local group_name = "codelens_" .. bufnr
+        vim.api.nvim_create_augroup(group_name, { clear = true })
+        -- default Astrovim version
+        --vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
+        vim.api.nvim_create_autocmd({ "LSPAttach", "BufEnter", "BufWritePost", "InsertLeave" }, {
+          --vim.api.nvim_create_autocmd({ "BufWrite" }, {
+          group = group_name,
+          callback = function() vim.lsp.codelens.refresh() end,
+          buffer = bufnr,
+        })
+      end
+
+      if capabilities.implementationProvider then
+        lsp_mappings.n["gI"] = { function() vim.lsp.buf.implementation() end, desc = "Implementation of current symbol" }
+      end
+
+      if capabilities.referencesProvider then
+        lsp_mappings.n["gr"] = { function() vim.lsp.buf.references() end, desc = "References of current symbol" }
+        lsp_mappings.n["<leader>lR"] = { function() vim.lsp.buf.references() end, desc = "Search references" }
+      end
+
+      if capabilities.renameProvider then
+        lsp_mappings.n["<leader>lr"] = { function() vim.lsp.buf.rename() end, desc = "Rename current symbol" }
+      end
+
+      if capabilities.signatureHelpProvider then
+        lsp_mappings.n["<leader>lh"] = { function() vim.lsp.buf.signature_help() end, desc = "Signature help" }
+      end
+
+      if capabilities.typeDefinitionProvider then
+        lsp_mappings.n["gT"] = { function() vim.lsp.buf.type_definition() end, desc = "Definition of current type" }
+      end
+
+      if capabilities.workspaceSymbolProvider then
+        lsp_mappings.n["<leader>lG"] = { function() vim.lsp.buf.workspace_symbol() end, desc = "Search workspace symbols" }
+      end
+
+      if is_available "telescope.nvim" then -- setup telescope mappings if available
+        if lsp_mappings.n.gd then lsp_mappings.n.gd[1] = function() require("telescope.builtin").lsp_definitions() end end
+        if lsp_mappings.n.gI then
+          lsp_mappings.n.gI[1] = function() require("telescope.builtin").lsp_implementations() end
+        end
+        if lsp_mappings.n.gr then lsp_mappings.n.gr[1] = function() require("telescope.builtin").lsp_references() end end
+        if lsp_mappings.n["<leader>lR"] then
+          lsp_mappings.n["<leader>lR"][1] = function() require("telescope.builtin").lsp_references() end
+        end
+        if lsp_mappings.n.gT then
+          lsp_mappings.n.gT[1] = function() require("telescope.builtin").lsp_type_definitions() end
+        end
+        if lsp_mappings.n["<leader>lG"] then
+          lsp_mappings.n["<leader>lG"][1] = function() require("telescope.builtin").lsp_workspace_symbols() end
+        end
+      end
+
+      if not vim.tbl_isempty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
+      astronvim.set_mappings(lsp_mappings, { buffer = bufnr })
+
     end
-
-    if not vim.tbl_isempty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
-    astronvim.set_mappings(lsp_mappings, { buffer = bufnr })
-
   end
 
   astronvim.lsp.configs = {
@@ -1790,6 +1571,9 @@ else
     ionide = {
       cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
       on_attach = astronvim.lsp.on_attach,
+
+      -- handlers = require "ionide".handlers,
+      settings = { FSharp = { use_sdk_scripts = 0 }, },
       -- root_dir = function(fname)
       --   local util = require("lspconfig.util")
       --   local get_root_dir = function(filename, _)
@@ -1807,7 +1591,6 @@ else
       --   end
       --   return get_root_dir(fname)
       -- end,
-
     },
     yamlls = {
       settings = {
@@ -1832,8 +1615,13 @@ else
     if not tbl_contains(skip_setup, server) then
       conditional_func(require, server == "sumneko_lua" and is_available "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
       if server == "ionide" then
+        vim.cmd("let g:fsharp#use_recommended_server_config =0")
+        vim.cmd("let g:fsharp#use_sdk_scripts =0")
+
+        local i = require "ionide".setup(astronvim.lsp.configs.ionide)
+
         -- local isAttachd = vim.fn.confirm("Do you want to attachDebuggr before ionide does setup??\n", "&yes\n&no", 2) == 1
-        require "ionide".setup {}
+        -- require "ionide".setup(astronvim.lsp.configs.ionide)
       end
       -- if server doesn't exist, set it up from user server definition
       local configs = require("lspconfig.configs")
@@ -1859,7 +1647,6 @@ else
 
       end
 
-
       if not (configs[server]) and not require("lspconfig.server_configurations." .. server) then
         astronvim.notify(server .. " was not found in lspconfig.configs or server_configurations.. ")
         local server_definition = astronvim.user_plugin_opts("lsp.server-settings." .. server)
@@ -1879,6 +1666,11 @@ else
       local lspconfig = require("lspconfig")
       lspconfig[server].setup(opts)
     end
+    if server == "ionide" then
+      astronvim.notify(vim.inspect(require 'lspconfig.configs'["ionide"]))
+    end
+
+
   end
 
 
@@ -1981,8 +1773,8 @@ else
       list = true, -- show whitespace characters
       listchars = { tab = "│→", extends = "⟩", precedes = "⟨", trail = "·", nbsp = "␣" },
       showbreak = "↪ ",
-      spellfile = vim.fn.expand "C:/.config/nvim/lua/user/spell/en.utf-8.add",
-      thesaurus = vim.fn.expand "C:/.config/nvim/lua/user/spell/mthesaur.txt",
+      spellfile = vim.fn.expand "C:/.config/nvim/lua/spell/en.utf-8.add",
+      thesaurus = vim.fn.expand "C:/.config/nvim/lua/spell/mthesaur.txt",
       wrap = true, -- soft wrap lines
       shell = "pwsh",
       shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;",
@@ -3088,6 +2880,13 @@ else
             require("telescope").load_extension "file_browser"
           end,
         },
+        ["Verf/telescope-everything.nvim"] = {
+
+          config = function()
+            require("telescope").load_extension "everything"
+          end
+        },
+
         ["nvim-telescope/telescope-hop.nvim"] = {
 
           config = function()
@@ -3981,7 +3780,9 @@ else
           end
         },
 
-        ["ionide/ionide-vim"] = { config = astronvim.lsp.configs.ionide, },
+        -- ["WillEhrendreich/ionide-vim"] = { config = astronvim.lsp.configs.ionide, },
+        ["WillEhrendreich/ionide-vim"] = {},
+        -- ["ionide/ionide-vim"] = { lazy = false, config = function() require("ionide").setup(astronvim.lsp.configs.ionide) end, },
 
         ["hood/popui.nvim"] = {
 
@@ -4370,9 +4171,11 @@ else
   --   end,
   -- })
 
+
   autocmd("BufRead", {
     group = grp("git_plugin_lazy_load", { clear = true }),
     callback = function()
+
       vim.fn.system("git -C " .. vim.fn.expand "%:p:h" .. " rev-parse")
       if vim.v.shell_error == 0 then
         vim.api.nvim_del_augroup_by_name "git_plugin_lazy_load"
@@ -4502,9 +4305,9 @@ else
     callback = function()
       vim.cmd "set commentstring=<!--%s-->"
       vim.cmd "let g:xml_syntax_folding=1"
-      vim.cmd "setlocal foldmethod=syntax"
-      vim.cmd "setlocal syntax=xml"
-      vim.cmd "setlocal foldlevelstart=999  foldminlines=0"
+      vim.cmd "set foldmethod=syntax"
+      vim.cmd "set syntax=xml"
+      vim.cmd "set foldlevelstart=999  foldminlines=0"
     end,
   })
 
@@ -4517,8 +4320,8 @@ else
       vim.cmd "set filetype=xml"
       vim.cmd "set commentstring=<!--%s-->"
       vim.cmd "let g:xml_syntax_folding=1"
-      vim.cmd "setlocal foldmethod=syntax"
-      vim.cmd "setlocal foldlevelstart=999  foldminlines=0"
+      vim.cmd "set foldmethod=syntax"
+      vim.cmd "set foldlevelstart=999  foldminlines=0"
     end,
   })
   autocmd("FileType", {
@@ -4613,7 +4416,7 @@ else
 
 
   local sections = {
-    f = { name = "File" },
+    f = { name = "Find" },
     n = { name = "New" },
     p = { name = "Packages" },
     l = { name = "LSP" },
@@ -4621,7 +4424,7 @@ else
     b = { name = "Buffers" },
     d = { name = "Debugger" },
     g = { name = "Git" },
-    s = { name = "Search" },
+    s = { name = "SomethingNotUsedYet.. " },
     S = { name = "Session" },
     t = { name = "Terminal" },
   }
@@ -4634,8 +4437,20 @@ else
 
     n = {
 
+      ["<leader>l"] = sections.l,
+      ["<leader>f"] = sections.f,
+      ["<leader>n"] = sections.n,
+      ["<leader>p"] = sections.p,
+      ["<leader>b"] = sections.b,
+      ["<leader>g"] = sections.g,
+      -- ["<leader>s"] = sections.s,
+      ["<leader>S"] = sections.S,
+      ["<leader>d"] = sections.d,
+      ["<leader>u"] = sections.u,
+
 
       ["<C-Space>"] = { function() local cmp = require('cmp')
+        -- print 'triggered ctrl space'
         cmp.mapping.complete()
       end, desc = "trigger cmp" },
 
@@ -4649,9 +4464,9 @@ else
 
       ["<leader>w"] = { "<cmd>w<cr>", desc = "Save" },
       ["<leader>q"] = { "<cmd>q<cr>", desc = "Quit" },
-      ["<leader>f"] = sections.f,
-      ["<leader>n"] = sections.n,
-      ["<leader>nf"] = { "<cmd>enew<cr>", desc = "New File" },
+
+      ["<leader>nf"] = { "<cmd>vnew<cr>", desc = "New File" },
+
       ["gx"] = { function() astronvim.system_open() end, desc = "Open the file under cursor with system app" },
       ["Q"] = "<Nop>",
       ["K"] = { function()
@@ -4665,7 +4480,6 @@ else
       end, desc = "Hover symbol details" },
 
       -- Plugin Manager
-      ["<leader>p"] = sections.p,
       ["<leader>pi"] = { function() require("lazy").install() end, desc = "Plugins Install" },
       ["<leader>ps"] = { function() require("lazy").home() end, desc = "Plugins Status" },
       ["<leader>pS"] = { function() require("lazy").sync() end, desc = "Plugins Sync" },
@@ -4695,7 +4509,6 @@ else
       ["<b"] =
       { function() astronvim.move_buf(-(vim.v.count > 0 and vim.v.count or 1)) end, desc = "Move buffer tab left" },
 
-      ["<leader>b"] = sections.b,
       ["<leader>bb"] = { function() astronvim.status.heirline.buffer_picker(function(bufnr) vim.api.nvim_win_set_buf(0,
             bufnr)
         end)
@@ -4721,7 +4534,6 @@ else
       ["<leader>/"] = { function() require("Comment.api").toggle.linewise.current() end, desc = "Comment line" },
 
       -- GitSigns
-      ["<leader>g"] = sections.g,
 
       ["<leader>gj"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").next_hunk() end end,
         desc = "Next git hunk" },
@@ -4750,7 +4562,6 @@ else
         desc = "Focus Explorer" },
 
       -- Session Manager
-      ["<leader>S"] = sections.S,
       ["<leader>Sl"] = { "<cmd>SessionManager! load_last_session<cr>", desc = "Load last session" },
       ["<leader>Ss"] = { "<cmd>SessionManager! save_current_session<cr>", desc = "Save this session" },
       ["<leader>Sd"] = { "<cmd>SessionManager! delete_session<cr>", desc = "Delete session" },
@@ -4801,16 +4612,15 @@ else
       ["<leader>fo"] = { function() require("telescope.builtin").oldfiles() end, desc = "Search Old files" },
       ["<leader>fW"] = { function() require("telescope.builtin").grep_string() end, desc = "Search for word under cursor" },
       ["<leader>fr"] = { function() require("telescope.builtin").registers() end, desc = "Search registers" },
-      -- ["<leader>s"] = sections.s,
       -- ["<leader>sb"] = { function() require("telescope.builtin").git_branches() end, desc = "Git branches" },
       -- ["<leader>sh"] = { function() require("telescope.builtin").help_tags() end, desc = "Search help" },
       -- ["<leader>sm"] = { function() require("telescope.builtin").man_pages() end, desc = "Search man" },
       ["<leader>ft"] = { function() require("telescope.builtin").builtin() end, desc = "Telescope" },
+      ["<leader>fe"] = { function() require("telescope").extensions.everything.everything() end, desc = "Everything" },
       ["<leader>fk"] = { function() require("telescope.builtin").keymaps() end, desc = "Search keymaps" },
       ["<leader>fc"] = { function() require("telescope.builtin").commands() end, desc = "Search commands" },
       ["<leader>fn"] = { function() if astronvim.is_available "nvim-notify" then require("telescope").extensions.notify.notify() end end,
         desc = "Search notifications" },
-      ["<leader>l"] = sections.l,
       ["<leader>ls"] = { function() local aerial_avail, _ = pcall(require, "aerial")
         if aerial_avail then require("telescope")
               .extensions.aerial.aerial()
@@ -4844,7 +4654,6 @@ else
       ["<F7>"] = { "<cmd>ToggleTerm<cr>", desc = "Toggle terminal" },
       --end
 
-      ["<leader>d"]  = sections.d,
       -- modified function keys found with `showkey -a` in the terminal to get key code
       -- run `nvim -V3log +quit` and search through the "Terminal info" in the `log` file for the correct keyname
       ["<F5>"]       = { function() if is_available "nvim-dap" then require("dap").continue() end end,
@@ -4889,7 +4698,6 @@ else
       ["<leader>dh"] = { function() if is_available "nvim-dap-ui" then require("dap.ui.widgets").hover() end end,
         desc = "Debugger Hover" },
 
-      ["<leader>u"] = sections.u,
       -- Custom menu for modification of the user experience
 
       ["<leader>ua"] = { function() if is_available "nvim-autopairs" then astronvim.ui.toggle_autopairs() end end,
@@ -5011,6 +4819,13 @@ else
         function() require("syntax-tree-surfer").move("n", true) end,
         desc = "Swap previous tree-sitter object",
       },
+      ["<leader>li"] = { function() require 'lspconfig.ui.lspinfo' () end, desc = "LSP Info" },
+      ["<leader>ll"] = { function() vim.cmd(string.format('tabnew %s', vim.lsp.get_log_path())) end, desc = "LSP log" },
+
+      ["<leader>lk"] = { function()
+        vim.fn.writefile({}, vim.lsp.get_log_path())
+      end,
+        desc = "reset LSP log" },
     },
 
 
