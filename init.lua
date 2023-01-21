@@ -1626,21 +1626,21 @@ else
       -- if server doesn't exist, set it up from user server definition
       local configs = require("lspconfig.configs")
       --local server_definition = vim.fn.default
-      local ok, sv = pcall(require, configs[server])
+      local ok, sv = pcall(require, "lspconfig.configs".. server)
       if ok then
         local fallbackmessage = " one found in " .. server .. " config handlers"
 
-        vim.notify("server ok.")
+        astronvim.notify("server ok.")
         if sv.default_config then
-          vim.notify("server default config exists.")
+          astronvim.notify("server default config exists.")
         end
         if sv.default_config.handlers then
-          vim.notify("server default config handlers exist.")
+          astronvim.notify("server default config handlers exist.")
           for n, h in pairs(sv.handlers) do
             if vim.tbl_contains(vim.lsp.handlers, n) then
-              vim.notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
+              astronvim.notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
                 fallbackmessage)
-              vim.lsp.handlers[n] = h
+              astronvim.lsp.handlers[n] = h
             end
           end
         end
@@ -1666,6 +1666,7 @@ else
       local lspconfig = require("lspconfig")
       lspconfig[server].setup(opts)
     end
+
     if server == "ionide" then
       astronvim.notify(vim.inspect(require 'lspconfig.configs'["ionide"]))
     end
@@ -4296,20 +4297,19 @@ else
 
   -- attachToBuffer(1, "*.fs", { "dotnet", "test", vim.api.nvim_buf_get_name(1) })
 
-  grp("FsharpProjCommands", { clear = true })
-  autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
-    desc = "changes comment style, folding for fsproj",
-
-    pattern = { "*.fsproj", "fsharp_project" },
-    group = "FsharpProjCommands",
-    callback = function()
-      vim.cmd "set commentstring=<!--%s-->"
-      vim.cmd "let g:xml_syntax_folding=1"
-      vim.cmd "set foldmethod=syntax"
-      vim.cmd "set syntax=xml"
-      vim.cmd "set foldlevelstart=999  foldminlines=0"
-    end,
-  })
+  -- grp("FsharpProjCommands", { clear = true })
+  -- autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+  --   desc = "changes comment style, folding for fsproj",
+  --   pattern = { "*.fsproj" },
+  --   group = "FsharpProjCommands",
+  --   callback = function()
+  --     vim.cmd "set commentstring=<!--%s-->"
+  --     -- vim.cmd "let g:xml_syntax_folding=1"
+  --     -- vim.cmd "set foldmethod=syntax"
+  --     vim.cmd "set syntax=xml"
+  --     -- vim.cmd "set foldlevelstart=999  foldminlines=0"
+  --   end,
+  -- })
 
   grp("xamlCommands", { clear = true })
   autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
@@ -4324,6 +4324,7 @@ else
       vim.cmd "set foldlevelstart=999  foldminlines=0"
     end,
   })
+
   autocmd("FileType", {
     desc = "Make q close dap floating windows",
     group = grp("dapui", { clear = true }),
