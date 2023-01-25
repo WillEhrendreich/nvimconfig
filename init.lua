@@ -11,17 +11,38 @@
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
+---@diagnostic disable-next-line: undefined-global
+local vimsharp_installation = vimsharp_installation or nil
 
+_G.vimsharp = {
+  lsp = {},
+  module = {},
+  dotnet = {},
+  debug = {},
+  buf = {},
+  ui = {},
+  path = {},
+  highlight = {},
 
-
-_G.vimsharp = {}
+}
 
 local stdpath = vim.fn.stdpath
-local tbl_insert = table.insert
+local tInsert = table.insert
+local tContains = vim.tbl_contains
 local map = vim.keymap.set
-local v = _G.vimsharp 
+local v = _G.vimsharp
+local fn = vim.fn
+local re = require
+local tEmpty = vim.tbl_isempty
+--- Call function if a condition is met
+-- @param func the function to run
+-- @param condition a boolean value of whether to run the function or not
+function v.executeIfTrue(func, condition, ...)
+  -- if the condition is true or no condition is provided, evaluate the function with the rest of the parameters and return the result
+  if condition and type(func) == "function" then return func(...) end
+end
 
-
+local executeIfTrue = v.executeIfTrue
 
 --#region_utils
 --- installation details from external installers
@@ -31,10 +52,12 @@ v.install.config = stdpath("config"):gsub("nvim$", "v")
 vim.opt.rtp:append(v.install.config)
 local supported_configs = { v.install.home, v.install.config }
 
+v.lsp.ignoredLspServersForFindingRoot = { "null-ls", "stylua", "lemminx", "editorconfig_checker" }
+
 --- Looks to see if a module path references a lua file in a configuration folder and tries to load it. If there is an error loading the file, write an error and continue
 -- @param module the module path to try and load
 -- @return the loaded module if successful or nil
-local function load_module_file(module)
+v.module.load = function(module)
   -- placeholder for final return value
   local found_module = nil
   -- search through each of the supported configuration locations
@@ -42,12 +65,12 @@ local function load_module_file(module)
     -- convert the module path to a file path (example user.setup -> user/init.lua)
     local module_path = config_path .. "/lua/" .. module:gsub("%.", "/") .. ".lua"
     -- check if there is a readable file, if so, set it as found
-    if vim.fn.filereadable(module_path) == 1 then found_module = module_path end
+    if fn.filereadable(module_path) == 1 then found_module = module_path end
   end
   -- if we found a readable lua file, try to load it
   if found_module then
     -- try to load the file
-    local status_ok, loaded_module = pcall(require, module)
+    local status_ok, loaded_module = pcall(re, module)
     -- if successful at loading, set the return variable
     if status_ok then
       found_module = loaded_module
@@ -63,13 +86,13 @@ end
 --
 -- Does package.json file contain speficied configuration or dependency?
 -- (e.g. "prettier")
--- IMPORTANT! package.json file is found only if current working directory (cwd)
--- is in the root of the project, i.e. lvim was launched in the directory
+-- IMPORTANT! package.json file is found only if lsp root
 -- where package.json is or vim-rooter (or something similar) is activated
 --
 v.is_in_package_json = function(field)
-  if vim.fn.filereadable(vim.fn.getcwd() .. "/package.json") ~= 0 then
-    local package_json = vim.fn.json_decode(vim.fn.readfile "package.json")
+  local root = v.lsp.FindRoot(v.lsp.ignoredLspServersForFindingRoot)
+  if fn.filereadable(root .. "/package.json") ~= 0 then
+    local package_json = fn.json_decode(fn.readfile "package.json")
     if package_json == nil then
       return false
     end
@@ -89,110 +112,210 @@ v.is_in_package_json = function(field)
 end
 
 v.is_web_project = function()
-  return (vim.fn.glob "package.json" ~= "" or vim.fn.glob "yarn.lock" ~= "" or vim.fn.glob "node_modules" ~= "")
+  return (fn.glob "package.json" ~= "" or fn.glob "yarn.lock" ~= "" or fn.glob "node_modules" ~= "")
 end
 
 v.is_arduino_project = function()
-  return (vim.fn.glob "*.ino" ~= "")
+  return (fn.glob "*.ino" ~= "")
 end
 
 v.decode_json_file = function(filename)
-  if vim.fn.filereadable(filename) == 0 then
+  if fn.filereadable(filename) == 0 then
     return nil
   end
 
-  return vim.fn.json_decode(vim.fn.readfile(filename))
+  return fn.json_decode(fn.readfile(filename))
 end
 
-v.replace_string_values = function(original, to_replace, replace_with)
-  if type(original) == "string" or type(original) == "number" then
-    return string.gsub(original, to_replace, replace_with)
+v.stringReplace = function(x, to_replace, replace_with)
+  if type(x) == "string" or type(x) == "number" then
+    return string.gsub(x, to_replace, replace_with)
   end
 
-  if type(original) == "table" then
-    for key, value in pairs(original) do
-      original[key] = v.replace_string_values(value, to_replace, replace_with)
+  if type(x) == "table" then
+    for key, value in pairs(x) do
+      x[key] = v.stringReplace(value, to_replace, replace_with)
     end
   end
 
-  return original
+  return x
 end
 
-v.get_debug_config = function()
-  local dap_config = v.decode_json_file(vim.fn.getcwd() .. "/.dap.json")
+v.dotnet.StartupProjectPath = nil
+v.dotnet.GetProjectPath = function()
+  if v.dotnet.StartupProjectPath == nil then
+    v.dotnet.StartupProjectPath = vim.fn.getcwd()
+  end
+  v.debug.getConfig()
+  local path = fn.input({ "Path to your startup *proj file ", v.dotnet.StartupProjectPath, "file" })
+  v.dotnet.lastProjectPath = path
+  v.dotnet.StartupProjectPath = path
+  return path
+end
+
+local openFileInNewBuffer = function(f)
+  if fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim.cmd.bufload(f) end
+end
+
+v.dotnet["buildRelease"] = function(p)
+  local logfile = "c:/temp/dotnet-release-Log.txt"
+  -- local cmd = "dotnet build -c Release " .. p .. '" *> ' .. logfile
+  local cmd = "dotnet build -c Release --project " .. p
+  print ""
+  print("Cmd to execute: " .. cmd)
+  local f = os.execute(cmd)
+  if f == 0 then
+    print "\nBuild: ✔️ "
+  else
+    print("\nBuild: ❌ (code: " .. f .. ")")
+    openFileInNewBuffer(logfile)
+  end
+  return f
+end
+
+v.dotnet["buildDebug"] = function(p)
+  local logfile = "c:/temp/dap-debug-nvim-dotnet.txt"
+  -- local cmd = "dotnet build -c Debug " .. p .. '" *> ' .. logfile
+  local cmd = "dotnet build -c Debug --project " .. p
+  print ""
+  print("Cmd to execute: " .. cmd)
+  local f = os.execute(cmd)
+  if f == 0 then
+    print "\nBuild: ✔️ "
+  else
+    print("\nBuild: ❌ (code: " .. f .. ")")
+    openFileInNewBuffer(logfile)
+  end
+  return f
+end
+
+v.dotnet["getDllPath"] = function()
+  local request = function()
+    return fn.input({ "Path to dll ",
+      replaceSeps(vim.lsp.buf.list_workspace_folders()[1]) .. "/bin/Debug/", "file" })
+  end
+  if v.dotnet["dotnet_last_dll_path"] == nil then
+    v.dotnet["dotnet_last_dll_path"] = request()
+  else
+    if fn.confirm("Do you want to change the path to dll?\n" .. v.dotnet["dotnet_last_dll_path"],
+      "&yes\n&no", 2) == 1
+    then
+      v.dotnet["dotnet_last_dll_path"] = request()
+    end
+    print("path to dll is set to: " .. v.dotnet["dotnet_last_dll_path"])
+  end
+  return v.dotnet["dotnet_last_dll_path"]
+end
+
+v.dotnet["build"] = function(path, buildType)
+  local t = buildType or "debug"
+  if t == "r" or t == "release" or t == "Release" or t == "R" then
+    print("building project: " .. path .. "with build type " .. t)
+    return v.dotnet.buildRelease(path)
+  else
+    print("building project: " .. path .. "with build type " .. t)
+    return v.dotnet.buildDebug(path)
+  end
+end
+
+
+local config = {
+  {
+    type = "coreclr",
+    name = "launch - netcoredbg",
+    request = "launch",
+    program = function()
+      if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
+        v.dotnet.build(v.dotnet.getProjectPath())
+      end
+      return v.dotnet.getDllPath()
+    end,
+  },
+}
+
+v.dotnet["run"] = function(proj, runtype)
+  local c = "dotnet run --project " .. proj
+  os.execute(c)
+end
+
+v.debug.getConfig = function()
+  local root = v.lsp.FindRoot(v.lsp.ignoredLspServersForFindingRoot)
+  local dap_config = v.decode_json_file(root .. "/.dap.json")
   if dap_config ~= nil then
     return { dap_config }
   end
 
-  local status_ok, vscode_launch_file = pcall(v.decode_json_file, vim.fn.getcwd() .. "/.vscode/launch.json")
+  local status_ok, vscode_launch_file = pcall(v.decode_json_file, root .. "/.vscode/launch.json")
   if status_ok and vscode_launch_file ~= nil then
     local configs = vscode_launch_file["configurations"]
     if configs ~= nil then
       for j = 1, #configs do
         if configs[j]["request"] == "launch" then
-          local config = v.replace_string_values(configs[j], "${workspaceRoot}", vim.fn.getcwd())
+          local config = v.stringReplace(configs[j], "${workspaceRoot}", root)
           return { config }
         end
       end
-      return v.replace_string_values(configs, "${workspaceRoot}", vim.fn.getcwd())
+      return v.stringReplace(configs, "${workspaceRoot}", root)
     end
   end
 
   return nil
 end
 
-      v.lsp.FindRoot = function(ignored_lsp_servers, bufnr)
-        -- Get lsp client for current buffer
-        local bufDir = v.GetDirForBufnr(bufnr)
-        local buf_ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
-        local result
-        local clients = vim.lsp.get_active_clients({
-          bufnr = bufnr
-        })
-        local i = ignored_lsp_servers or {}
-        for _, c in pairs(clients) do
-          local cname = c.name
-          -- v.notify("client name is " .. (cname or "not found"))
+v.lsp.FindRoot = function(ignored_lsp_servers, bufnr)
+  -- Get lsp client for current buffer
+  -- local bufDir = v.path.GetDirForBufnr(bufnr)
+  local b       = bufnr or 0
+  local buf_ft  = vim.api.nvim_buf_get_option(b, "filetype")
+  local result
+  local clients = vim.lsp.get_active_clients({
+    bufnr = b
+  })
+  local i       = ignored_lsp_servers or {}
+  for _, c in pairs(clients) do
+    local cname = c.name
+    -- v.notify("client name is " .. (cname or "not found"))
 
-          -- local bufname = vim.api.nvim_buf_get_name(bufnr)
-          -- v.notify("buf name is " .. (bufname or "not found"))
-          -- local lspConfigForClient = require 'lspconfig.configs'[cname]
+    -- local bufname = vim.api.nvim_buf_get_name(bufnr)
+    -- v.notify("buf name is " .. (bufname or "not found"))
+    -- local lspConfigForClient = re 'lspconfig.configs'[cname]
 
-          -- v.notify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
-          local filetypes = c.config.filetypes
-          if filetypes and vim.tbl_contains(filetypes, buf_ft) then
-            if not vim.tbl_contains(i, c.name) then
-              -- local rootDirFunction = lspConfigForClient.get_root_dir
+    -- v.notify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
+    local filetypes = c.config.filetypes
+    if filetypes and tContains(filetypes, buf_ft) then
+      if not tContains(i, cname) then
+        -- local rootDirFunction = lspConfigForClient.get_root_dir
 
-              -- v.notify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
-              local activeConfigRootDir = c.config.root_dir
+        -- v.notify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
+        local activeConfigRootDir = c.config.root_dir
 
-              -- local rootresult
-              -- v.notify("active root dir is " .. (activeConfigRootDir or "not found"))
-              -- if rootDirFunction then
-              -- rootresult = rootDirFunction(bufname)
-              -- if rootresult and not rootresult == nil and not rootresult == "" then v.notify("result of rootDirFunction is: "
-              --     ..
-              --     upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult))))
-              -- end
-              -- end
-              if activeConfigRootDir then
-                result = v.path.AppendSlash(upperDriveLetter(vim.fs.normalize(activeConfigRootDir)))
-                v.notify("active root dir is " .. (result or "not found"))
-                -- else
-                -- result = upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult) )))
-              end
-
-            end
-          end
+        -- local rootresult
+        -- v.notify("active root dir is " .. (activeConfigRootDir or "not found"))
+        -- if rootDirFunction then
+        -- rootresult = rootDirFunction(bufname)
+        -- if rootresult and not rootresult == nil and not rootresult == "" then v.notify("result of rootDirFunction is: "
+        --     ..
+        --     upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult))))
+        -- end
+        -- end
+        if activeConfigRootDir then
+          result = v.path.AppendSlash(v.upperDriveLetter(vim.fs.normalize(activeConfigRootDir)))
+          -- v.notify("active root dir is " .. (result or "not found"))
+          -- else
+          -- result = upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult) )))
         end
 
-        -- return upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(result or bufDir)))
-        return result
       end
+    end
+  end
+
+  -- return upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(result or bufDir)))
+  return result
+end
+
 v.get_debug_program = function()
-  local root =v.lsp.FindRoot()
-  local dap_config = v.decode_json_file( root .. ".dap.json")
+  local root = v.lsp.FindRoot()
+  local dap_config = v.decode_json_file(root .. ".dap.json")
 
   if dap_config ~= nil then
     local program = dap_config["program"]
@@ -203,7 +326,7 @@ v.get_debug_program = function()
 
   local status_ok, vscode_launch_file = pcall(v.decode_json_file, root .. ".vscode/launch.json")
   if not status_ok or vscode_launch_file == nil then
-    print (root ..  ".vscode/launch.json file not found or is invalid for json decoding.")
+    print(root .. ".vscode/launch.json file not found or is invalid for json decoding.")
     return ""
   end
 
@@ -211,7 +334,7 @@ v.get_debug_program = function()
   if configs ~= nil then
     for j = 1, #configs do
       if configs[j]["request"] == "launch" then
-        return v.replace_string_values(configs[j]["program"], "${workspaceRoot}", root)
+        return v.stringReplace(configs[j]["program"], "${workspaceRoot}", root)
       end
     end
   end
@@ -219,9 +342,9 @@ v.get_debug_program = function()
 end
 
 -- Returns the index of a item in the list
-v.indexOf = function(array, value)
-  for i, v in ipairs(array) do
-    if v == value then
+v.indexOf = function(l, value)
+  for i, x in ipairs(l) do
+    if x == value then
       return i
     end
   end
@@ -232,8 +355,8 @@ end
 -- Assumes, that LunarVim has been opened in the root of the project
 v.project_has_prettier_config = function()
   local hasprettier = (
-      vim.fn.glob ".prettierrc*" ~= ""
-          or vim.fn.glob "prettier.*" ~= ""
+      fn.glob ".prettierrc*" ~= ""
+          or fn.glob "prettier.*" ~= ""
           or v.is_in_package_json "prettier"
       )
   -- print("Project does has prettier configured? " .. tostring(hasprettier))
@@ -243,13 +366,13 @@ end
 
 
 --- user settings from the base `user/init.lua` file
-v.user_settings = load_module_file "user.init"
+v.user_settings = v.module.load "user.init"
 --- table of user created terminals
 v.user_terminals = {}
 --- table of plugins to load with git
 v.git_plugins = {}
 --- table of plugins to load when file opened
-v.file_plugins = {}
+v.filePlugins = {}
 --- regex used for matching a valid URL/URI string
 v.url_matcher =
 "\\v\\c%(%(h?ttps?|ftp|file|ssh|git)://|[a-z]+[@][a-z]+[.][a-z]+:)%([&:#*@~%_\\-=?!+;/0-9a-z]+%(%([.;/?]|[.][.]+)[&:#*@~%_\\-=?!+/0-9a-z]+|:\\d+|,%(%(%(h?ttps?|ftp|file|ssh|git)://|[a-z]+[@][a-z]+[.][a-z]+:)@![0-9a-z]+))*|\\([&:#*@~%_\\-=?!+;/.0-9a-z]*\\)|\\[[&:#*@~%_\\-=?!+;/.0-9a-z]*\\]|\\{%([&:#*@~%_\\-=?!+;/.0-9a-z]*|\\{[&:#*@~%_\\-=?!+;/.0-9a-z]*})\\})+"
@@ -260,7 +383,7 @@ v.url_matcher =
 -- @param default the default configuration table
 -- @param extend boolean value to either extend the default or simply overwrite it if an override is provided
 -- @return the new configuration table
-local function func_or_extend(overrides, default, extend)
+v.func_or_extend = function(overrides, default, extend)
   -- if we want to extend the default with the provided override
   if extend then
     -- if the override is a table, use vim.tbl_deep_extend
@@ -287,19 +410,11 @@ function v.default_tbl(opts, default)
   return default and vim.tbl_deep_extend("force", default, opts) or opts
 end
 
---- Call function if a condition is met
--- @param func the function to run
--- @param condition a boolean value of whether to run the function or not
-function v.conditional_func(func, condition, ...)
-  -- if the condition is true or no condition is provided, evaluate the function with the rest of the parameters and return the result
-  if condition and type(func) == "function" then return func(...) end
-end
-
 --- Get highlight properties for a given highlight name
 -- @param name highlight group name
 -- @return table of highlight group properties
-function v.get_hlgroup(name, fallback)
-  if vim.fn.hlexists(name) == 1 then
+function v.highlight.getGroup(name, fallback)
+  if fn.hlexists(name) == 1 then
     local hl = vim.api.nvim_get_hl_by_name(name, vim.o.termguicolors)
     if not hl["foreground"] then hl["foreground"] = "NONE" end
     if not hl["background"] then hl["background"] = "NONE" end
@@ -326,7 +441,7 @@ end
 
 --- Initialize icons used throughout the user interface
 function v.initialize_icons()
-  -- v.icons = v.user_plugin_opts("icons", require "core.icons.nerd_font")
+  -- v.icons = v.user_plugin_opts("icons", re "core.icons.nerd_font")
   v.icons =
   {
     ActiveLSP = "",
@@ -374,7 +489,7 @@ function v.initialize_icons()
     TabClose = "",
   }
 
-  -- v.text_icons = v.user_plugin_opts("text_icons", require "core.icons.text")
+  -- v.text_icons = v.user_plugin_opts("text_icons", re "core.icons.text")
   v.text_icons = {
     ActiveLSP = "",
     ActiveTS = "綠",
@@ -436,13 +551,13 @@ end
 -- @param type the type of the notification (:help vim.log.levels)
 -- @param opts table of nvim-notify options to use (:help notify-options)
 function v.notify(msg, type, opts)
-  vim.schedule(function() vim.notify(msg, type, v.default_tbl(opts, { title = "v" })) end)
+  vim.schedule(function() vim.notify(msg, type, v.default_tbl(opts, { title = "VimSharp" })) end)
 end
 
 --- Trigger an v user event
--- @param event the event name to be appended to Astro
+-- @param event the event name to be appended to VimSharp
 function v.event(event)
-  vim.schedule(function() vim.api.nvim_exec_autocmds("User", { pattern = "Astro" .. event }) end)
+  vim.schedule(function() vim.api.nvim_exec_autocmds("User", { pattern = "VimSharp" .. event }) end)
 end
 
 --- Wrapper function for neovim echo API
@@ -458,7 +573,7 @@ end
 -- @return True if the user responded y, False for any other response
 function v.confirm_prompt(messages)
   if messages then v.echo(messages) end
-  local confirmed = string.lower(vim.fn.input "(y/n) ") == "y"
+  local confirmed = string.lower(fn.input "(y/n) ") == "y"
   v.echo()
   return confirmed
 end
@@ -495,17 +610,17 @@ end
 -- @param extend boolean value to either extend the default settings or overwrite them with the user settings entirely (default: true)
 -- @param prefix a module prefix for where to search (default: user)
 -- @return the new configuration settings with the user overrides applied
-function v.user_plugin_opts(module, default, extend, prefix)
+function v.userConfigs(module, default, extend, prefix)
   -- default to extend = true
   if extend == nil then extend = true end
   -- if no default table is provided set it to an empty table
   if default == nil then default = {} end
   -- try to load a module file if it exists
-  local user_settings = load_module_file((prefix or "user") .. "." .. module)
+  local user_settings = v.module.load((prefix or "user") .. "." .. module)
   -- if no user module file is found, try to load an override from the user settings table from user/init.lua
   if user_settings == nil and prefix == nil then user_settings = user_setting_table(module) end
   -- if a user override was found call the configuration engine
-  if user_settings ~= nil then default = func_or_extend(user_settings, default, extend) end
+  if user_settings ~= nil then default = v.func_or_extend(user_settings, default, extend) end
   -- return the final configuration table with any overrides applied
   return default
 end
@@ -513,13 +628,13 @@ end
 -- --- Open a URL under the cursor with the current operating system (Supports Mac OS X and *nix)
 -- -- @param path the path of the file to open with the system opener
 -- function v.system_open(path)
---   path = path or vim.fn.expand "<cfile>"
---   if vim.fn.has "mac" == 1 then
+--   path = path or fn.expand "<cfile>"
+--   if fn.has "mac" == 1 then
 --     -- if mac use the open command
---     vim.fn.jobstart({ "open", path }, { detach = true })
---   elseif vim.fn.has "unix" == 1 then
+--     fn.jobstart({ "open", path }, { detach = true })
+--   elseif fn.has "unix" == 1 then
 --     -- if unix then use xdg-open
---     vim.fn.jobstart({ "xdg-open", path }, { detach = true })
+--     fn.jobstart({ "xdg-open", path }, { detach = true })
 --   else
 --     -- if any other operating system notify the user that there is currently no support
 --     v.notify("System open is not supported on this OS!", "error")
@@ -528,16 +643,16 @@ end
 --- Open a URL under the cursor with the current operating system (Supports Mac OS X and *nix)
 -- @param path the path of the file to open with the system opener
 function v.system_open(path)
-  path = path or vim.fn.expand "<cfile>"
-  if vim.fn.has "mac" == 1 then
+  path = path or fn.expand "<cfile>"
+  if fn.has "mac" == 1 then
     -- if mac use the open command
-    vim.fn.jobstart({ "open", path }, { detach = true })
-  elseif vim.fn.has "unix" == 1 then
+    fn.jobstart({ "open", path }, { detach = true })
+  elseif fn.has "unix" == 1 then
     -- if unix then use xdg-open
-    vim.fn.jobstart({ "xdg-open", path }, { detach = true })
+    fn.jobstart({ "xdg-open", path }, { detach = true })
   else
     -- if any other operating system notify the user that there is currently no support
-    if v.is_available("OpenBrowserSmartSearch") then
+    if v.isAvalable("OpenBrowserSmartSearch") then
       vim.cmd.OpenBrowserSmartSearch(path)
     end
     -- v.notify("System open is not supported on this OS!", "error")
@@ -558,7 +673,7 @@ function v.toggle_term_cmd(opts)
   if not terms[opts.cmd] then terms[opts.cmd] = {} end
   if not terms[opts.cmd][num] then
     if not opts.count then opts.count = vim.tbl_count(terms) * 100 + num end
-    terms[opts.cmd][num] = require("toggleterm.terminal").Terminal:new(opts)
+    terms[opts.cmd][num] = re("toggleterm.terminal").Terminal:new(opts)
   end
   -- toggle the terminal
   v.user_terminals[opts.cmd][num]:toggle()
@@ -568,7 +683,7 @@ end
 -- @param mappings nested table of mappings where the first key is the mode, the second key is the prefix, and the value is the mapping table for which-key
 -- @param opts table of which-key options when setting the mappings (see which-key documentation for possible values)
 function v.which_key_register(mappings, opts)
-  local status_ok, which_key = pcall(require, "which-key")
+  local status_ok, which_key = pcall(re, "which-key")
   if not status_ok then return end
   for mode, prefixes in pairs(mappings) do
     for prefix, mapping_table in pairs(prefixes) do
@@ -590,14 +705,14 @@ end
 function v.null_ls_providers(filetype)
   local registered = {}
   -- try to load null-ls
-  local sources_avail, sources = pcall(require, "null-ls.sources")
+  local sources_avail, sources = pcall(re, "null-ls.sources")
   if sources_avail then
     -- get the available sources of a given filetype
     for _, source in ipairs(sources.get_available(filetype)) do
       -- get each source name
       for method in pairs(source.methods) do
         registered[method] = registered[method] or {}
-        tbl_insert(registered[method], source.name)
+        tInsert(registered[method], source.name)
       end
     end
   end
@@ -610,7 +725,7 @@ end
 -- @param method the null-ls method (check null-ls documentation for available methods)
 -- @return the available sources for the given filetype and method
 function v.null_ls_sources(filetype, method)
-  local methods_avail, methods = pcall(require, "null-ls.methods")
+  local methods_avail, methods = pcall(re, "null-ls.methods")
   return methods_avail and v.null_ls_providers(filetype)[methods.internal[method]] or {}
 end
 
@@ -647,13 +762,13 @@ end
 --- Check if a plugin is defined in lazy. Useful with lazy loading when a plugin is not necessarily loaded yet
 -- @param plugin the plugin string to search for
 -- @return boolean value if the plugin is available
-function v.is_available(plugin)
-  local lazy_config_avail, lazy_config = pcall(require, "lazy.core.config")
+function v.isAvalable(plugin)
+  local lazy_config_avail, lazy_config = pcall(re, "lazy.core.config")
   return lazy_config_avail and lazy_config.plugins and lazy_config.plugins[plugin]
 end
 
---- A helper function to wrap a module function to require a plugin before running
--- @param plugin the plugin string to call `require("lazy").laod` with
+--- A helper function to wrap a module function to re a plugin before running
+-- @param plugin the plugin string to call `re("lazy").laod` with
 -- @param module the system module where the functions live (e.g. `vim.ui`)
 -- @param func_names a string or a list like table of strings for functions to wrap in the given moduel (e.g. `{ "ui", "select }`)
 function v.load_plugin_with_func(plugin, module, func_names)
@@ -662,7 +777,7 @@ function v.load_plugin_with_func(plugin, module, func_names)
     local old_func = module[func]
     module[func] = function(...)
       module[func] = old_func
-      require("lazy").load { plugins = { plugin } }
+      re("lazy").load { plugins = { plugin } }
       module[func](...)
     end
   end
@@ -672,7 +787,7 @@ end
 -- @param map_table A nested table where the first key is the vim mode, the second key is the key to map, and the value is the function to set the mapping to
 -- @param base A base set of options to set on every keybinding
 function v.set_mappings(map_table, base)
-  local wk_avail, wk = pcall(require, "which-key")
+  local wk_avail, wk = pcall(re, "which-key")
   -- iterate over the first keys for each mode
   for mode, maps in pairs(map_table) do
     -- iterate over each keybinding set in the current mode
@@ -703,15 +818,15 @@ end
 
 --- Delete the syntax matching rules for URLs/URIs if set
 function v.delete_url_match()
-  for _, match in ipairs(vim.fn.getmatches()) do
-    if match.group == "HighlightURL" then vim.fn.matchdelete(match.id) end
+  for _, match in ipairs(fn.getmatches()) do
+    if match.group == "HighlightURL" then fn.matchdelete(match.id) end
   end
 end
 
 --- Add syntax matching rules for highlighting URLs/URIs
 function v.set_url_match()
   v.delete_url_match()
-  if vim.g.highlighturl_enabled then vim.fn.matchadd("HighlightURL", v.url_matcher, 15) end
+  if vim.g.highlighturl_enabled then fn.matchadd("HighlightURL", v.url_matcher, 15) end
 end
 
 --- Run a shell command and capture the output and if the command succeeded or failed
@@ -719,8 +834,8 @@ end
 -- @param show_error boolean of whether or not to show an unsuccessful command as an error to the user
 -- @return the result of a successfully executed command or nil
 function v.cmd(cmd, show_error)
-  if vim.fn.has "win32" == 1 then cmd = { "cmd.exe", "/C", cmd } end
-  local result = vim.fn.system(cmd)
+  if fn.has "win32" == 1 then cmd = { "cmd.exe", "/C", cmd } end
+  local result = fn.system(cmd)
   local success = vim.api.nvim_get_vvar "shell_error" == 0
   if not success and (show_error == nil and true or show_error) then
     vim.api.nvim_err_writeln("Error running command: " .. cmd .. "\nError message:\n" .. result)
@@ -766,8 +881,8 @@ end
 -- @param n the number of tabs to navigate to (positive = right, negative = left)
 function v.nav_buf(n)
   local current = vim.api.nvim_get_current_buf()
-  for i, v in ipairs(vim.t.bufs) do
-    if current == v then
+  for i, x in ipairs(vim.t.bufs) do
+    if current == x then
       vim.cmd.b(vim.t.bufs[(i + n - 1) % #vim.t.bufs + 1])
       break
     end
@@ -782,8 +897,8 @@ function v.close_buf(bufnr, force)
   if not bufnr or bufnr == 0 then bufnr = current end
   if bufnr == current then v.nav_buf(-1) end
 
-  if v.is_available "bufdelete.nvim" then
-    require("bufdelete").bufdelete(bufnr, force)
+  if v.isAvalable "bufdelete.nvim" then
+    re("bufdelete").bufdelete(bufnr, force)
   else
     vim.cmd((force and "bd!" or "confirm bd") .. bufnr)
   end
@@ -801,7 +916,7 @@ end
 
 --#region_VSCODE
 if vim.g.vscode then
-  v.set_mappings(require("vscode"))
+  v.set_mappings(re("vscode"))
   return
 else
   --#endregion_VSCODE
@@ -823,7 +938,7 @@ else
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
   --#region_ui
-  -- require "core.utils.ui"
+  -- re "core.utils.ui"
 
 
 
@@ -843,7 +958,7 @@ else
 
   --- Toggle autopairs
   function v.ui.toggle_autopairs()
-    local ok, autopairs = pcall(require, "nvim-autopairs")
+    local ok, autopairs = pcall(re, "nvim-autopairs")
     if ok then
       if autopairs.state.disabled then
         autopairs.enable()
@@ -886,7 +1001,7 @@ else
   --- Toggle cmp entrirely
   function v.ui.toggle_cmp()
     vim.g.cmp_enabled = not vim.g.cmp_enabled
-    local ok, _ = pcall(require, "cmp")
+    local ok, _ = pcall(re, "cmp")
     ui_notify(ok and string.format("completion %s", bool2str(vim.g.cmp_enabled)) or "completion not available")
   end
 
@@ -939,7 +1054,7 @@ else
 
   --- Set the indent and tab related numbers
   function v.ui.set_indent()
-    local input_avail, input = pcall(vim.fn.input, "Set indent value (>0 expandtab, <=0 noexpandtab): ")
+    local input_avail, input = pcall(fn.input, "Set indent value (>0 expandtab, <=0 noexpandtab): ")
     if input_avail then
       local indent = tonumber(input)
       if not indent or indent == 0 then return end
@@ -988,7 +1103,7 @@ else
 
   --- Toggle syntax highlighting and treesitter
   function v.ui.toggle_syntax()
-    local ts_avail, parsers = pcall(require, "nvim-treesitter.parsers")
+    local ts_avail, parsers = pcall(re, "nvim-treesitter.parsers")
     if vim.g.syntax_on then -- global var for on//off
       if ts_avail and parsers.has_parser() then vim.cmd.TSBufDisable "highlight" end
       vim.cmd.syntax "off" -- set vim.g.syntax_on = false
@@ -1024,7 +1139,7 @@ else
   --#region_status
 
 
-  require "status"
+  re "status"
 
 
   --#endregion_status
@@ -1040,8 +1155,7 @@ else
   ---------------------------------------------------------------------------------------------------
   --#region_git
 
-  local fn = vim.fn
-  -- local git = require "core.utils.git"
+  -- local git = re "core.utils.git"
 
 
   local git = { url = "https://github.com/" }
@@ -1053,7 +1167,7 @@ else
 
   --- Check if the v is able to reach the `git` command
   -- @return the result of running `git --help`
-  function git.available() return vim.fn.executable "git" == 1 end
+  function git.available() return fn.executable "git" == 1 end
 
   --- Check if the v home is a git repo
   -- @return the result of the command
@@ -1137,7 +1251,7 @@ else
     local range = ""
     if start_hash and end_hash then range = start_hash .. ".." .. end_hash end
     local log = git.cmd('log --no-merges --pretty="format:[%h] %s" ' .. range, ...)
-    return log and vim.fn.split(log, "\n") or {}
+    return log and fn.split(log, "\n") or {}
   end
 
   --- Get a list of all tags with a regex filter
@@ -1145,7 +1259,7 @@ else
   -- @return an array like table of tags that match the search
   function git.get_versions(search, ...)
     local tags = git.cmd('tag -l --sort=version:refname "' .. (search == "latest" and "v*" or search) .. '"', ...)
-    return tags and vim.fn.split(tags, "\n") or {}
+    return tags and fn.split(tags, "\n") or {}
   end
 
   --- Get the latest version of a list of versions
@@ -1160,15 +1274,15 @@ else
   -- @param str the remote to parse to a full git url
   -- @return the full git url for the given remote string
   function git.parse_remote_url(str)
-    return vim.fn.match(str, v.url_matcher) == -1
-        and git.url .. str .. (vim.fn.match(str, "/") == -1 and "/v.git" or ".git")
+    return fn.match(str, v.url_matcher) == -1
+        and git.url .. str .. (fn.match(str, "/") == -1 and "/v.git" or ".git")
         or str
   end
 
   --- Check if a Conventional Commit commit message is breaking or not
   -- @param commit a commit message
   -- @return boolean true if the message is breaking, false if the commit message is not breaking
-  function git.is_breaking(commit) return vim.fn.match(commit, "\\[.*\\]\\s\\+\\w\\+\\((\\w\\+)\\)\\?!:") ~= -1 end
+  function git.is_breaking(commit) return fn.match(commit, "\\[.*\\]\\s\\+\\w\\+\\((\\w\\+)\\)\\?!:") ~= -1 end
 
   --- Get a list of breaking commits from commit messages using Conventional Commit standard
   -- @param commits an array like table of commit messages
@@ -1205,7 +1319,7 @@ else
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
   --#region_mason
-  -- require "core.utils.mason"
+  -- re "core.utils.mason"
 
   v.mason = {}
 
@@ -1214,7 +1328,7 @@ else
   -- @param auto_install boolean of whether or not to install a package that is not currently installed (default: True)
   function v.mason.update(pkg_name, auto_install)
     if auto_install == nil then auto_install = true end
-    local registry_avail, registry = pcall(require, "mason-registry")
+    local registry_avail, registry = pcall(re, "mason-registry")
     if not registry_avail then
       vim.api.nvim_err_writeln "Unable to access mason registry"
       return
@@ -1246,7 +1360,7 @@ else
 
   --- Update all packages in Mason
   function v.mason.update_all()
-    local registry_avail, registry = pcall(require, "mason-registry")
+    local registry_avail, registry = pcall(re, "mason-registry")
     if not registry_avail then
       vim.api.nvim_err_writeln "Unable to access mason registry"
       return
@@ -1340,17 +1454,13 @@ else
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
-  -- require "core.utils.lsp"
+  -- re "core.utils.lsp"
 
   v.lsp = {}
-  local tbl_contains = vim.tbl_contains
-  local tbl_isempty = vim.tbl_isempty
   -- local user_plugin_opts = v.user_plugin_opts
-  local conditional_func = v.conditional_func
-  local is_available = v.is_available
-  local setup_handlers = nil
+  -- local setup_handlers = nil
   -- user_plugin_opts("lsp.setup_handlers", nil, false)
-  local skip_setup = {
+  v.lsp.skip_setup = {
     "fsautocomplete",
     "tsserver",
     "clangd",
@@ -1373,6 +1483,29 @@ else
   },
   }
 
+  v.path.UpperDriveLetter = function(p)
+    local stringArg = p or ""
+    return (stringArg:gsub("^%l", string.upper))
+  end
+
+  v.path.GetDirForFilename = function(s)
+    return vim.fs.dirname(s)
+  end
+
+  v.path.GetBaseFilenameForBufnr = function(bufnr)
+    local fileAbs = vim.api.nvim_buf_get_name(bufnr)
+    return vim.fs.basename(fileAbs)
+  end
+
+  v.buf.FileRowColumnToPlusRegister = function()
+    local fileAbs = vim.api.nvim_buf_get_name(0)
+    local fname = vim.fs.basename(fileAbs)
+    local line_col_pair = vim.api.nvim_win_get_cursor(0) -- row is 1, column is 0 indexed
+    local fnamecol = fname .. ':' .. tostring(line_col_pair[1]) .. ':' .. tostring(line_col_pair[2])
+    fn.setreg('+', fnamecol) -- register + has filename:row:column
+  end
+
+
   if type(v.lsp.formatting.format_on_save) == "boolean" then
     v.lsp.formatting.format_on_save = { enabled = v.lsp.formatting.format_on_save }
   end
@@ -1383,7 +1516,7 @@ else
     --v.lsp.format_opts.format_on_save = nil
     --v.lsp.format_opts.disabled = nil
     -- check if client is fully disabled or filtered by function
-    return not (vim.tbl_contains(disabled, client.name) or (type(filter) == "function" and not filter(client)))
+    return not (tContains(disabled, client.name) or (type(filter) == "function" and not filter(client)))
   end
 
 
@@ -1414,53 +1547,30 @@ else
   -- @param client the LSP client details when attaching
   -- @param bufnr the number of the buffer that the LSP client is attaching to
   v.lsp.on_attach = function(client, bufnr)
-    -- if not vim.tbl_isempty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
+    -- if not tEmpty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
     -- v.set_mappings(user_plugin_opts("lsp.mappings", lsp_mappings), { buffer = bufnr })
 
+    local ignored = v.lsp.ignoredLspServersForFindingRoot
     -- local on_attach_override = user_plugin_opts("lsp.on_attach", nil, false)
     -- conditional_func(on_attach_override, true, client, bufnr)
-
-    local upperDriveLetter = function(p)
-      local stringArg = p or ""
-      return (stringArg:gsub("^%l", string.upper))
-    end
-
-    v.GetDirForFilename= function (s)
-      return vim.fs.dirname(s)
-    end
-
-    v.GetBaseFilenameForBufnr(bufnr)
-      local fileAbs = vim.api.nvim_buf_get_name(bufnr)
-      return vim.fs.basename(fileAbs)
-    end
-
-    v.FileRowColumnToPlusRegister= function ()
-      local fileAbs = vim.api.nvim_buf_get_name(0)
-      local fname = vim.fs.basename(fileAbs)
-      local line_col_pair = vim.api.nvim_win_get_cursor(0) -- row is 1, column is 0 indexed
-      local fnamecol = fname .. ':' .. tostring(line_col_pair[1]) .. ':' .. tostring(line_col_pair[2])
-      vim.fn.setreg('+', fnamecol) -- register + has filename:row:column
-    end
-
     local capabilities = client.server_capabilities
-    local ignore_lsp = { "null-ls", "stylua", "lemminx", "editorconfig_checker" }
     -- vim.notify(client.name .. " is running on_attach")
-    if not vim.tbl_contains(ignore_lsp, client.name) then
+    if not tContains(ignored, client.name) then
       -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
-      local root = v.lsp.FindRoot(ignore_lsp, bufnr)
+      local root = v.lsp.FindRoot(ignored, bufnr)
       -- v.notify("lsp root should have found root of : " .. root)
-      local cwd = v.path.AppendSlash(upperDriveLetter(vim.fs.normalize(vim.fn.getcwd())))
+      local cwd = v.path.AppendSlash(v.path.UpperDriveLetter(vim.fs.normalize(fn.getcwd())))
       if not root then
         v.notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
         root = vim.cmd.expand("%:p:h")
       end
       -- v.notify("i have the root and cwd now.. but ill check the number of buffers.. ")
 
-      local shouldAsk = vim.tbl_count(vim.fn.getbufinfo { buflisted = true }) > 1
+      local shouldAsk = vim.tbl_count(fn.getbufinfo { buflisted = true }) > 1
       if root and cwd ~= root then
         if shouldAsk == true then
           -- v.notify("at this point the buffers say i should ask about setting root.. " .. vim.inspect(shouldAsk))
-          if vim.fn.confirm(
+          if fn.confirm(
             "Do you want to change the current working directory to lsp root?\nROOT: "
             .. root
             .. "\nCWD : "
@@ -1598,9 +1708,9 @@ else
       local autoformat = v.lsp.formatting.format_on_save
       local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
       if autoformat.enabled
-          and (tbl_isempty(autoformat.allow_filetypes or {}) or tbl_contains(autoformat.allow_filetypes, filetype))
+          and (tbl_isempty(autoformat.allow_filetypes or {}) or tContains(autoformat.allow_filetypes, filetype))
           and
-          (tbl_isempty(autoformat.ignore_filetypes or {}) or not tbl_contains(autoformat.ignore_filetypes, filetype)
+          (tbl_isempty(autoformat.ignore_filetypes or {}) or not tContains(autoformat.ignore_filetypes, filetype)
           )
       then
         local autocmd_group = "auto_format_" .. bufnr
@@ -1623,8 +1733,8 @@ else
     end
 
     if capabilities.hoverProvider then
-      if is_available("hover") then
-        lsp_mappings.n["K"] = { require 'hover'.hover(), desc = "Hover symbol details" }
+      if v.isAvalable("hover") then
+        lsp_mappings.n["K"] = { re 'hover'.hover(), desc = "Hover symbol details" }
       else
         lsp_mappings.n["K"] = { function() vim.lsp.buf.hover() end, desc = "Hover symbol details" }
       end
@@ -1649,10 +1759,10 @@ else
         lsp_mappings.n["gT"] = { function() vim.lsp.buf.type_definition() end, desc = "Definition of current type" }
       end
 
-      -- original version from Astrovim --
+      -- original version from VimSharpvim --
       --
       -- if capabilities.documentHighlightProvider then
-      --   local highlight_name = vim.fn.printf("lsp_document_highlight_%d", bufnr)
+      --   local highlight_name = fn.printf("lsp_document_highlight_%d", bufnr)
       --   vim.api.nvim_create_augroup(highlight_name, {})
       --   vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
       --     group = highlight_name,
@@ -1668,7 +1778,7 @@ else
       --
 
       if capabilities.documentHighlightProvider then
-        local highlight_name = vim.fn.printf("lsp_document_highlight_%d", bufnr)
+        local highlight_name = fn.printf("lsp_document_highlight_%d", bufnr)
         vim.api.nvim_create_augroup(highlight_name, { clear = true })
         vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
           group = highlight_name,
@@ -1713,7 +1823,7 @@ else
 
         local group_name = "codelens_" .. bufnr
         vim.api.nvim_create_augroup(group_name, { clear = true })
-        -- default Astrovim version
+        -- default VimSharpvim version
         --vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
         vim.api.nvim_create_autocmd({ "LSPAttach", "BufEnter", "BufWritePost", "InsertLeave" }, {
           --vim.api.nvim_create_autocmd({ "BufWrite" }, {
@@ -1748,24 +1858,24 @@ else
         lsp_mappings.n["<leader>lG"] = { function() vim.lsp.buf.workspace_symbol() end, desc = "Search workspace symbols" }
       end
 
-      if is_available "telescope.nvim" then -- setup telescope mappings if available
-        if lsp_mappings.n.gd then lsp_mappings.n.gd[1] = function() require("telescope.builtin").lsp_definitions() end end
+      if v.isAvalable "telescope.nvim" then -- setup telescope mappings if available
+        if lsp_mappings.n.gd then lsp_mappings.n.gd[1] = function() re("telescope.builtin").lsp_definitions() end end
         if lsp_mappings.n.gI then
-          lsp_mappings.n.gI[1] = function() require("telescope.builtin").lsp_implementations() end
+          lsp_mappings.n.gI[1] = function() re("telescope.builtin").lsp_implementations() end
         end
-        if lsp_mappings.n.gr then lsp_mappings.n.gr[1] = function() require("telescope.builtin").lsp_references() end end
+        if lsp_mappings.n.gr then lsp_mappings.n.gr[1] = function() re("telescope.builtin").lsp_references() end end
         if lsp_mappings.n["<leader>lR"] then
-          lsp_mappings.n["<leader>lR"][1] = function() require("telescope.builtin").lsp_references() end
+          lsp_mappings.n["<leader>lR"][1] = function() re("telescope.builtin").lsp_references() end
         end
         if lsp_mappings.n.gT then
-          lsp_mappings.n.gT[1] = function() require("telescope.builtin").lsp_type_definitions() end
+          lsp_mappings.n.gT[1] = function() re("telescope.builtin").lsp_type_definitions() end
         end
         if lsp_mappings.n["<leader>lG"] then
-          lsp_mappings.n["<leader>lG"][1] = function() require("telescope.builtin").lsp_workspace_symbols() end
+          lsp_mappings.n["<leader>lG"][1] = function() re("telescope.builtin").lsp_workspace_symbols() end
         end
       end
 
-      if not vim.tbl_isempty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
+      if not tEmpty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
       v.set_mappings(lsp_mappings, { buffer = bufnr })
 
     end
@@ -1777,10 +1887,10 @@ else
       cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
       on_attach = v.lsp.on_attach,
 
-      -- handlers = require "ionide".handlers,
+      -- handlers = re "ionide".handlers,
       settings = { FSharp = { use_sdk_scripts = 0 }, },
       -- root_dir = function(fname)
-      --   local util = require("lspconfig.util")
+      --   local util = re("lspconfig.util")
       --   local get_root_dir = function(filename, _)
       --     local root
       --     -- in order of preference:
@@ -1817,21 +1927,21 @@ else
   v.lsp.flags = {} -- Helper function to set up a given server with the Neovim LSP client
   -- @param server the name of the server to be setup
   v.lsp.setup = function(server)
-    if not tbl_contains(skip_setup, server) then
-      conditional_func(require, server == "sumneko_lua" and is_available "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
+    if not tContains(v.lsp.skip_setup, server) then
+      executeIfTrue(re, server == "sumneko_lua" and v.isAvalable "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
       if server == "ionide" then
         vim.cmd("let g:fsharp#use_recommended_server_config =0")
         vim.cmd("let g:fsharp#use_sdk_scripts =0")
 
-        local i = require "ionide".setup(v.lsp.configs.ionide)
+        local i = re "ionide".setup(v.lsp.configs.ionide)
 
-        -- local isAttachd = vim.fn.confirm("Do you want to attachDebuggr before ionide does setup??\n", "&yes\n&no", 2) == 1
-        -- require "ionide".setup(v.lsp.configs.ionide)
+        -- local isAttachd = fn.confirm("Do you want to attachDebuggr before ionide does setup??\n", "&yes\n&no", 2) == 1
+        -- re "ionide".setup(v.lsp.configs.ionide)
       end
       -- if server doesn't exist, set it up from user server definition
-      local configs = require("lspconfig.configs")
-      --local server_definition = vim.fn.default
-      local ok, sv = pcall(require, "lspconfig.configs" .. server)
+      local configs = re("lspconfig.configs")
+      --local server_definition = fn.default
+      local ok, sv = pcall(re, "lspconfig.configs" .. server)
       if ok then
         local fallbackmessage = " one found in " .. server .. " config handlers"
 
@@ -1842,7 +1952,7 @@ else
         if sv.default_config.handlers then
           v.notify("server default config handlers exist.")
           for n, h in pairs(sv.handlers) do
-            if vim.tbl_contains(vim.lsp.handlers, n) then
+            if tContains(vim.lsp.handlers, n) then
               v.notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
                 fallbackmessage)
               v.lsp.handlers[n] = h
@@ -1852,9 +1962,9 @@ else
 
       end
 
-      if not (configs[server]) and not require("lspconfig.server_configurations." .. server) then
+      if not (configs[server]) and not re("lspconfig.server_configurations." .. server) then
         v.notify(server .. " was not found in lspconfig.configs or server_configurations.. ")
-        local server_definition = v.user_plugin_opts("lsp.server-settings." .. server)
+        local server_definition = v.userConfigs("lsp.server-settings." .. server)
         if server_definition.cmd then
           configs[server] = { default_config = server_definition }
         end
@@ -1868,12 +1978,12 @@ else
     elseif type(setup_handlers) == "table" and (setup_handlers[1] or setup_handlers[server]) then
       (setup_handlers[server] or setup_handlers[1])(server, opts)
     else
-      local lspconfig = require("lspconfig")
+      local lspconfig = re("lspconfig")
       lspconfig[server].setup(opts)
     end
 
     if server == "ionide" then
-      v.notify(vim.inspect(require 'lspconfig.configs'["ionide"]))
+      v.notify(vim.inspect(re 'lspconfig.configs'["ionide"]))
     end
 
 
@@ -1887,14 +1997,14 @@ else
   -- @return the table of LSP options used when setting up the given language server
   function v.lsp.server_settings(server_name)
 
-    local server = require("lspconfig")[server_name]
+    local server = re("lspconfig")[server_name]
     local lsp_settings
-    if server_name == "jsonls" and v.is_available "SchemaStore.nvim" then -- by default add json schemas
-      lsp_settings = { json = { schemas = require("schemastore").json.schemas(), validate = { enable = true } } }
+    if server_name == "jsonls" and v.isAvalable "SchemaStore.nvim" then -- by default add json schemas
+      lsp_settings = { json = { schemas = re("schemastore").json.schemas(), validate = { enable = true } } }
     end
 
     local de = vim.tbl_deep_extend
-    local upo = de("force", v.user_plugin_opts("lsp.configs." .. server_name), server) -- get user server-settings
+    local upo = de("force", v.userConfigs("lsp.configs." .. server_name), server) -- get user server-settings
 
     local defaultServerWithvSettings = de("force",
       { settings = lsp_settings, capabilities = v.lsp.capabilities, flags = v.lsp.flags }
@@ -1908,9 +2018,9 @@ else
     local old_on_attach = server.on_attach
     local user_on_attach = opts.on_attach
     opts.on_attach = function(client, bufnr)
-      v.conditional_func(old_on_attach, true, client, bufnr)
+      v.executeIfTrue(old_on_attach, true, client, bufnr)
       v.lsp.on_attach(client, bufnr)
-      v.conditional_func(user_on_attach, true, client, bufnr)
+      v.executeIfTrue(user_on_attach, true, client, bufnr)
     end
 
 
@@ -1935,7 +2045,7 @@ else
   --#region_options
 
   vim.opt.shortmess:append { s = true, I = true } -- disable startup message
-  -- if vim.fn.has "nvim-0.9" == 1 then -- TODO v3 REMOVE THIS CONDITIONAL
+  -- if fn.has "nvim-0.9" == 1 then -- TODO v3 REMOVE THIS CONDITIONAL
   --   vim.opt.diffopt:append "linematch:60" -- enable linematch diff algorithm
   -- end
   v.vim_opts({
@@ -1966,7 +2076,7 @@ else
       smartcase = true, -- Case sensitivie searching
       splitbelow = true, -- Splitting a new window below the current one
       -- TODO v3 REMOVE THIS CONDITIONAL
-      -- splitkeep = vim.fn.has "nvim-0.9" == 1 and "screen" or nil, -- Maintain code view when splitting
+      -- splitkeep = fn.has "nvim-0.9" == 1 and "screen" or nil, -- Maintain code view when splitting
       splitright = true, -- Splitting a new window at the right of the current one
       tabstop = 2, -- Number of space in a tab
       termguicolors = true, -- Enable 24-bit RGB color in the TUI
@@ -1979,8 +2089,8 @@ else
       list = true, -- show whitespace characters
       listchars = { tab = "│→", extends = "⟩", precedes = "⟨", trail = "·", nbsp = "␣" },
       showbreak = "↪ ",
-      spellfile = vim.fn.expand "C:/.config/nvim/lua/spell/en.utf-8.add",
-      thesaurus = vim.fn.expand "C:/.config/nvim/lua/spell/mthesaur.txt",
+      spellfile = fn.expand "C:/.config/nvim/lua/spell/en.utf-8.add",
+      thesaurus = fn.expand "C:/.config/nvim/lua/spell/mthesaur.txt",
       wrap = true, -- soft wrap lines
       shell = "pwsh",
       shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;",
@@ -2042,10 +2152,10 @@ else
   ---------------------------------------------------------------------------------------------------
   --#region_Lazy
 
-  local lazypath = vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
+  local lazypath = fn.stdpath "data" .. "/lazy/lazy.nvim"
   if not vim.loop.fs_stat(lazypath) then
-    vim.fn.system { "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", lazypath }
-    vim.fn.system { "git", "-C", lazypath, "checkout", "tags/stable" }
+    fn.system { "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", lazypath }
+    fn.system { "git", "-C", lazypath, "checkout", "tags/stable" }
     local oldcmdheight = vim.opt.cmdheight:get()
     vim.opt.cmdheight = 1
     vim.notify "Please wait while plugins are installed..."
@@ -2055,7 +2165,7 @@ else
       callback = function()
         vim.cmd.bw()
         vim.opt.cmdheight = oldcmdheight
-        vim.tbl_map(function(module) pcall(require, module) end, { "nvim-treesitter", "mason" })
+        vim.tbl_map(function(module) pcall(re, module) end, { "nvim-treesitter", "mason" })
         v.notify "Mason is installing packages if configured, check status with :Mason"
       end,
     })
@@ -2087,7 +2197,7 @@ else
     return plugins
   end
 
-  require("lazy").setup(
+  re("lazy").setup(
     parse_plugins(
 
     -- v.user_plugin_opts(
@@ -2101,16 +2211,16 @@ else
         ["b0o/SchemaStore.nvim"] = {},
         ["nvim-lua/plenary.nvim"] = {},
         ["folke/neodev.nvim"] = { config = function()
-          require("neodev").setup({})
+          re("neodev").setup({})
         end },
         -- ["goolord/alpha-nvim"] = { cmd = "Alpha",
         -- config = function()
-        --   require "configs.alpha"
+        --   re "configs.alpha"
         -- end },
 
         ["mrjones2014/smart-splits.nvim"] = {
           config = function()
-            -- require "configs.smart-splits"
+            -- re "configs.smart-splits"
             return {
               ignored_filetypes = {
                 "nofile",
@@ -2125,7 +2235,7 @@ else
 
         ["onsails/lspkind.nvim"] = { enabled = vim.g.icons_enabled,
           config = function()
-            -- require "configs.lspkind"
+            -- re "configs.lspkind"
             v.lspkind = {
               mode = "symbol_text",
               symbol_map = {
@@ -2149,48 +2259,48 @@ else
                 Unit = "",
               },
             }
-            require("lspkind").init(v.lspkind)
+            re("lspkind").init(v.lspkind)
 
 
           end },
         ["rebelot/heirline.nvim"] = { event = "VimEnter", config = function()
-          -- require "configs.heirline"
-          local heirline = require "heirline"
+          -- re "configs.heirline"
+          local heirline = re "heirline"
           if not v.status then return end
-          local C = require "v_theme.colors"
+          local C = re "vimsharp_theme.colors"
 
           local function setup_colors()
-            local Normal = v.get_hlgroup("Normal", { fg = C.fg, bg = C.bg })
-            local Comment = v.get_hlgroup("Comment", { fg = C.grey_2, bg = C.bg })
-            local Error = v.get_hlgroup("Error", { fg = C.red, bg = C.bg })
-            local StatusLine = v.get_hlgroup("StatusLine", { fg = C.fg, bg = C.grey_4 })
-            local TabLine = v.get_hlgroup("TabLine", { fg = C.grey, bg = C.none })
-            local TabLineSel = v.get_hlgroup("TabLineSel", { fg = C.fg, bg = C.none })
-            local WinBar = v.get_hlgroup("WinBar", { fg = C.grey_2, bg = C.bg })
-            local WinBarNC = v.get_hlgroup("WinBarNC", { fg = C.grey, bg = C.bg })
-            local Conditional = v.get_hlgroup("Conditional", { fg = C.purple_1, bg = C.grey_4 })
-            local String = v.get_hlgroup("String", { fg = C.green, bg = C.grey_4 })
-            local TypeDef = v.get_hlgroup("TypeDef", { fg = C.yellow, bg = C.grey_4 })
-            local GitSignsAdd = v.get_hlgroup("GitSignsAdd", { fg = C.green, bg = C.grey_4 })
-            local GitSignsChange = v.get_hlgroup("GitSignsChange", { fg = C.orange_1, bg = C.grey_4 })
-            local GitSignsDelete = v.get_hlgroup("GitSignsDelete", { fg = C.red_1, bg = C.grey_4 })
-            local DiagnosticError = v.get_hlgroup("DiagnosticError", { fg = C.red_1, bg = C.grey_4 })
-            local DiagnosticWarn = v.get_hlgroup("DiagnosticWarn", { fg = C.orange_1, bg = C.grey_4 })
-            local DiagnosticInfo = v.get_hlgroup("DiagnosticInfo", { fg = C.white_2, bg = C.grey_4 })
-            local DiagnosticHint = v.get_hlgroup("DiagnosticHint", { fg = C.yellow_1, bg = C.grey_4 })
-            local HeirlineInactive = v.get_hlgroup("HeirlineInactive", { fg = nil }).fg
+            local Normal = v.highlight.getGroup("Normal", { fg = C.fg, bg = C.bg })
+            local Comment = v.highlight.getGroup("Comment", { fg = C.grey_2, bg = C.bg })
+            local Error = v.highlight.getGroup("Error", { fg = C.red, bg = C.bg })
+            local StatusLine = v.highlight.getGroup("StatusLine", { fg = C.fg, bg = C.grey_4 })
+            local TabLine = v.highlight.getGroup("TabLine", { fg = C.grey, bg = C.none })
+            local TabLineSel = v.highlight.getGroup("TabLineSel", { fg = C.fg, bg = C.none })
+            local WinBar = v.highlight.getGroup("WinBar", { fg = C.grey_2, bg = C.bg })
+            local WinBarNC = v.highlight.getGroup("WinBarNC", { fg = C.grey, bg = C.bg })
+            local Conditional = v.highlight.getGroup("Conditional", { fg = C.purple_1, bg = C.grey_4 })
+            local String = v.highlight.getGroup("String", { fg = C.green, bg = C.grey_4 })
+            local TypeDef = v.highlight.getGroup("TypeDef", { fg = C.yellow, bg = C.grey_4 })
+            local GitSignsAdd = v.highlight.getGroup("GitSignsAdd", { fg = C.green, bg = C.grey_4 })
+            local GitSignsChange = v.highlight.getGroup("GitSignsChange", { fg = C.orange_1, bg = C.grey_4 })
+            local GitSignsDelete = v.highlight.getGroup("GitSignsDelete", { fg = C.red_1, bg = C.grey_4 })
+            local DiagnosticError = v.highlight.getGroup("DiagnosticError", { fg = C.red_1, bg = C.grey_4 })
+            local DiagnosticWarn = v.highlight.getGroup("DiagnosticWarn", { fg = C.orange_1, bg = C.grey_4 })
+            local DiagnosticInfo = v.highlight.getGroup("DiagnosticInfo", { fg = C.white_2, bg = C.grey_4 })
+            local DiagnosticHint = v.highlight.getGroup("DiagnosticHint", { fg = C.yellow_1, bg = C.grey_4 })
+            local HeirlineInactive = v.highlight.getGroup("HeirlineInactive", { fg = nil }).fg
                 or v.status.hl.lualine_mode("inactive", C.grey_7)
-            local HeirlineNormal = v.get_hlgroup("HeirlineNormal", { fg = nil }).fg
+            local HeirlineNormal = v.highlight.getGroup("HeirlineNormal", { fg = nil }).fg
                 or v.status.hl.lualine_mode("normal", C.blue)
-            local HeirlineInsert = v.get_hlgroup("HeirlineInsert", { fg = nil }).fg
+            local HeirlineInsert = v.highlight.getGroup("HeirlineInsert", { fg = nil }).fg
                 or v.status.hl.lualine_mode("insert", C.green)
-            local HeirlineVisual = v.get_hlgroup("HeirlineVisual", { fg = nil }).fg
+            local HeirlineVisual = v.highlight.getGroup("HeirlineVisual", { fg = nil }).fg
                 or v.status.hl.lualine_mode("visual", C.purple)
-            local HeirlineReplace = v.get_hlgroup("HeirlineReplace", { fg = nil }).fg
+            local HeirlineReplace = v.highlight.getGroup("HeirlineReplace", { fg = nil }).fg
                 or v.status.hl.lualine_mode("replace", C.red_1)
-            local HeirlineCommand = v.get_hlgroup("HeirlineCommand", { fg = nil }).fg
+            local HeirlineCommand = v.highlight.getGroup("HeirlineCommand", { fg = nil }).fg
                 or v.status.hl.lualine_mode("command", C.yellow_1)
-            local HeirlineTerminal = v.get_hlgroup("HeirlineTerminal", { fg = nil }).fg
+            local HeirlineTerminal = v.highlight.getGroup("HeirlineTerminal", { fg = nil }).fg
                 or v.status.hl.lualine_mode("inactive", HeirlineInsert)
 
             local colors = {
@@ -2286,7 +2396,7 @@ else
           ---@return table
           v.status.heirline.make_buflist = function(component)
             local overflow_hl = v.status.hl.get_attributes("buffer_overflow", true)
-            return require("heirline.utils").make_buflist(
+            return re("heirline.utils").make_buflist(
               v.status.utils.surround(
                 "tab",
                 function(self)
@@ -2336,13 +2446,13 @@ else
             )
           end
 
-          --- Alias to require("heirline.utils").make_tablist
-          v.status.heirline.make_tablist = require("heirline.utils").make_tablist
+          --- Alias to re("heirline.utils").make_tablist
+          v.status.heirline.make_tablist = re("heirline.utils").make_tablist
 
           --- Run the buffer picker and execute the callback function on the selected buffer
           -- @param callback function with a single parameter of the buffer number
           function v.status.heirline.buffer_picker(callback)
-            local tabline = require("heirline").tabline
+            local tabline = re("heirline").tabline
             local buflist = tabline and tabline._buflist[1]
             if buflist then
               local prev_showtabline = vim.opt.showtabline
@@ -2350,7 +2460,7 @@ else
               buflist._show_picker = true
               vim.opt.showtabline = 2
               vim.cmd.redrawtabline()
-              local char = vim.fn.getcharstr()
+              local char = fn.getcharstr()
               local bufnr = buflist._picker_labels[char]
               if bufnr then callback(bufnr) end
               buflist._show_picker = false
@@ -2441,11 +2551,11 @@ else
 
           local grp = vim.api.nvim_create_augroup("Heirline", { clear = true })
           vim.api.nvim_create_autocmd("User", {
-            pattern = "AstroColorScheme",
+            pattern = "VimSharpColorScheme",
             group = grp,
             desc = "Refresh heirline colors",
             callback = function()
-              -- require("heirline.utils").on_colorscheme(setup_colors()))
+              -- re("heirline.utils").on_colorscheme(setup_colors()))
             end,
           })
           vim.api.nvim_create_autocmd("User", {
@@ -2453,9 +2563,9 @@ else
             group = grp,
             desc = "Disable winbar for some filetypes",
             callback = function()
-              if not require "heirline".winbar["disabled"] then require "heirline".winbar["disabled"] = true end
+              if not re "heirline".winbar["disabled"] then re "heirline".winbar["disabled"] = true end
               if vim.opt.diff:get()
-                  -- or v.status.condition.buffer_matches(require("heirline").winbar.disabled
+                  -- or v.status.condition.buffer_matches(re("heirline").winbar.disabled
                   or true
 
               then
@@ -2467,15 +2577,15 @@ else
         end },
         ["famiu/bufdelete.nvim"] = { cmd = { "Bdelete", "Bwipeout" } },
         ["s1n7ax/nvim-window-picker"] = { version = "^1", config = function()
-          -- require "configs.window-picker"
-          local colors = require "v_theme.colors"
-          require("window-picker").setup(
+          -- re "configs.window-picker"
+          local colors = re "v_theme.colors"
+          re("window-picker").setup(
             { use_winbar = "smart", other_win_hl_color = colors.grey_4 }
           )
         end },
 
         ["folke/which-key.nvim"] = { event = "VeryLazy", config = function()
-          -- require "configs.which-key"
+          -- re "configs.which-key"
           return {
             plugins = {
               spelling = { enabled = true },
@@ -2493,8 +2603,8 @@ else
           --Dont think i want this..
           enabled = false,
           event = "InsertEnter", config = function()
-            -- require "configs.autopairs"
-            local npairs = require "nvim-autopairs"
+            -- re "configs.autopairs"
+            local npairs = re "nvim-autopairs"
             npairs.setup(
               {
                 check_ts = true,
@@ -2513,9 +2623,9 @@ else
               })
 
             if not vim.g.autopairs_enabled then npairs.disable() end
-            local cmp_status_ok, cmp = pcall(require, "cmp")
+            local cmp_status_ok, cmp = pcall(re, "cmp")
             if cmp_status_ok then
-              cmp.event:on("confirm_done", require("nvim-autopairs.completion.cmp").on_confirm_done { tex = false })
+              cmp.event:on("confirm_done", re("nvim-autopairs.completion.cmp").on_confirm_done { tex = false })
             end
           end
         },
@@ -2523,18 +2633,18 @@ else
         ["numToStr/Comment.nvim"] = {
           --       keys = { { "<Leader>/", mode = { "n", "v" } }, { "gb", mode = { "n", "v" } } },
           config = function()
-            -- require "configs.Comment"
-            local utils = require "Comment.utils"
-            require("Comment").setup({
+            -- re "configs.Comment"
+            local utils = re "Comment.utils"
+            re("Comment").setup({
               pre_hook = function(ctx)
                 local location = nil
                 if ctx.ctype == utils.ctype.blockwise then
-                  location = require("ts_context_commentstring.utils").get_cursor_location()
+                  location = re("ts_context_commentstring.utils").get_cursor_location()
                 elseif ctx.cmotion == utils.cmotion.v or ctx.cmotion == utils.cmotion.V then
-                  location = require("ts_context_commentstring.utils").get_visual_start_location()
+                  location = re("ts_context_commentstring.utils").get_visual_start_location()
                 end
 
-                return require("ts_context_commentstring.internal").calculate_commentstring {
+                return re("ts_context_commentstring.internal").calculate_commentstring {
                   key = ctx.ctype == utils.ctype.linewise and "__default" or "__multiline",
                   location = location,
                 }
@@ -2545,8 +2655,8 @@ else
         ["akinsho/toggleterm.nvim"] = {
           cmd = { "ToggleTerm", "TermExec" },
           config = function()
-            -- require "configs.toggleterm"
-            require("toggleterm").setup({
+            -- re "configs.toggleterm"
+            re("toggleterm").setup({
               terminal_mappings = false,
               size = 10,
               open_mapping = [[<F7>]],
@@ -2565,9 +2675,9 @@ else
         ["nvim-tree/nvim-web-devicons"] = {
           enabled = vim.g.icons_enabled,
           config = function()
-            --  require "configs.nvim-web-devicons"
-            require("nvim-web-devicons").set_default_icon(v.get_icon "DefaultFile", "#6d8086", "66")
-            require("nvim-web-devicons").set_icon({
+            --  re "configs.nvim-web-devicons"
+            re("nvim-web-devicons").set_default_icon(v.get_icon "DefaultFile", "#6d8086", "66")
+            re("nvim-web-devicons").set_icon({
               deb = { icon = "", name = "Deb" },
               lock = { icon = "", name = "Lock" },
               mp3 = { icon = "", name = "Mp3" },
@@ -2584,10 +2694,10 @@ else
           end,
         },
         ["Darazaki/indent-o-matic"] = {
-          init = function() table.insert(v.file_plugins, "indent-o-matic") end,
+          init = function() table.insert(v.filePlugins, "indent-o-matic") end,
           config = function()
-            -- require "configs.indent-o-matic"
-            local indent_o_matic = require "indent-o-matic"
+            -- re "configs.indent-o-matic"
+            local indent_o_matic = re "indent-o-matic"
             indent_o_matic.setup({})
             indent_o_matic.detect()
           end,
@@ -2630,8 +2740,8 @@ else
             -- Overriding vim.notify with fancy notify if fancy notify exists
 
 
-            -- require "configs.notify"
-            local notify = require "notify"
+            -- re "configs.notify"
+            local notify = re "notify"
             notify.setup({
               timeout = 2000,
               max_width = 500,
@@ -2647,8 +2757,8 @@ else
             v.load_plugin_with_func("dressing.nvim", vim.ui, { "input", "select" })
           end,
           config = function()
-            -- require "configs.dressing"
-            require("dressing").setup({
+            -- re "configs.dressing"
+            re("dressing").setup({
               input = {
                 default_prompt = "➤ ",
                 win_options = { winhighlight = "Normal:Normal,NormalNC:Normal" },
@@ -2667,8 +2777,8 @@ else
           cmd = "Neotree",
           init = function() vim.g.neo_tree_remove_legacy_commands = true end,
           config = function()
-            -- require "configs.neo-tree"
-            require("neo-tree").setup({
+            -- re "configs.neo-tree"
+            re("neo-tree").setup({
               close_if_last_window = true,
               enable_diagnostics = false,
               source_selector = {
@@ -2757,7 +2867,7 @@ else
         },
 
         ["nvim-treesitter/nvim-treesitter"] = {
-          init = function() table.insert(v.file_plugins, "nvim-treesitter") end,
+          init = function() table.insert(v.filePlugins, "nvim-treesitter") end,
           cmd = {
             "TSBufDisable",
             "TSBufEnable",
@@ -2778,10 +2888,10 @@ else
             ["windwp/nvim-ts-autotag"] = {},
             ["JoosepAlviste/nvim-ts-context-commentstring"] = {},
           },
-          build = function() require("nvim-treesitter.install").update { with_sync = true } () end,
+          build = function() re("nvim-treesitter.install").update { with_sync = true } () end,
           config = function()
-            -- require "configs.treesitter"
-            require("nvim-treesitter.configs").setup({
+            -- re "configs.treesitter"
+            re("nvim-treesitter.configs").setup({
 
               context_commentstring = {
                 enable = true,
@@ -2808,7 +2918,7 @@ else
               -- indent = { enable = false },
               indent = { enable = true, disable = { "python", "fsharp" } },
 
-              auto_install = vim.fn.executable "tree-sitter" == 1,
+              auto_install = fn.executable "tree-sitter" == 1,
               ensure_installed = "all",
               matchup = { enable = true },
               textobjects = {
@@ -2887,11 +2997,11 @@ else
           end,
         },
         ["NvChad/nvim-colorizer.lua"] = {
-          init = function() table.insert(v.file_plugins, "nvim-colorizer.lua") end,
+          init = function() table.insert(v.filePlugins, "nvim-colorizer.lua") end,
           cmd = { "ColorizerToggle", "ColorizerAttachToBuffer", "ColorizerDetachFromBuffer", "ColorizerReloadAllBuffers" },
           config = function()
-            -- require "configs.colorizer"
-            require("colorizer").setup(
+            -- re "configs.colorizer"
+            re("colorizer").setup(
               { user_default_options = { names = false } }
             )
           end,
@@ -2899,24 +3009,24 @@ else
         ["max397574/better-escape.nvim"] = {
           event = "InsertCharPre",
           config = function()
-            -- require "configs.better_escape"
-            require("better_escape").setup({})
+            -- re "configs.better_escape"
+            re("better_escape").setup({})
           end,
         },
         ["Shatur/neovim-session-manager"] = {
           event = "BufWritePost",
           cmd = "SessionManager",
           config = function()
-            -- require "configs.session_manager"
-            require("session_manager").setup({})
+            -- re "configs.session_manager"
+            re("session_manager").setup({})
 
           end,
         },
         ["lukas-reineke/indent-blankline.nvim"] = {
-          init = function() table.insert(v.file_plugins, "indent-blankline.nvim") end,
+          init = function() table.insert(v.filePlugins, "indent-blankline.nvim") end,
           config = function()
-            -- require "configs.indent-line"
-            require("indent_blankline").setup({
+            -- re "configs.indent-line"
+            re("indent_blankline").setup({
               buftype_exclude = {
                 "nofile",
                 "terminal",
@@ -2965,12 +3075,12 @@ else
           end,
         },
         ["lewis6991/gitsigns.nvim"] = {
-          enabled = vim.fn.executable "git" == 1,
+          enabled = fn.executable "git" == 1,
           ft = "gitcommit",
           init = function() table.insert(v.git_plugins, "gitsigns.nvim") end,
           config = function()
-            -- require "configs.gitsigns"
-            require("gitsigns").setup({
+            -- re "configs.gitsigns"
+            re("gitsigns").setup({
               signs = {
                 add = { text = "▎" },
                 change = { text = "▎" },
@@ -2993,9 +3103,9 @@ else
         ["nvim-telescope/telescope.nvim"] = {
           cmd = "Telescope",
           config = function()
-            -- require "configs.telescope"
-            local telescope = require "telescope"
-            local actions = require "telescope.actions"
+            -- re "configs.telescope"
+            local telescope = re "telescope"
+            local actions = re "telescope.actions"
             local hop = telescope.extensions.hop
             telescope.setup(
               {
@@ -3066,14 +3176,14 @@ else
                 dependencies = {
                   ["nvim-telescope/telescope-fzf-native.nvim"] =
                   {
-                    enabled = vim.fn.executable "make" == 1, build = "make"
+                    enabled = fn.executable "make" == 1, build = "make"
                   },
                 },
               })
 
-            v.conditional_func(telescope.load_extension, pcall(require, "notify"), "notify")
-            v.conditional_func(telescope.load_extension, pcall(require, "aerial"), "aerial")
-            v.conditional_func(telescope.load_extension, v.is_available "telescope-fzf-native.nvim",
+            v.executeIfTrue(telescope.load_extension, pcall(re, "notify"), "notify")
+            v.executeIfTrue(telescope.load_extension, pcall(re, "aerial"), "aerial")
+            v.executeIfTrue(telescope.load_extension, v.isAvalable "telescope-fzf-native.nvim",
               "fzf")
           end,
 
@@ -3081,55 +3191,55 @@ else
         -- ["nvim-telescope/telescope-bibtex.nvim"] = {
 
         --   config = function()
-        --     -- require "telescope-bibtex"
+        --     -- re "telescope-bibtex"
         --   end,
         -- },
         ["nvim-telescope/telescope-cheat.nvim"] = {
 
           config = function()
-            require("telescope").load_extension "cheat"
+            re("telescope").load_extension "cheat"
           end
         },
         ["nvim-telescope/telescope-file-browser.nvim"] = {
 
           config = function()
-            -- require "telescope-file-browser"
-            require("telescope").load_extension "file_browser"
+            -- re "telescope-file-browser"
+            re("telescope").load_extension "file_browser"
           end,
         },
         ["Verf/telescope-everything.nvim"] = {
 
           config = function()
-            require("telescope").load_extension "everything"
+            re("telescope").load_extension "everything"
           end
         },
 
         ["nvim-telescope/telescope-hop.nvim"] = {
 
           config = function()
-            --  require "telescope-hop"
-            require("telescope").load_extension "hop"
+            --  re "telescope-hop"
+            re("telescope").load_extension "hop"
           end,
         },
         ["nvim-telescope/telescope-media-files.nvim"] = {
 
           config = function()
-            -- require "telescope-media-files"
-            require("telescope").load_extension "media-files"
+            -- re "telescope-media-files"
+            re("telescope").load_extension "media-files"
           end,
         },
         ["nvim-telescope/telescope-project.nvim"] = {
 
           config = function()
-            -- require "telescope-project"
-            require("telescope").load_extension "project"
+            -- re "telescope-project"
+            re("telescope").load_extension "project"
           end,
         },
         ["stevearc/aerial.nvim"] = {
-          init = function() table.insert(v.file_plugins, "aerial.nvim") end,
+          init = function() table.insert(v.filePlugins, "aerial.nvim") end,
           config = function()
-            -- require "configs.aerial"
-            require("aerial").setup({
+            -- re "configs.aerial"
+            re("aerial").setup({
               attach_mode = "global",
               backends = { "lsp", "treesitter", "markdown", "man" },
               layout = {
@@ -3161,14 +3271,14 @@ else
 
         ["L3MON4D3/LuaSnip"] = {
           config = function()
-            -- require "configs.luasnip"
-            local ls = require "luasnip"
-            local types = require("luasnip.util.types")
-            local ext_util = require("luasnip.util.ext_opts")
-            local ft_functions = require("luasnip.extras.filetype_functions")
-            local session = require("luasnip.session")
-            local iNode = require("luasnip.nodes.insertNode")
-            local cNode = require("luasnip.nodes.choiceNode")
+            -- re "configs.luasnip"
+            local ls = re "luasnip"
+            local types = re("luasnip.util.types")
+            local ext_util = re("luasnip.util.ext_opts")
+            local ft_functions = re("luasnip.extras.filetype_functions")
+            local session = re("luasnip.session")
+            local iNode = re("luasnip.nodes.insertNode")
+            local cNode = re("luasnip.nodes.choiceNode")
 
             -- Inserts a insert(1) before all other nodes, decreases node.pos's as indexing is "wrong".
             local function modify_nodes(snip)
@@ -3276,7 +3386,7 @@ else
               ext_base_prio = 200,
               ext_prio_increase = 9,
               enable_autosnippets = false,
-              -- default applied in util.parser, requires iNode, cNode
+              -- default applied in util.parser, res iNode, cNode
               -- (Dependency cycle if here).
               parser_nested_assembler = function(pos, snip)
                 modify_nodes(snip)
@@ -3291,34 +3401,34 @@ else
               load_ft_func = ft_functions.from_filetype_load,
               -- globals injected into luasnippet-files.
               snip_env = {
-                s = require("luasnip.nodes.snippet").S,
-                sn = require("luasnip.nodes.snippet").SN,
-                isn = require("luasnip.nodes.snippet").ISN,
-                t = require("luasnip.nodes.textNode").T,
-                i = require("luasnip.nodes.insertNode").I,
-                f = require("luasnip.nodes.functionNode").F,
-                c = require("luasnip.nodes.choiceNode").C,
-                d = require("luasnip.nodes.dynamicNode").D,
-                r = require("luasnip.nodes.restoreNode").R,
-                events = require("luasnip.util.events"),
-                ai = require("luasnip.nodes.absolute_indexer"),
-                extras = require("luasnip.extras"),
-                l = require("luasnip.extras").lambda,
-                rep = require("luasnip.extras").rep,
-                p = require("luasnip.extras").partial,
-                m = require("luasnip.extras").match,
-                n = require("luasnip.extras").nonempty,
-                dl = require("luasnip.extras").dynamic_lambda,
-                fmt = require("luasnip.extras.fmt").fmt,
-                fmta = require("luasnip.extras.fmt").fmta,
-                conds = require("luasnip.extras.expand_conditions"),
-                postfix = require("luasnip.extras.postfix").postfix,
-                types = require("luasnip.util.types"),
-                parse = require("luasnip.util.parser").parse_snippet,
+                s = re("luasnip.nodes.snippet").S,
+                sn = re("luasnip.nodes.snippet").SN,
+                isn = re("luasnip.nodes.snippet").ISN,
+                t = re("luasnip.nodes.textNode").T,
+                i = re("luasnip.nodes.insertNode").I,
+                f = re("luasnip.nodes.functionNode").F,
+                c = re("luasnip.nodes.choiceNode").C,
+                d = re("luasnip.nodes.dynamicNode").D,
+                r = re("luasnip.nodes.restoreNode").R,
+                events = re("luasnip.util.events"),
+                ai = re("luasnip.nodes.absolute_indexer"),
+                extras = re("luasnip.extras"),
+                l = re("luasnip.extras").lambda,
+                rep = re("luasnip.extras").rep,
+                p = re("luasnip.extras").partial,
+                m = re("luasnip.extras").match,
+                n = re("luasnip.extras").nonempty,
+                dl = re("luasnip.extras").dynamic_lambda,
+                fmt = re("luasnip.extras.fmt").fmt,
+                fmta = re("luasnip.extras.fmt").fmta,
+                conds = re("luasnip.extras.expand_conditions"),
+                postfix = re("luasnip.extras.postfix").postfix,
+                types = re("luasnip.util.types"),
+                parse = re("luasnip.util.parser").parse_snippet,
               },
             })
 
-            vim.tbl_map(function(type) require("luasnip.loaders.from_" .. type).lazy_load() end,
+            vim.tbl_map(function(type) re("luasnip.loaders.from_" .. type).lazy_load() end,
               { "vscode", "snipmate", "lua" })
 
           end,
@@ -3330,10 +3440,10 @@ else
           event = "InsertEnter",
           lazy = false,
           config = function()
-            -- require "configs.cmp"
-            local cmp = require "cmp"
-            local snip_status_ok, luasnip = pcall(require, "luasnip")
-            local lspkind_status_ok, lspkind = pcall(require, "lspkind")
+            -- re "configs.cmp"
+            local cmp = re "cmp"
+            local snip_status_ok, luasnip = pcall(re, "luasnip")
+            local lspkind_status_ok, lspkind = pcall(re, "lspkind")
 
             if not snip_status_ok then return end
             local setup = cmp.setup
@@ -3348,7 +3458,7 @@ else
             setup {
               snippet = {
                 expand = function(args)
-                  require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+                  re('luasnip').lsp_expand(args.body) -- For `luasnip` users.
                 end,
               },
               enabled = function()
@@ -3362,7 +3472,7 @@ else
                 format =
 
                 -- function(entry, vim_item)
-                --   local prsnt, _ = pcall(require, "lspkind")
+                --   local prsnt, _ = pcall(re, "lspkind")
                 --   if not prsnt then
                 --     -- From kind_icons array
                 --     local kind_icons = v.lspkind.symbol_map
@@ -3500,9 +3610,9 @@ else
         },
         ["neovim/nvim-lspconfig"] = {
           lazy = false,
-          init = function() table.insert(v.file_plugins, "nvim-lspconfig") end,
+          init = function() table.insert(v.filePlugins, "nvim-lspconfig") end,
           config = function()
-            -- require "configs.lspconfig"
+            -- re "configs.lspconfig"
             if vim.g.lsp_handlers_enabled then
               vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
               vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help,
@@ -3532,8 +3642,8 @@ else
               )
               vim.api.nvim_exec_autocmds("FileType", {})
             end
-            if v.is_available "mason-lspconfig.nvim" then
-              vim.api.nvim_create_autocmd("User", { pattern = "AstroLspSetup", once = true, callback = setup_servers })
+            if v.isAvalable "mason-lspconfig.nvim" then
+              vim.api.nvim_create_autocmd("User", { pattern = "VimSharpLspSetup", once = true, callback = setup_servers })
             else
               setup_servers()
             end
@@ -3546,7 +3656,7 @@ else
               cmd = { "LspInstall", "LspUninstall" },
               config = function()
 
-                require "mason-lspconfig".setup({
+                re "mason-lspconfig".setup({
                   automatic_installation = true,
                   ensure_installed = {
                     -- "fsautocomplete",
@@ -3566,7 +3676,7 @@ else
                     "yamlls",
                   },
                 })
-                require "mason-lspconfig".setup_handlers { function(server)
+                re "mason-lspconfig".setup_handlers { function(server)
                   v.lsp.setup(server)
                 end }
                 v.event "LspSetup"
@@ -3576,17 +3686,17 @@ else
           },
         },
         ["jose-elias-alvarez/null-ls.nvim"] = {
-          init = function() table.insert(v.file_plugins, "null-ls.nvim") end,
+          init = function() table.insert(v.filePlugins, "null-ls.nvim") end,
           config = function()
-            -- require "configs.null-ls"
+            -- re "configs.null-ls"
 
           end,
           dependencies = {
             ["jayp0521/mason-null-ls.nvim"] = {
               cmd = { "NullLsInstall", "NullLsUninstall" },
               config = function()
-                -- require "configs.mason-null-ls"
-                local mason_null_ls = require "mason-null-ls"
+                -- re "configs.mason-null-ls"
+                local mason_null_ls = re "mason-null-ls"
                 mason_null_ls.setup({ automatic_setup = true, on_attach = v.lsp.on_attach })
                 mason_null_ls.setup_handlers {}
 
@@ -3596,12 +3706,12 @@ else
         },
 
         ["mfussenegger/nvim-dap"] = {
-          init = function() table.insert(v.file_plugins, "nvim-dap") end,
+          init = function() table.insert(v.filePlugins, "nvim-dap") end,
 
-          -- config = function() require "configs.dap" end,
+          -- config = function() re "configs.dap" end,
           config = function()
 
-            local dap = require "dap"
+            local dap = re "dap"
             dap.adapters = dap.adapters
             dap.configurations = dap.configurations
 
@@ -3610,7 +3720,7 @@ else
           dependencies = {
             ["rcarriga/nvim-dap-ui"] = { config = function()
 
-              local dap, dapui = require "dap", require "dapui"
+              local dap, dapui = re "dap", re "dapui"
               dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
               dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
               dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
@@ -3620,20 +3730,22 @@ else
             ["jayp0521/mason-nvim-dap.nvim"] = {
               cmd = { "DapInstall", "DapUninstall" },
               config = function()
-                local dap = require("dap")
-                local replaceSeps = function(p) return p:gsub("\\", "/") end
-                vim.g["dotnet_get_project_path"] = function()
-                  local default_path = replaceSeps(vim.lsp.buf.list_workspace_folders()[1]) .. "/"
-                  if vim.g["dotnet_last_proj_path"] == nil then default_path = vim.fn.getcwd() end
-                  local path = vim.fn.input({ "Path to your *proj file ", default_path, "file" })
+
+                local dap = re("dap")
+
+                v.dotnet.projectPath = function()
+                  if v.dotnet.lastProjectPath == nil then
+                    default_path = fn.getcwd()
+                  end
+                  local path = fn.input({ "Path to your *proj file ", default_path, "file" })
                   vim.g["dotnet_last_proj_path"] = path
                   return path
                 end
 
-                local util = require "neo-tree.utils"
+                local util = re "neo-tree.utils"
 
                 local openFileInNewBuffer = function(f)
-                  if vim.fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim.cmd.bufload(f) end
+                  if fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim.cmd.bufload(f) end
                 end
 
                 vim.g["dotnet_build_release_project"] = function(p)
@@ -3670,13 +3782,13 @@ else
 
                 vim.g["dotnet_get_dll_path"] = function()
                   local request = function()
-                    return vim.fn.input({ "Path to dll ",
+                    return fn.input({ "Path to dll ",
                       replaceSeps(vim.lsp.buf.list_workspace_folders()[1]) .. "/bin/Debug/", "file" })
                   end
                   if vim.g["dotnet_last_dll_path"] == nil then
                     vim.g["dotnet_last_dll_path"] = request()
                   else
-                    if vim.fn.confirm("Do you want to change the path to dll?\n" .. vim.g["dotnet_last_dll_path"],
+                    if fn.confirm("Do you want to change the path to dll?\n" .. vim.g["dotnet_last_dll_path"],
                       "&yes\n&no", 2) == 1
                     then
                       vim.g["dotnet_last_dll_path"] = request()
@@ -3704,7 +3816,7 @@ else
                     name = "launch - netcoredbg",
                     request = "launch",
                     program = function()
-                      if vim.fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
+                      if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
                         vim.g.dotnet_build_project(vim.g.dotnet_get_project_path())
                       end
                       return vim.g.dotnet_get_dll_path()
@@ -3717,23 +3829,24 @@ else
                   vim.cmd(c)
                 end
 
-                require("mason-nvim-dap").setup {
+                re("mason-nvim-dap").setup {
                   automatic_installation = true,
                   automatic_init = true,
                   ensure_installed = { "coreclr" },
                 }
-                require("mason-nvim-dap").setup_handlers {
+                re("mason-nvim-dap").setup_handlers {
 
                   function(source_name)
                     -- all sources with no handler get passed here
                     -- Keep original functionality of `automatic_init = true`
-                    require "mason-nvim-dap.automatic_setup" (source_name)
+                    re "mason-nvim-dap.automatic_setup" (source_name)
                   end,
 
                   coreclr = function(source_name)
                     dap.adapters.coreclr = {
                       type = "executable",
-                      command = "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+                      command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
+                      -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
                       -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
                       args = { "--interpreter=vscode" },
                     }
@@ -3778,9 +3891,9 @@ else
             "MasonUpdateAll", -- v command
           },
           config = function()
-            -- require "configs.mason"
+            -- re "configs.mason"
 
-            require("mason").setup {
+            re("mason").setup {
               ui = {
                 icons = {
                   package_installed = "✓",
@@ -3795,32 +3908,32 @@ else
             cmd("MasonUpdateAll", function() v.mason.update_all() end, { desc = "Update Mason Packages" })
             cmd("MasonUpdate", function(opts) v.mason.update(opts.args) end,
               { nargs = 1, desc = "Update Mason Package" })
-            vim.tbl_map(function(module) pcall(require, module) end, { "nvim-lspconfig", "null-ls", "dap" })
+            vim.tbl_map(function(module) pcall(re, module) end, { "nvim-lspconfig", "null-ls", "dap" })
           end,
         },
         -- -- setting up this plugin in lsp/server-settings/sumneko_lua
         ["kkharji/sqlite.lua"] = {
           config = function()
-            -- require("sqlite")
+            -- re("sqlite")
             vim.cmd("let g:sqlite_clib_path =" .. "C:/ProgramData/chocolatey/lib/SQLite/tools/sqlite3.dll")
 
           end
         },
         ["arsham/indent-tools.nvim"] = {
 
-          init = function() table.insert(v.file_plugins, "indent-tools.nvim") end,
+          init = function() table.insert(v.filePlugins, "indent-tools.nvim") end,
           dependencies = { ["arsham/arshlib.nvim"] = {} },
           config = function()
-            -- require "indent-tools"
-            require("indent-tools").config {}
+            -- re "indent-tools"
+            re("indent-tools").config {}
 
           end,
         },
         ["danymat/neogen"] = {
           cmd = "Neogen",
           config = function()
-            -- require "neogen"
-            require("neogen").setup {
+            -- re "neogen"
+            re("neogen").setup {
               snippet_engine = "luasnip",
               languages = {
                 lua = { template = { annotation_convention = "ldoc" } },
@@ -3835,8 +3948,8 @@ else
           -- module = "nightfox",
           event = "ColorScheme",
           config = function()
-            -- require "nightfox"
-            require("nightfox").setup {
+            -- re "nightfox"
+            re("nightfox").setup {
               options = {
                 dim_inactive = true,
                 styles = { comments = "italic" },
@@ -3863,10 +3976,10 @@ else
         },
         ["ethanholz/nvim-lastplace"] = {
           lazy = true,
-          init = function() table.insert(v.file_plugins, "nvim-lastplace") end,
+          init = function() table.insert(v.filePlugins, "nvim-lastplace") end,
           config = function()
-            -- require "nvim-lastplace"
-            require("nvim-lastplace").setup {
+            -- re "nvim-lastplace"
+            re("nvim-lastplace").setup {
               lastplace_ignore_buftype = { "quickfix", "nofile", "help" },
               lastplace_ignore_filetype = { "gitcommit", "gitrebase", "svn", "hgcommit" },
               lastplace_open_folds = true,
@@ -3876,18 +3989,18 @@ else
 
         ["jose-elias-alvarez/typescript.nvim"] = {
           config = function()
-            --  require "typescript"
+            --  re "typescript"
 
           end,
         },
         ["junegunn/vim-easy-align"] = {
           lazy = true,
-          init = function() table.insert(v.file_plugins, "vim-easy-align") end,
+          init = function() table.insert(v.filePlugins, "vim-easy-align") end,
         },
 
         ["machakann/vim-sandwich"] = {
           lazy = true,
-          init = function() table.insert(v.file_plugins, "vim-sandwich") end,
+          init = function() table.insert(v.filePlugins, "vim-sandwich") end,
         },
 
         ["nanotee/sqls.nvim"] = {},
@@ -3897,16 +4010,16 @@ else
         ["p00f/clangd_extensions.nvim"] = {
 
           config = function()
-            -- require "clangd_extensions"
-            require("clangd_extensions").setup { server = v.lsp.server_settings "clangd" }
+            -- re "clangd_extensions"
+            re("clangd_extensions").setup { server = v.lsp.server_settings "clangd" }
           end,
         },
         ["sindrets/diffview.nvim"] = {
           lazy = true,
           init = function() table.insert(v.git_plugins, "diffview.nvim") end,
           config = function()
-            -- require "diffview"
-            local actions = require "diffview.actions"
+            -- re "diffview"
+            local actions = re "diffview.actions"
 
             v.which_key_register {
               n = {
@@ -3951,7 +4064,7 @@ else
               return out
             end
 
-            require("diffview").setup {
+            re("diffview").setup {
               view = {
                 merge_tool = { layout = "diff3_mixed" },
               },
@@ -4026,8 +4139,8 @@ else
         ["ziontee113/syntax-tree-surfer"] = {
           -- module = "syntax-tree-surfer",
           config = function()
-            -- require "syntax-tree-surfer"
-            require("syntax-tree-surfer").setup { highlight_group = "HopNextKey" }
+            -- re "syntax-tree-surfer"
+            re("syntax-tree-surfer").setup { highlight_group = "HopNextKey" }
           end,
         },
         -- ["AndrewRadev/bufferize.vim"] = {
@@ -4049,11 +4162,11 @@ else
             vim.g["codeium_no_map_tab"] = true
             vim.g["codeium_disable_bindings"] = false
             vim.g["codium_map_ctrl_enter"] = true
-            local cocmpt = function() vim.fn["codeium#DebouncedComplete"]() end
-            local coclr = function() vim.fn["codeium#Clear"]() end
-            local con = function() vim.fn["codeium#CycleCompletions"](1) end
-            local cop = function() vim.fn["codeium#CycleCompletions"](-1) end
-            local coac = function() vim.fn["codeium#accept"]() end
+            local cocmpt = function() fn["codeium#DebouncedComplete"]() end
+            local coclr = function() fn["codeium#Clear"]() end
+            local con = function() fn["codeium#CycleCompletions"](1) end
+            local cop = function() fn["codeium#CycleCompletions"](-1) end
+            local coac = function() fn["codeium#accept"]() end
 
             local grp = vim.api.nvim_create_augroup
             local ac = vim.api.nvim_create_autocmd
@@ -4103,7 +4216,7 @@ else
               group = autocmd_group,
               desc = "Call codeium#DebouncedComplete on BufEnter",
               callback = function()
-                if vim.fn.mode() == "i" or vim.fn.mode() == "R" then
+                if fn.mode() == "i" or fn.mode() == "R" then
                   cocmpt()
                 end
               end,
@@ -4118,7 +4231,7 @@ else
               group = autocmd_group,
               desc = "Call Codium Clear on BufLeave",
               callback = function()
-                if vim.fn.mode() == "i" or vim.fn.mode() == "R" then
+                if fn.mode() == "i" or fn.mode() == "R" then
                   coclr()
                 end
               end,
@@ -4142,7 +4255,7 @@ else
         },
         -- ["jackMort/ChatGPT.nvim"] =
         -- { config = function()
-        --   require("chatgpt").setup(
+        --   re("chatgpt").setup(
         --     {
         --       -- welcome_message = WELCOME_MESSAGE,
         --       loading_text = "Loading, please wait ...",
@@ -4244,27 +4357,27 @@ else
         --   } },
         -- ["WillEhrendreich/ionide-vim"] = { config = v.lsp.configs.ionide, },
         ["WillEhrendreich/ionide-vim"] = {},
-        -- ["ionide/ionide-vim"] = { lazy = false, config = function() require("ionide").setup(v.lsp.configs.ionide) end, },
+        -- ["ionide/ionide-vim"] = { lazy = false, config = function() re("ionide").setup(v.lsp.configs.ionide) end, },
 
         ["hood/popui.nvim"] = {
 
           config = function()
-            vim.ui.select = require "popui.ui-overrider"
-            vim.ui.input = require "popui.input-overrider"
+            vim.ui.select = re "popui.ui-overrider"
+            vim.ui.input = re "popui.input-overrider"
           end,
         },
 
 
         ["lewis6991/hover.nvim"] = {
           config = function()
-            require("hover").setup {
+            re("hover").setup {
               init = function()
-                -- Require providers
-                require "hover.providers.lsp"
-                require('hover.providers.gh')
-                -- require('hover.providers.jira')
-                -- require "hover.providers.man"
-                require('hover.providers.dictionary')
+                -- re providers
+                re "hover.providers.lsp"
+                re('hover.providers.gh')
+                -- re('hover.providers.jira')
+                -- re "hover.providers.man"
+                re('hover.providers.dictionary')
               end,
               preview_opts = {
                 border = nil,
@@ -4275,14 +4388,14 @@ else
               title = true,
             }
             -- Setup keymaps
-            vim.keymap.set("n", "K", require("hover").hover, { desc = "hover.nvim" })
-            vim.keymap.set("n", "gK", require("hover").hover_select, { desc = "hover.nvim (select)" })
+            vim.keymap.set("n", "K", re("hover").hover, { desc = "hover.nvim" })
+            vim.keymap.set("n", "gK", re("hover").hover_select, { desc = "hover.nvim (select)" })
           end,
         },
 
         ["nguyenvukhang/nvim-toggler"] = {
           config = function()
-            require("nvim-toggler").setup {
+            re("nvim-toggler").setup {
               inverses = {
                 ["bad"] = "good",
                 ["up"] = "down",
@@ -4297,7 +4410,7 @@ else
           -- live-command supports semantic versioning via tags
           -- version = "1.*",
           config = function()
-            require("live-command").setup {
+            re("live-command").setup {
               commands = {
                 Norm = { cmd = "norm" },
               },
@@ -4332,14 +4445,14 @@ else
             "nvim-neotest/neotest-vim-test",
           },
           config = function()
-            require("neotest").setup {
+            re("neotest").setup {
               adapters = {
-                require "neotest-dotnet" {},
-                -- require "neotest-python" {
+                re "neotest-dotnet" {},
+                -- re "neotest-python" {
                 --   dap = { justMyCode = false },
                 -- },
-                require "neotest-plenary",
-                require "neotest-vim-test" {
+                re "neotest-plenary",
+                re "neotest-vim-test" {
                   ignore_file_types = { "python", "vim", "lua", "fsharp", "csharp", "cs" },
                 },
               },
@@ -4350,14 +4463,14 @@ else
         ["tamton-aquib/duck.nvim"] = {},
         ["djoshea/vim-autoread"] = {},
         -- ["phaazon/hop.nvim"] = {},
-        -- -- ["dhruvasagar/vim-table-mode"] = require "vim-table-mode",
+        -- -- ["dhruvasagar/vim-table-mode"] = re "vim-table-mode",
         ["echasnovski/mini.nvim"] = {},
-        -- -- ["folke/zen-mode.nvim"] = require "zen-mode",
-        -- -- ["jbyuki/nabla.nvim"] = require "nabla",
-        -- -- ["lukas-reineke/headlines.nvim"] = require "headlines",
-        -- -- ["mickael-menu/zk-nvim"] = require "zk",
-        -- -- ["vitalk/vim-simple-todo"] = require "vim-simple-todo",
-        -- -- ["akinsho/git-conflict.nvim"] = require "git-conflict",
+        -- -- ["folke/zen-mode.nvim"] = re "zen-mode",
+        -- -- ["jbyuki/nabla.nvim"] = re "nabla",
+        -- -- ["lukas-reineke/headlines.nvim"] = re "headlines",
+        -- -- ["mickael-menu/zk-nvim"] = re "zk",
+        -- -- ["vitalk/vim-simple-todo"] = re "vim-simple-todo",
+        -- -- ["akinsho/git-conflict.nvim"] = re "git-conflict",
 
       }
     ),
@@ -4371,7 +4484,7 @@ else
           disabled_plugins = { "tohtml", "gzip", "matchit", "zipPlugin", "netrwPlugin", "tarPlugin", "matchparen" },
         },
       },
-      lockfile = vim.fn.stdpath "data" .. "/lazy-lock.json",
+      lockfile = fn.stdpath "data" .. "/lazy-lock.json",
     }
   )
 
@@ -4409,7 +4522,7 @@ else
 
   for _, sign in ipairs(signs) do
     if not sign.texthl then sign.texthl = sign.name end
-    vim.fn.sign_define(sign.name, sign)
+    fn.sign_define(sign.name, sign)
   end
 
   v.lsp.diagnostics = {
@@ -4460,13 +4573,13 @@ else
   local autocmd = vim.api.nvim_create_autocmd
   local grp = vim.api.nvim_create_augroup
   local setlines = vim.api.nvim_buf_set_lines
-  local jb = vim.fn.jobstart
+  local jb = fn.jobstart
   local uc = vim.api.nvim_create_user_command
-  local inp = vim.fn.input
+  local inp = fn.input
 
   vim.on_key(function(char)
-    if vim.fn.mode() == "n" then
-      local new_hlsearch = vim.tbl_contains({ "<CR>", "n", "N", "*", "#", "?", "/" }, vim.fn.keytrans(char))
+    if fn.mode() == "n" then
+      local new_hlsearch = tContains({ "<CR>", "n", "N", "*", "#", "?", "/" }, fn.keytrans(char))
       if vim.opt.hlsearch:get() ~= new_hlsearch then vim.opt.hlsearch = new_hlsearch end
     end
   end, namespace "auto_hlsearch")
@@ -4478,7 +4591,7 @@ else
     callback = function(args)
       if not vim.t.bufs then vim.t.bufs = {} end
       local bufs = vim.t.bufs
-      if not vim.tbl_contains(bufs, args.buf) then
+      if not tContains(bufs, args.buf) then
         table.insert(bufs, args.buf)
         vim.t.bufs = bufs
       end
@@ -4557,7 +4670,7 @@ else
     end,
   })
 
-  if is_available "alpha-nvim" then
+  if v.isAvalable "alpha-nvim" then
     local group_name = grp("alpha_settings", { clear = true })
     autocmd("User", {
       desc = "Disable status and tablines for alpha",
@@ -4583,7 +4696,7 @@ else
     --   group = group_name,
     --   callback = function()
     --     local should_skip = false
-    --     if vim.fn.argc() > 0 or vim.fn.line2byte "$" ~= -1 or not vim.o.modifiable then
+    --     if fn.argc() > 0 or fn.line2byte "$" ~= -1 or not vim.o.modifiable then
     --       should_skip = true
     --     else
     --       for _, arg in pairs(vim.v.argv) do
@@ -4593,23 +4706,23 @@ else
     --         end
     --       end
     --     end
-    --     if not should_skip then require("alpha").start(true) end
+    --     if not should_skip then re("alpha").start(true) end
     --   end,
     -- })
   end
 
-  if is_available "neo-tree.nvim" then
+  if v.isAvalable "neo-tree.nvim" then
     autocmd("BufEnter", {
       desc = "Open Neo-Tree on startup with directory",
       group = grp("neotree_start", { clear = true }),
       callback = function()
         local stats = vim.loop.fs_stat(vim.api.nvim_buf_get_name(0))
-        if stats and stats.type == "directory" then require("neo-tree.setup.netrw").hijack() end
+        if stats and stats.type == "directory" then re("neo-tree.setup.netrw").hijack() end
       end,
     })
   end
 
-  if is_available "nvim-dap-ui" then
+  if v.isAvalable "nvim-dap-ui" then
     autocmd("FileType", {
       desc = "Make q close dap floating windows",
       group = grp("dapui", { clear = true }),
@@ -4638,11 +4751,11 @@ else
     group = grp("git_plugin_lazy_load", { clear = true }),
     callback = function()
 
-      vim.fn.system("git -C " .. vim.fn.expand "%:p:h" .. " rev-parse")
+      fn.system("git -C " .. fn.expand "%:p:h" .. " rev-parse")
       if vim.v.shell_error == 0 then
         vim.api.nvim_del_augroup_by_name "git_plugin_lazy_load"
         if #v.git_plugins > 0 then
-          vim.schedule(function() require("lazy").load { plugins = v.git_plugins } end)
+          vim.schedule(function() re("lazy").load { plugins = v.git_plugins } end)
         end
       end
     end,
@@ -4650,23 +4763,23 @@ else
   autocmd({ "BufRead", "BufWinEnter", "BufNewFile" }, {
     group = grp("file_plugin_lazy_load", { clear = true }),
     callback = function(args)
-      if not (vim.fn.expand "%" == "" or vim.api.nvim_get_option_value("buftype", { buf = args.buf }) == "nofile") then
+      if not (fn.expand "%" == "" or vim.api.nvim_get_option_value("buftype", { buf = args.buf }) == "nofile") then
         vim.api.nvim_del_augroup_by_name "file_plugin_lazy_load"
-        if #v.file_plugins > 0 then
-          if vim.tbl_contains(v.file_plugins, "nvim-treesitter") then
-            require("lazy").load { plugins = { "nvim-treesitter" } }
+        if #v.filePlugins > 0 then
+          if tContains(v.filePlugins, "nvim-treesitter") then
+            re("lazy").load { plugins = { "nvim-treesitter" } }
           end
-          vim.schedule(function() require("lazy").load { plugins = v.file_plugins } end)
+          vim.schedule(function() re("lazy").load { plugins = v.filePlugins } end)
         end
       end
     end,
   })
 
   local cmd = vim.api.nvim_create_user_command
-  -- cmd("AstroUpdatePackages", function() v.updater.update_packages() end, { desc = "Update Plugins and Mason" })
-  -- cmd("AstroUpdate", function() v.updater.update() end, { desc = "Update v" })
-  -- cmd("AstroVersion", function() v.updater.version() end, { desc = "Check v Version" })
-  -- cmd("AstroChangelog", function() v.updater.changelog() end, { desc = "Check v Changelog" })
+  -- cmd("VimSharpUpdatePackages", function() v.updater.update_packages() end, { desc = "Update Plugins and Mason" })
+  -- cmd("VimSharpUpdate", function() v.updater.update() end, { desc = "Update v" })
+  -- cmd("VimSharpVersion", function() v.updater.version() end, { desc = "Check v Version" })
+  -- cmd("VimSharpChangelog", function() v.updater.changelog() end, { desc = "Check v Changelog" })
   cmd("ToggleHighlightURL", function() v.ui.toggle_url_match() end, { desc = "Toggle URL Highlights" })
 
   -- Check if we need to reload the file when it changed
@@ -4677,8 +4790,8 @@ else
     callback = function(event)
       local file = vim.loop.fs_realpath(event.match) or event.match
 
-      vim.fn.mkdir(vim.fn.fnamemodify(file, ":p:h"), "p")
-      local backup = vim.fn.fnamemodify(file, ":p:~:h")
+      fn.mkdir(fn.fnamemodify(file, ":p:h"), "p")
+      local backup = fn.fnamemodify(file, ":p:~:h")
       backup = backup:gsub("[/\\]", "%%")
       vim.go.backupext = backup
     end,
@@ -4700,7 +4813,7 @@ else
     desc = "Stop running auto compiler",
     group = grp("autocomp", { clear = true }),
     pattern = "*",
-    callback = function() vim.fn.jobstart { "autocomp", vim.fn.expand "%:p", "stop" } end,
+    callback = function() fn.jobstart { "autocomp", fn.expand "%:p", "stop" } end,
   })
 
   local attachToBuffer = function(outputBufnr, pattern, command)
@@ -4804,7 +4917,7 @@ else
 
   RELOAD = function(...)
     p("Reloading Module " .. ...)
-    return require("plenary.reload").reload_module(...)
+    return re("plenary.reload").reload_module(...)
   end
 
   uc("R", function(x)
@@ -4814,12 +4927,12 @@ else
 
   R = function(name)
     RELOAD(name)
-    return require(name)
+    return re(name)
   end
 
 
   TRY = function(module, Ok, NotOk)
-    local ok, _ = pcall(require, module)
+    local ok, _ = pcall(re, module)
     if ok then
       Ok()
     else
@@ -4915,12 +5028,12 @@ else
 
       -- ["<leader>ac"] = { "<cmd>ChatGPT<cr>", desc = "Start ChatGPT" },
       ["<leader>ac"] = { function()
-        vim.fn["codeium#DebouncedComplete"]()
+        fn["codeium#DebouncedComplete"]()
       end, desc = "Codeium Accept" },
       -- ["<leader>an"] = { "<Plug>codeium-next<cr>", desc = "Codeium Next" },
       -- ["<leader>ak"] = { "<Plug>codeium-next<cr>", desc = "Codeium Next" },
 
-      ["<C-Space>"] = { function() local cmp = require('cmp')
+      ["<C-Space>"] = { function() local cmp = re('cmp')
         -- print 'triggered ctrl space'
         cmp.mapping.complete()
       end, desc = "trigger cmp" },
@@ -4928,7 +5041,7 @@ else
       ["<leader>V"] = { function() vim.cmd('e $myvimrc') end, desc = "edit init.lua" },
 
       ["<leader>."] = { function()
-        local here = v.path.AppendSlash(vim.fs.normalize(vim.fn.expand("%:p:h")))
+        local here = v.path.AppendSlash(vim.fs.normalize(fn.expand("%:p:h")))
         vim.cmd("cd " .. here)
         v.notify("CWD set to: " .. here)
       end, desc = "Set CWD to here" },
@@ -4942,8 +5055,8 @@ else
       ["Q"] = "<Nop>",
       ["K"] = { function()
 
-        if is_available(require("hover")) then
-          require("hover").hover()
+        if v.isAvalable(re("hover")) then
+          re("hover").hover()
         else
           vim.lsp.buf.hover()
 
@@ -4951,21 +5064,21 @@ else
       end, desc = "Hover symbol details" },
 
       -- Plugin Manager
-      ["<leader>pi"] = { function() require("lazy").install() end, desc = "Plugins Install" },
-      ["<leader>ps"] = { function() require("lazy").home() end, desc = "Plugins Status" },
-      ["<leader>pS"] = { function() require("lazy").sync() end, desc = "Plugins Sync" },
-      ["<leader>pu"] = { function() require("lazy").check() end, desc = "Plugins Check Updates" },
-      ["<leader>pU"] = { function() require("lazy").update() end, desc = "Plugins Update" },
+      ["<leader>pi"] = { function() re("lazy").install() end, desc = "Plugins Install" },
+      ["<leader>ps"] = { function() re("lazy").home() end, desc = "Plugins Status" },
+      ["<leader>pS"] = { function() re("lazy").sync() end, desc = "Plugins Sync" },
+      ["<leader>pu"] = { function() re("lazy").check() end, desc = "Plugins Check Updates" },
+      ["<leader>pU"] = { function() re("lazy").update() end, desc = "Plugins Update" },
 
       -- -- v
-      -- ["<leader>pa"] = { "<cmd>AstroUpdatePackages<cr>", desc = "Update Plugins and Mason" },
-      -- ["<leader>pA"] = { "<cmd>AstroUpdate<cr>", desc = "v Update" },
-      -- ["<leader>pv"] = { "<cmd>AstroVersion<cr>", desc = "v Version" },
-      -- ["<leader>pl"] = { "<cmd>AstroChangelog<cr>", desc = "v Changelog" },
+      -- ["<leader>pa"] = { "<cmd>VimSharpUpdatePackages<cr>", desc = "Update Plugins and Mason" },
+      -- ["<leader>pA"] = { "<cmd>VimSharpUpdate<cr>", desc = "v Update" },
+      -- ["<leader>pv"] = { "<cmd>VimSharpVersion<cr>", desc = "v Version" },
+      -- ["<leader>pl"] = { "<cmd>VimSharpChangelog<cr>", desc = "v Changelog" },
 
       -- -- Alpha
-      -- if is_available "alpha-nvim" then
-      --   ["<leader>h"] = { function() require("alpha").start() end, desc = "Home Screen" },
+      -- if v.isAvalable "alpha-nvim" then
+      --   ["<leader>h"] = { function() re("alpha").start() end, desc = "Home Screen" },
       -- end
 
       --["<C-'>"] = ["<F7>"],
@@ -5002,34 +5115,34 @@ else
       ["[t"] = { function() vim.cmd.tabprevious() end, desc = "Previous tab" },
 
       -- Comment
-      ["<leader>/"] = { function() require("Comment.api").toggle.linewise.current() end, desc = "Comment line" },
+      ["<leader>/"] = { function() re("Comment.api").toggle.linewise.current() end, desc = "Comment line" },
 
       -- GitSigns
 
-      ["<leader>gj"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").next_hunk() end end,
+      ["<leader>gj"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").next_hunk() end end,
         desc = "Next git hunk" },
-      ["<leader>gk"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").prev_hunk() end end,
+      ["<leader>gk"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").prev_hunk() end end,
         desc = "Previous git hunk" },
-      ["<leader>gl"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").blame_line() end end,
+      ["<leader>gl"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").blame_line() end end,
         desc = "View git blame" },
-      ["<leader>gp"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").preview_hunk() end end,
+      ["<leader>gp"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").preview_hunk() end end,
         desc = "Preview git hunk" },
-      ["<leader>gh"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").reset_hunk() end end,
+      ["<leader>gh"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").reset_hunk() end end,
         desc = "Reset git hunk" },
-      ["<leader>gr"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").reset_buffer() end end,
+      ["<leader>gr"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").reset_buffer() end end,
         desc = "Reset git buffer" },
-      ["<leader>gs"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").stage_hunk() end end,
+      ["<leader>gs"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").stage_hunk() end end,
         desc = "Stage git hunk" },
-      ["<leader>gu"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").undo_stage_hunk() end end,
+      ["<leader>gu"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").undo_stage_hunk() end end,
         desc = "Unstage git hunk" },
-      ["<leader>gd"] = { function() if is_available "gitsigns.nvim" then require("gitsigns").diffthis() end end,
+      ["<leader>gd"] = { function() if v.isAvalable "gitsigns.nvim" then re("gitsigns").diffthis() end end,
         desc = "View git diff" },
 
       -- NeoTree
 
-      ["<leader>e"] = { function() if is_available "neo-tree.nvim" then vim.cmd("Neotree toggle<cr>") end end,
+      ["<leader>e"] = { function() if v.isAvalable "neo-tree.nvim" then vim.cmd("Neotree toggle<cr>") end end,
         desc = "Toggle Explorer" },
-      ["<leader>o"] = { function() if is_available "neo-tree.nvim" then vim.cmd("Neotree focus<cr>") end end,
+      ["<leader>o"] = { function() if v.isAvalable "neo-tree.nvim" then vim.cmd("Neotree focus<cr>") end end,
         desc = "Focus Explorer" },
 
       -- Session Manager
@@ -5044,79 +5157,79 @@ else
       ["<leader>pM"] = { "<cmd>MasonUpdateAll<cr>", desc = "Mason Update" },
 
       -- Smart Splits
-      ["<C-h>"] = { function() require("smart-splits").move_cursor_left() end, desc = "Move to left split" },
-      ["<C-j>"] = { function() require("smart-splits").move_cursor_down() end, desc = "Move to below split" },
-      ["<C-k>"] = { function() require("smart-splits").move_cursor_up() end, desc = "Move to above split" },
-      ["<C-l>"] = { function() require("smart-splits").move_cursor_right() end, desc = "Move to right split" },
+      ["<C-h>"] = { function() re("smart-splits").move_cursor_left() end, desc = "Move to left split" },
+      ["<C-j>"] = { function() re("smart-splits").move_cursor_down() end, desc = "Move to below split" },
+      ["<C-k>"] = { function() re("smart-splits").move_cursor_up() end, desc = "Move to above split" },
+      ["<C-l>"] = { function() re("smart-splits").move_cursor_right() end, desc = "Move to right split" },
 
       -- Resize with arrows
-      ["<C-Up>"] = { function() require("smart-splits").resize_up() end, desc = "Resize split up" },
-      ["<C-Down>"] = { function() require("smart-splits").resize_down() end, desc = "Resize split down" },
-      ["<C-Left>"] = { function() require("smart-splits").resize_left() end, desc = "Resize split left" },
-      ["<C-Right>"] = { function() require("smart-splits").resize_right() end, desc = "Resize split right" },
+      ["<C-Up>"] = { function() re("smart-splits").resize_up() end, desc = "Resize split up" },
+      ["<C-Down>"] = { function() re("smart-splits").resize_down() end, desc = "Resize split down" },
+      ["<C-Left>"] = { function() re("smart-splits").resize_left() end, desc = "Resize split left" },
+      ["<C-Right>"] = { function() re("smart-splits").resize_right() end, desc = "Resize split right" },
 
       -- SymbolsOutline
       --
 
-      ["<leader>lS"] = { function() if is_available "aerial.nvim" then require("aerial").toggle() end end,
+      ["<leader>lS"] = { function() if v.isAvalable "aerial.nvim" then re("aerial").toggle() end end,
         desc = "Symbols outline" },
       --end
 
       -- Telescope
-      --if is_available "telescope.nvim" then
+      --if v.isAvalable "telescope.nvim" then
 
       ["<leader>fw"] = { function()
-        require("telescope.builtin").live_grep {
+        re("telescope.builtin").live_grep {
           additional_args = function(args) return vim.list_extend(args, { "--hidden", "--no-ignore" }) end,
         }
       end, desc = "Search words in all files" },
-      -- ["<leader>fW"] = { function() require("telescope.builtin").live_grep() end, desc = "Search words" },
-      ["<leader>gt"] = { function() require("telescope.builtin").git_status() end, desc = "Git status" },
-      ["<leader>gb"] = { function() require("telescope.builtin").git_branches() end, desc = "Git branches" },
-      ["<leader>gc"] = { function() require("telescope.builtin").git_commits() end, desc = "Git commits" },
-      ["<leader>ff"] = { function() require("telescope.builtin").find_files { hidden = true, no_ignore = true } end,
+      -- ["<leader>fW"] = { function() re("telescope.builtin").live_grep() end, desc = "Search words" },
+      ["<leader>gt"] = { function() re("telescope.builtin").git_status() end, desc = "Git status" },
+      ["<leader>gb"] = { function() re("telescope.builtin").git_branches() end, desc = "Git branches" },
+      ["<leader>gc"] = { function() re("telescope.builtin").git_commits() end, desc = "Git commits" },
+      ["<leader>ff"] = { function() re("telescope.builtin").find_files { hidden = true, no_ignore = true } end,
         desc = "Search all files", },
-      ["<leader>fF"] = { function() require("telescope.builtin").find_files() end, desc = "Search files" },
-      ["<leader>fb"] = { function() require("telescope.builtin").buffers() end, desc = "Search buffers" },
-      ["<leader>fh"] = { function() require("telescope.builtin").help_tags() end, desc = "Search help" },
-      ["<leader>fm"] = { function() require("telescope.builtin").marks() end, desc = "Search marks" },
-      ["<leader>fo"] = { function() require("telescope.builtin").oldfiles() end, desc = "Search Old files" },
-      ["<leader>fW"] = { function() require("telescope.builtin").grep_string() end, desc = "Search for word under cursor" },
-      ["<leader>fr"] = { function() require("telescope.builtin").registers() end, desc = "Search registers" },
-      -- ["<leader>sb"] = { function() require("telescope.builtin").git_branches() end, desc = "Git branches" },
-      -- ["<leader>sh"] = { function() require("telescope.builtin").help_tags() end, desc = "Search help" },
-      -- ["<leader>sm"] = { function() require("telescope.builtin").man_pages() end, desc = "Search man" },
-      ["<leader>ft"] = { function() require("telescope.builtin").builtin() end, desc = "Telescope" },
-      ["<leader>fe"] = { function() require("telescope").extensions.everything.everything() end, desc = "Everything" },
-      ["<leader>fk"] = { function() require("telescope.builtin").keymaps() end, desc = "Search keymaps" },
-      ["<leader>fc"] = { function() require("telescope.builtin").commands() end, desc = "Search commands" },
-      ["<leader>fn"] = { function() if v.is_available "nvim-notify" then require("telescope").extensions.notify.notify() end end,
+      ["<leader>fF"] = { function() re("telescope.builtin").find_files() end, desc = "Search files" },
+      ["<leader>fb"] = { function() re("telescope.builtin").buffers() end, desc = "Search buffers" },
+      ["<leader>fh"] = { function() re("telescope.builtin").help_tags() end, desc = "Search help" },
+      ["<leader>fm"] = { function() re("telescope.builtin").marks() end, desc = "Search marks" },
+      ["<leader>fo"] = { function() re("telescope.builtin").oldfiles() end, desc = "Search Old files" },
+      ["<leader>fW"] = { function() re("telescope.builtin").grep_string() end, desc = "Search for word under cursor" },
+      ["<leader>fr"] = { function() re("telescope.builtin").registers() end, desc = "Search registers" },
+      -- ["<leader>sb"] = { function() re("telescope.builtin").git_branches() end, desc = "Git branches" },
+      -- ["<leader>sh"] = { function() re("telescope.builtin").help_tags() end, desc = "Search help" },
+      -- ["<leader>sm"] = { function() re("telescope.builtin").man_pages() end, desc = "Search man" },
+      ["<leader>ft"] = { function() re("telescope.builtin").builtin() end, desc = "Telescope" },
+      ["<leader>fe"] = { function() re("telescope").extensions.everything.everything() end, desc = "Everything" },
+      ["<leader>fk"] = { function() re("telescope.builtin").keymaps() end, desc = "Search keymaps" },
+      ["<leader>fc"] = { function() re("telescope.builtin").commands() end, desc = "Search commands" },
+      ["<leader>fn"] = { function() if v.isAvalable "nvim-notify" then re("telescope").extensions.notify.notify() end end,
         desc = "Search notifications" },
-      ["<leader>ls"] = { function() local aerial_avail, _ = pcall(require, "aerial")
-        if aerial_avail then require("telescope")
+      ["<leader>ls"] = { function() local aerial_avail, _ = pcall(re, "aerial")
+        if aerial_avail then re("telescope")
               .extensions.aerial.aerial()
-        else require("telescope.builtin").lsp_document_symbols() end
+        else re("telescope.builtin").lsp_document_symbols() end
       end,
         desc = "Search symbols", },
-      ["<leader>lD"] = { function() require("telescope.builtin").diagnostics() end, desc = "Search diagnostics" },
+      ["<leader>lD"] = { function() re("telescope.builtin").diagnostics() end, desc = "Search diagnostics" },
       --end
 
       -- Terminal
-      --if is_available "toggleterm.nvim" then
-      --if vim.fn.executable "lazygit" == 1 then
+      --if v.isAvalable "toggleterm.nvim" then
+      --if fn.executable "lazygit" == 1 then
       ["<leader>gg"] = { function() v.toggle_term_cmd "lazygit" end, desc = "ToggleTerm lazygit" },
       ["<leader>tl"] = { function() v.toggle_term_cmd "lazygit" end, desc = "ToggleTerm lazygit" },
       --end
-      --if vim.fn.executable "node" == 1 then
+      --if fn.executable "node" == 1 then
       ["<leader>tn"] = { function() v.toggle_term_cmd "node" end, desc = "ToggleTerm node" },
       --end
-      --if vim.fn.executable "gdu" == 1 then
+      --if fn.executable "gdu" == 1 then
       ["<leader>tu"] = { function() v.toggle_term_cmd "gdu" end, desc = "ToggleTerm gdu" },
       --end
-      --if vim.fn.executable "btm" == 1 then
+      --if fn.executable "btm" == 1 then
       ["<leader>tb"] = { function() v.toggle_term_cmd "btm" end, desc = "ToggleTerm btm" },
       --end
-      --if vim.fn.executable "python" == 1 then
+      --if fn.executable "python" == 1 then
       ["<leader>tp"] = { function() v.toggle_term_cmd "python" end, desc = "ToggleTerm python" },
       --end
       ["<leader>tf"] = { "<cmd>ToggleTerm direction=float<cr>", desc = "ToggleTerm float" },
@@ -5127,59 +5240,59 @@ else
 
       -- modified function keys found with `showkey -a` in the terminal to get key code
       -- run `nvim -V3log +quit` and search through the "Terminal info" in the `log` file for the correct keyname
-      ["<F5>"]       = { function() if is_available "nvim-dap" then require("dap").continue() end end,
+      ["<F5>"]       = { function() if v.isAvalable "nvim-dap" then re("dap").continue() end end,
         desc = "Debugger: Start" },
-      ["<F17>"]      = { function() if is_available "nvim-dap" then require("dap").terminate() end end,
+      ["<F17>"]      = { function() if v.isAvalable "nvim-dap" then re("dap").terminate() end end,
         desc = "Debugger: Stop" }, -- Shift+F5,
-      ["<F29>"]      = { function() if is_available "nvim-dap" then require("dap").restart_frame() end end,
+      ["<F29>"]      = { function() if v.isAvalable "nvim-dap" then re("dap").restart_frame() end end,
         desc = "Debugger: Restart" }, -- Control+F5,
-      ["<F6>"]       = { function() if is_available "nvim-dap" then require("dap").pause() end end,
+      ["<F6>"]       = { function() if v.isAvalable "nvim-dap" then re("dap").pause() end end,
         desc = "Debugger: Pause" },
-      ["<F9>"]       = { function() if is_available "nvim-dap" then require("dap").toggle_breakpoint() end end,
+      ["<F9>"]       = { function() if v.isAvalable "nvim-dap" then re("dap").toggle_breakpoint() end end,
         desc = "Debugger: Toggle Breakpoint" },
-      ["<F10>"]      = { function() if is_available "nvim-dap" then require("dap").step_over() end end,
+      ["<F10>"]      = { function() if v.isAvalable "nvim-dap" then re("dap").step_over() end end,
         desc = "Debugger: Step Over" },
-      ["<F11>"]      = { function() if is_available "nvim-dap" then require("dap").step_into() end end,
+      ["<F11>"]      = { function() if v.isAvalable "nvim-dap" then re("dap").step_into() end end,
         desc = "Debugger: Step Into" },
-      ["<F23>"]      = { function() if is_available "nvim-dap" then require("dap").step_out() end end,
+      ["<F23>"]      = { function() if v.isAvalable "nvim-dap" then re("dap").step_out() end end,
         desc = "Debugger: Step Out" }, -- Shift+F11,
-      ["<leader>db"] = { function() if is_available "nvim-dap" then require("dap").toggle_breakpoint() end end,
+      ["<leader>db"] = { function() if v.isAvalable "nvim-dap" then re("dap").toggle_breakpoint() end end,
         desc = "Toggle Breakpoint (F9)" },
-      ["<leader>dB"] = { function() if is_available "nvim-dap" then require("dap").clear_breakpoints() end end,
+      ["<leader>dB"] = { function() if v.isAvalable "nvim-dap" then re("dap").clear_breakpoints() end end,
         desc = "Clear Breakpoints" },
-      ["<leader>dc"] = { function() if is_available "nvim-dap" then require("dap").continue() end end,
+      ["<leader>dc"] = { function() if v.isAvalable "nvim-dap" then re("dap").continue() end end,
         desc = "Start/Continue (F5)" },
-      ["<leader>di"] = { function() if is_available "nvim-dap" then require("dap").step_into() end end,
+      ["<leader>di"] = { function() if v.isAvalable "nvim-dap" then re("dap").step_into() end end,
         desc = "Step Into (F11)" },
-      ["<leader>do"] = { function() if is_available "nvim-dap" then require("dap").step_over() end end,
+      ["<leader>do"] = { function() if v.isAvalable "nvim-dap" then re("dap").step_over() end end,
         desc = "Step Over (F10)" },
-      ["<leader>dO"] = { function() if is_available "nvim-dap" then require("dap").step_out() end end,
+      ["<leader>dO"] = { function() if v.isAvalable "nvim-dap" then re("dap").step_out() end end,
         desc = "Step Out (S-F11)" },
-      ["<leader>dq"] = { function() if is_available "nvim-dap" then require("dap").close() end end,
+      ["<leader>dq"] = { function() if v.isAvalable "nvim-dap" then re("dap").close() end end,
         desc = "Close Session" },
-      ["<leader>dQ"] = { function() if is_available "nvim-dap" then require("dap").terminate() end end,
+      ["<leader>dQ"] = { function() if v.isAvalable "nvim-dap" then re("dap").terminate() end end,
         desc = "Terminate Session (S-F5)" },
-      ["<leader>dp"] = { function() if is_available "nvim-dap" then require("dap").pause() end end, desc = "Pause (F6)" },
-      ["<leader>dr"] = { function() if is_available "nvim-dap" then require("dap").restart_frame() end end,
+      ["<leader>dp"] = { function() if v.isAvalable "nvim-dap" then re("dap").pause() end end, desc = "Pause (F6)" },
+      ["<leader>dr"] = { function() if v.isAvalable "nvim-dap" then re("dap").restart_frame() end end,
         desc = "Restart (C-F5)" },
-      ["<leader>dR"] = { function() if is_available "nvim-dap" then require("dap").repl.toggle() end end,
+      ["<leader>dR"] = { function() if v.isAvalable "nvim-dap" then re("dap").repl.toggle() end end,
         desc = "Toggle REPL" },
-      ["<leader>du"] = { function() if is_available "nvim-dap-ui" then require("dapui").toggle() end end,
+      ["<leader>du"] = { function() if v.isAvalable "nvim-dap-ui" then re("dapui").toggle() end end,
         desc = "Toggle Debugger UI" },
-      ["<leader>dh"] = { function() if is_available "nvim-dap-ui" then require("dap.ui.widgets").hover() end end,
+      ["<leader>dh"] = { function() if v.isAvalable "nvim-dap-ui" then re("dap.ui.widgets").hover() end end,
         desc = "Debugger Hover" },
 
       -- Custom menu for modification of the user experience
 
-      ["<leader>ua"] = { function() if is_available "nvim-autopairs" then v.ui.toggle_autopairs() end end,
+      ["<leader>ua"] = { function() if v.isAvalable "nvim-autopairs" then v.ui.toggle_autopairs() end end,
         desc = "Toggle autopairs" },
-      ["<leader>ub"] = { function() if is_available "nvim-autopairs" then v.ui.toggle_background() end end,
+      ["<leader>ub"] = { function() if v.isAvalable "nvim-autopairs" then v.ui.toggle_background() end end,
         desc = "Toggle background" },
 
-      ["<leader>uc"] = { function() if is_available "nvim-cmp" then v.ui.toggle_cmp() end end,
+      ["<leader>uc"] = { function() if v.isAvalable "nvim-cmp" then v.ui.toggle_cmp() end end,
         desc = "Toggle autocompletion" },
 
-      ["<leader>uC"] = { function() if is_available "nvim-colorizer.lua" then vim.cmd.ColorizerToggle() end end,
+      ["<leader>uC"] = { function() if v.isAvalable "nvim-colorizer.lua" then vim.cmd.ColorizerToggle() end end,
         desc = "Toggle color highlight" },
 
       ["<leader>uS"] = { function() v.ui.toggle_conceal() end, desc = "Toggle conceal" },
@@ -5227,16 +5340,16 @@ else
 
       -- duck. the most important of the mappings.
       ["<leader>dd"] = {
-        function() require("duck").hatch("🦆", 10) end,
+        function() re("duck").hatch("🦆", 10) end,
         desc = "hatch yoself a ducky friend",
       },
       ["<leader>df"] = {
-        function() require("duck").hatch("🐈", 0.80) end,
+        function() re("duck").hatch("🐈", 0.80) end,
         desc = "hatch yoself a feline.. ",
       },
 
       ["<leader>dk"] = {
-        function() require("duck").cook() end,
+        function() re("duck").cook() end,
         desc = "dat duk get cooked.",
       },
       --bad
@@ -5244,9 +5357,9 @@ else
       ["<leader><leader>i"] = {
         desc = "invert whatever's under the cursor",
         function()
-          local w = vim.fn.expand "<cword>"
+          local w = fn.expand "<cword>"
           print("inverting " .. w)
-          require("nvim-toggler").toggle()
+          re("nvim-toggler").toggle()
         end,
       },
       -- save and source current file
@@ -5267,34 +5380,34 @@ else
       ["_"] = { "<c-x>", desc = "Descrement number" },
       ["+"] = { "<c-a>", desc = "Increment number" },
       -- resize with arrows
-      ["<Up>"] = { function() require("smart-splits").resize_up(2) end, desc = "Resize split up" },
-      ["<Down>"] = { function() require("smart-splits").resize_down(2) end, desc = "Resize split down" },
-      ["<Left>"] = { function() require("smart-splits").resize_left(2) end, desc = "Resize split left" },
-      ["<Right>"] = { function() require("smart-splits").resize_right(2) end, desc = "Resize split right" },
+      ["<Up>"] = { function() re("smart-splits").resize_up(2) end, desc = "Resize split up" },
+      ["<Down>"] = { function() re("smart-splits").resize_down(2) end, desc = "Resize split down" },
+      ["<Left>"] = { function() re("smart-splits").resize_left(2) end, desc = "Resize split left" },
+      ["<Right>"] = { function() re("smart-splits").resize_right(2) end, desc = "Resize split right" },
       -- Easy-Align
       ga = { "<Plug>(EasyAlign)", desc = "Easy Align" },
       -- Treesitter Surfer
       ["<C-down>"] = {
-        function() require("syntax-tree-surfer").move("n", false) end,
+        function() re("syntax-tree-surfer").move("n", false) end,
         desc = "Swap next tree-sitter object",
       },
       ["<C-right>"] = {
-        function() require("syntax-tree-surfer").move("n", false) end,
+        function() re("syntax-tree-surfer").move("n", false) end,
         desc = "Swap next tree-sitter object",
       },
       ["<C-up>"] = {
-        function() require("syntax-tree-surfer").move("n", true) end,
+        function() re("syntax-tree-surfer").move("n", true) end,
         desc = "Swap previous tree-sitter object",
       },
       ["<C-left>"] = {
-        function() require("syntax-tree-surfer").move("n", true) end,
+        function() re("syntax-tree-surfer").move("n", true) end,
         desc = "Swap previous tree-sitter object",
       },
-      ["<leader>li"] = { function() require 'lspconfig.ui.lspinfo' () end, desc = "LSP Info" },
+      ["<leader>li"] = { function() re 'lspconfig.ui.lspinfo' () end, desc = "LSP Info" },
       ["<leader>ll"] = { function() vim.cmd(string.format('tabnew %s', vim.lsp.get_log_path())) end, desc = "LSP log" },
 
       ["<leader>lk"] = { function()
-        vim.fn.writefile({}, vim.lsp.get_log_path())
+        fn.writefile({}, vim.lsp.get_log_path())
       end,
         desc = "reset LSP log" },
     },
@@ -5315,7 +5428,7 @@ else
       -- ["<S-Tab>"] = { "<C-V><Tab>", desc = "Tab character" },
     },
     v = {
-      ["<leader>/"] = { "<esc><cmd>lua require('Comment.api').toggle.linewise(vim.fn.visualmode())<cr>",
+      ["<leader>/"] = { "<esc><cmd>lua re('Comment.api').toggle.linewise(vim.fn.visualmode())<cr>",
         desc = "Toggle comment line", },
       -- Move Lines
       ["<A-j>"] = { ":m '>+1<CR>gv=gv", desc = "move line down" },
@@ -5368,35 +5481,35 @@ else
       ga = { "<Plug>(EasyAlign)", desc = "Easy Align" },
       -- Tressitter Surfer
       ["J"] = {
-        function() require("syntax-tree-surfer").surf("next", "visual") end,
+        function() re("syntax-tree-surfer").surf("next", "visual") end,
         desc = "Surf next tree-sitter object",
       },
       ["K"] = {
-        function() require("syntax-tree-surfer").surf("prev", "visual") end,
+        function() re("syntax-tree-surfer").surf("prev", "visual") end,
         desc = "Surf previous tree-sitter object",
       },
       ["H"] = {
-        function() require("syntax-tree-surfer").surf("parent", "visual") end,
+        function() re("syntax-tree-surfer").surf("parent", "visual") end,
         desc = "Surf parent tree-sitter object",
       },
       ["L"] = {
-        function() require("syntax-tree-surfer").surf("child", "visual") end,
+        function() re("syntax-tree-surfer").surf("child", "visual") end,
         desc = "Surf child tree-sitter object",
       },
       ["<C-j>"] = {
-        function() require("syntax-tree-surfer").surf("next", "visual", true) end,
+        function() re("syntax-tree-surfer").surf("next", "visual", true) end,
         desc = "Surf next tree-sitter object",
       },
       ["<C-l>"] = {
-        function() require("syntax-tree-surfer").surf("next", "visual", true) end,
+        function() re("syntax-tree-surfer").surf("next", "visual", true) end,
         desc = "Surf next tree-sitter object",
       },
       ["<C-k>"] = {
-        function() require("syntax-tree-surfer").surf("prev", "visual", true) end,
+        function() re("syntax-tree-surfer").surf("prev", "visual", true) end,
         desc = "Surf previous tree-sitter object",
       },
       ["<C-h>"] = {
-        function() require("syntax-tree-surfer").surf("prev", "visual", true) end,
+        function() re("syntax-tree-surfer").surf("prev", "visual", true) end,
         desc = "Surf previous tree-sitter object",
       },
     },
@@ -5446,7 +5559,7 @@ else
 
   local colorscheme = nil
   if colorscheme then colorscheme = pcall(vim.cmd.colorscheme, colorscheme) end
-  if not colorscheme then vim.cmd.colorscheme "v" end
+  if not colorscheme then vim.cmd.colorscheme "vimsharp" end
 
   -- v.conditional_func(v.user_plugin_opts("polish", nil, false), true)
 
