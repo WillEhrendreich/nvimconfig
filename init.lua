@@ -19,16 +19,17 @@ _G.vimsharp = {}
 local stdpath = vim.fn.stdpath
 local tbl_insert = table.insert
 local map = vim.keymap.set
+local v = _G.vimsharp 
+
+
+
 --#region_utils
-
-
-
 --- installation details from external installers
-vimsharp.install = vimsharp_installation or { home = stdpath "config" }
---- external vimsharp configuration folder
-vimsharp.install.config = stdpath("config"):gsub("nvim$", "vimsharp")
-vim.opt.rtp:append(vimsharp.install.config)
-local supported_configs = { vimsharp.install.home, vimsharp.install.config }
+v.install = vimsharp_installation or { home = stdpath "config" }
+--- external v configuration folder
+v.install.config = stdpath("config"):gsub("nvim$", "v")
+vim.opt.rtp:append(v.install.config)
+local supported_configs = { v.install.home, v.install.config }
 
 --- Looks to see if a module path references a lua file in a configuration folder and tries to load it. If there is an error loading the file, write an error and continue
 -- @param module the module path to try and load
@@ -59,7 +60,6 @@ local function load_module_file(module)
   return found_module
 end
 
-vimsharp = {}
 --
 -- Does package.json file contain speficied configuration or dependency?
 -- (e.g. "prettier")
@@ -67,7 +67,7 @@ vimsharp = {}
 -- is in the root of the project, i.e. lvim was launched in the directory
 -- where package.json is or vim-rooter (or something similar) is activated
 --
-vimsharp.is_in_package_json = function(field)
+v.is_in_package_json = function(field)
   if vim.fn.filereadable(vim.fn.getcwd() .. "/package.json") ~= 0 then
     local package_json = vim.fn.json_decode(vim.fn.readfile "package.json")
     if package_json == nil then
@@ -88,15 +88,15 @@ vimsharp.is_in_package_json = function(field)
   return false
 end
 
-vimsharp.is_web_project = function()
+v.is_web_project = function()
   return (vim.fn.glob "package.json" ~= "" or vim.fn.glob "yarn.lock" ~= "" or vim.fn.glob "node_modules" ~= "")
 end
 
-vimsharp.is_arduino_project = function()
+v.is_arduino_project = function()
   return (vim.fn.glob "*.ino" ~= "")
 end
 
-vimsharp.decode_json_file = function(filename)
+v.decode_json_file = function(filename)
   if vim.fn.filereadable(filename) == 0 then
     return nil
   end
@@ -104,46 +104,46 @@ vimsharp.decode_json_file = function(filename)
   return vim.fn.json_decode(vim.fn.readfile(filename))
 end
 
-vimsharp.replace_string_values = function(original, to_replace, replace_with)
+v.replace_string_values = function(original, to_replace, replace_with)
   if type(original) == "string" or type(original) == "number" then
     return string.gsub(original, to_replace, replace_with)
   end
 
   if type(original) == "table" then
     for key, value in pairs(original) do
-      original[key] = vimsharp.replace_string_values(value, to_replace, replace_with)
+      original[key] = v.replace_string_values(value, to_replace, replace_with)
     end
   end
 
   return original
 end
 
-vimsharp.get_debug_config = function()
-  local dap_config = vimsharp.decode_json_file(vim.fn.getcwd() .. "/.dap.json")
+v.get_debug_config = function()
+  local dap_config = v.decode_json_file(vim.fn.getcwd() .. "/.dap.json")
   if dap_config ~= nil then
     return { dap_config }
   end
 
-  local status_ok, vscode_launch_file = pcall(vimsharp.decode_json_file, vim.fn.getcwd() .. "/.vscode/launch.json")
+  local status_ok, vscode_launch_file = pcall(v.decode_json_file, vim.fn.getcwd() .. "/.vscode/launch.json")
   if status_ok and vscode_launch_file ~= nil then
     local configs = vscode_launch_file["configurations"]
     if configs ~= nil then
       for j = 1, #configs do
         if configs[j]["request"] == "launch" then
-          local config = vimsharp.replace_string_values(configs[j], "${workspaceRoot}", vim.fn.getcwd())
+          local config = v.replace_string_values(configs[j], "${workspaceRoot}", vim.fn.getcwd())
           return { config }
         end
       end
-      return vimsharp.replace_string_values(configs, "${workspaceRoot}", vim.fn.getcwd())
+      return v.replace_string_values(configs, "${workspaceRoot}", vim.fn.getcwd())
     end
   end
 
   return nil
 end
 
-      vimsharp.lsp.FindRoot = function(ignored_lsp_servers, bufnr)
+      v.lsp.FindRoot = function(ignored_lsp_servers, bufnr)
         -- Get lsp client for current buffer
-        local bufDir = vimsharp.GetDirForBufnr(bufnr)
+        local bufDir = v.GetDirForBufnr(bufnr)
         local buf_ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
         local result
         local clients = vim.lsp.get_active_clients({
@@ -152,53 +152,48 @@ end
         local i = ignored_lsp_servers or {}
         for _, c in pairs(clients) do
           local cname = c.name
-          -- vimsharp.notify("client name is " .. (cname or "not found"))
+          -- v.notify("client name is " .. (cname or "not found"))
 
           -- local bufname = vim.api.nvim_buf_get_name(bufnr)
-          -- vimsharp.notify("buf name is " .. (bufname or "not found"))
+          -- v.notify("buf name is " .. (bufname or "not found"))
           -- local lspConfigForClient = require 'lspconfig.configs'[cname]
 
-          -- vimsharp.notify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
+          -- v.notify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
           local filetypes = c.config.filetypes
           if filetypes and vim.tbl_contains(filetypes, buf_ft) then
             if not vim.tbl_contains(i, c.name) then
               -- local rootDirFunction = lspConfigForClient.get_root_dir
 
-              -- vimsharp.notify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
+              -- v.notify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
               local activeConfigRootDir = c.config.root_dir
 
               -- local rootresult
-              -- vimsharp.notify("active root dir is " .. (activeConfigRootDir or "not found"))
+              -- v.notify("active root dir is " .. (activeConfigRootDir or "not found"))
               -- if rootDirFunction then
               -- rootresult = rootDirFunction(bufname)
-              -- if rootresult and not rootresult == nil and not rootresult == "" then vimsharp.notify("result of rootDirFunction is: "
+              -- if rootresult and not rootresult == nil and not rootresult == "" then v.notify("result of rootDirFunction is: "
               --     ..
-              --     upperDriveLetter(vim.fs.normalize(vimsharp.path.AppendSlash(rootresult))))
+              --     upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult))))
               -- end
               -- end
               if activeConfigRootDir then
-                result = vimsharp.path.AppendSlash(upperDriveLetter(vim.fs.normalize(activeConfigRootDir)))
-                vimsharp.notify("active root dir is " .. (result or "not found"))
+                result = v.path.AppendSlash(upperDriveLetter(vim.fs.normalize(activeConfigRootDir)))
+                v.notify("active root dir is " .. (result or "not found"))
                 -- else
-                -- result = upperDriveLetter(vim.fs.normalize(vimsharp.path.AppendSlash(rootresult) )))
+                -- result = upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult) )))
               end
 
             end
           end
         end
 
-        -- return upperDriveLetter(vim.fs.normalize(vimsharp.path.AppendSlash(result or bufDir)))
+        -- return upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(result or bufDir)))
         return result
       end
-vimsharp.get_debug_program = function()
-  local clients = vim.lsp.buf_get_active_clients()
-  local root = root
-  for c in pairs(clients) 
+v.get_debug_program = function()
+  local root =v.lsp.FindRoot()
+  local dap_config = v.decode_json_file( root .. ".dap.json")
 
-  c.
-  end
-
-  local dap_config = vimsharp.decode_json_file(  .. "/.dap.json")
   if dap_config ~= nil then
     local program = dap_config["program"]
     if program ~= nil then
@@ -206,9 +201,9 @@ vimsharp.get_debug_program = function()
     end
   end
 
-  local status_ok, vscode_launch_file = pcall(vimsharp.decode_json_file, vim.fn.getcwd() .. "/.vscode/launch.json")
+  local status_ok, vscode_launch_file = pcall(v.decode_json_file, root .. ".vscode/launch.json")
   if not status_ok or vscode_launch_file == nil then
-    print "./.vscode/launch.json file not found or is invalid for json decoding."
+    print (root ..  ".vscode/launch.json file not found or is invalid for json decoding.")
     return ""
   end
 
@@ -216,7 +211,7 @@ vimsharp.get_debug_program = function()
   if configs ~= nil then
     for j = 1, #configs do
       if configs[j]["request"] == "launch" then
-        return vimsharp.replace_string_values(configs[j]["program"], "${workspaceRoot}", vim.fn.getcwd())
+        return v.replace_string_values(configs[j]["program"], "${workspaceRoot}", root)
       end
     end
   end
@@ -224,7 +219,7 @@ vimsharp.get_debug_program = function()
 end
 
 -- Returns the index of a item in the list
-vimsharp.indexOf = function(array, value)
+v.indexOf = function(array, value)
   for i, v in ipairs(array) do
     if v == value then
       return i
@@ -235,11 +230,11 @@ end
 
 -- Does the current project have a Prettier configuration?
 -- Assumes, that LunarVim has been opened in the root of the project
-vimsharp.project_has_prettier_config = function()
+v.project_has_prettier_config = function()
   local hasprettier = (
       vim.fn.glob ".prettierrc*" ~= ""
           or vim.fn.glob "prettier.*" ~= ""
-          or vimsharp.is_in_package_json "prettier"
+          or v.is_in_package_json "prettier"
       )
   -- print("Project does has prettier configured? " .. tostring(hasprettier))
   return hasprettier
@@ -248,19 +243,19 @@ end
 
 
 --- user settings from the base `user/init.lua` file
-vimsharp.user_settings = load_module_file "user.init"
+v.user_settings = load_module_file "user.init"
 --- table of user created terminals
-vimsharp.user_terminals = {}
+v.user_terminals = {}
 --- table of plugins to load with git
-vimsharp.git_plugins = {}
+v.git_plugins = {}
 --- table of plugins to load when file opened
-vimsharp.file_plugins = {}
+v.file_plugins = {}
 --- regex used for matching a valid URL/URI string
-vimsharp.url_matcher =
+v.url_matcher =
 "\\v\\c%(%(h?ttps?|ftp|file|ssh|git)://|[a-z]+[@][a-z]+[.][a-z]+:)%([&:#*@~%_\\-=?!+;/0-9a-z]+%(%([.;/?]|[.][.]+)[&:#*@~%_\\-=?!+/0-9a-z]+|:\\d+|,%(%(%(h?ttps?|ftp|file|ssh|git)://|[a-z]+[@][a-z]+[.][a-z]+:)@![0-9a-z]+))*|\\([&:#*@~%_\\-=?!+;/.0-9a-z]*\\)|\\[[&:#*@~%_\\-=?!+;/.0-9a-z]*\\]|\\{%([&:#*@~%_\\-=?!+;/.0-9a-z]*|\\{[&:#*@~%_\\-=?!+;/.0-9a-z]*})\\})+"
 
 --- Main configuration engine logic for extending a default configuration table with either a function override or a table to merge into the default option
--- @function vimsharp.func_or_extend
+-- @function v.func_or_extend
 -- @param overrides the override definition, either a table or a function that takes a single parameter of the original table
 -- @param default the default configuration table
 -- @param extend boolean value to either extend the default or simply overwrite it if an override is provided
@@ -270,7 +265,7 @@ local function func_or_extend(overrides, default, extend)
   if extend then
     -- if the override is a table, use vim.tbl_deep_extend
     if type(overrides) == "table" then
-      default = vimsharp.default_tbl(overrides, default)
+      default = v.default_tbl(overrides, default)
       -- if the override is  a function, call it with the default and overwrite default with the return value
     elseif type(overrides) == "function" then
       default = overrides(default)
@@ -287,7 +282,7 @@ end
 -- @param opts the new options that should be merged with the default table
 -- @param default the default table that you want to merge into
 -- @return the merged table
-function vimsharp.default_tbl(opts, default)
+function v.default_tbl(opts, default)
   opts = opts or {}
   return default and vim.tbl_deep_extend("force", default, opts) or opts
 end
@@ -295,7 +290,7 @@ end
 --- Call function if a condition is met
 -- @param func the function to run
 -- @param condition a boolean value of whether to run the function or not
-function vimsharp.conditional_func(func, condition, ...)
+function v.conditional_func(func, condition, ...)
   -- if the condition is true or no condition is provided, evaluate the function with the rest of the parameters and return the result
   if condition and type(func) == "function" then return func(...) end
 end
@@ -303,7 +298,7 @@ end
 --- Get highlight properties for a given highlight name
 -- @param name highlight group name
 -- @return table of highlight group properties
-function vimsharp.get_hlgroup(name, fallback)
+function v.get_hlgroup(name, fallback)
   if vim.fn.hlexists(name) == 1 then
     local hl = vim.api.nvim_get_hl_by_name(name, vim.o.termguicolors)
     if not hl["foreground"] then hl["foreground"] = "NONE" end
@@ -318,21 +313,21 @@ end
 --- Trim a string or return nil
 -- @param str the string to trim
 -- @return a trimmed version of the string or nil if the parameter isn't a string
-function vimsharp.trim_or_nil(str) return type(str) == "string" and vim.trim(str) or nil end
+function v.trim_or_nil(str) return type(str) == "string" and vim.trim(str) or nil end
 
 --- Add left and/or right padding to a string
 -- @param str the string to add padding to
 -- @param padding a table of the format `{ left = 0, right = 0}` that defines the number of spaces to include to the left and the right of the string
 -- @return the padded string
-function vimsharp.pad_string(str, padding)
+function v.pad_string(str, padding)
   padding = padding or {}
   return str and str ~= "" and string.rep(" ", padding.left or 0) .. str .. string.rep(" ", padding.right or 0) or ""
 end
 
 --- Initialize icons used throughout the user interface
-function vimsharp.initialize_icons()
-  -- vimsharp.icons = vimsharp.user_plugin_opts("icons", require "core.icons.nerd_font")
-  vimsharp.icons =
+function v.initialize_icons()
+  -- v.icons = v.user_plugin_opts("icons", require "core.icons.nerd_font")
+  v.icons =
   {
     ActiveLSP = "",
     ActiveTS = "綠",
@@ -379,8 +374,8 @@ function vimsharp.initialize_icons()
     TabClose = "",
   }
 
-  -- vimsharp.text_icons = vimsharp.user_plugin_opts("text_icons", require "core.icons.text")
-  vimsharp.text_icons = {
+  -- v.text_icons = v.user_plugin_opts("text_icons", require "core.icons.text")
+  v.text_icons = {
     ActiveLSP = "",
     ActiveTS = "綠",
     ArrowLeft = "",
@@ -430,29 +425,29 @@ end
 --- Get an icon from `lspkind` if it is available and return it
 -- @param kind the kind of icon in `lspkind` to retrieve
 -- @return the icon
-function vimsharp.get_icon(kind)
+function v.get_icon(kind)
   local icon_pack = vim.g.icons_enabled and "icons" or "text_icons"
-  if not vimsharp[icon_pack] then vimsharp.initialize_icons() end
-  return vimsharp[icon_pack] and vimsharp[icon_pack][kind] or ""
+  if not v[icon_pack] then v.initialize_icons() end
+  return v[icon_pack] and v[icon_pack][kind] or ""
 end
 
---- Serve a notification with a title of vimsharp
+--- Serve a notification with a title of v
 -- @param msg the notification body
 -- @param type the type of the notification (:help vim.log.levels)
 -- @param opts table of nvim-notify options to use (:help notify-options)
-function vimsharp.notify(msg, type, opts)
-  vim.schedule(function() vim.notify(msg, type, vimsharp.default_tbl(opts, { title = "vimsharp" })) end)
+function v.notify(msg, type, opts)
+  vim.schedule(function() vim.notify(msg, type, v.default_tbl(opts, { title = "v" })) end)
 end
 
---- Trigger an vimsharp user event
+--- Trigger an v user event
 -- @param event the event name to be appended to Astro
-function vimsharp.event(event)
+function v.event(event)
   vim.schedule(function() vim.api.nvim_exec_autocmds("User", { pattern = "Astro" .. event }) end)
 end
 
 --- Wrapper function for neovim echo API
 -- @param messages an array like table where each item is an array like table of strings to echo
-function vimsharp.echo(messages)
+function v.echo(messages)
   -- if no parameter provided, echo a new line
   messages = messages or { { "\n" } }
   if type(messages) == "table" then vim.api.nvim_echo(messages, false, {}) end
@@ -461,10 +456,10 @@ end
 --- Echo a message and prompt the user for yes or no response
 -- @param messages the message to echo
 -- @return True if the user responded y, False for any other response
-function vimsharp.confirm_prompt(messages)
-  if messages then vimsharp.echo(messages) end
+function v.confirm_prompt(messages)
+  if messages then v.echo(messages) end
   local confirmed = string.lower(vim.fn.input "(y/n) ") == "y"
-  vimsharp.echo()
+  v.echo()
   return confirmed
 end
 
@@ -473,7 +468,7 @@ end
 -- @return the value of the table entry if exists or nil
 local function user_setting_table(module)
   -- get the user settings table
-  local settings = vimsharp.user_settings or {}
+  local settings = v.user_settings or {}
   -- iterate over the path string split by '.' to look up the table value
   for tbl in string.gmatch(module, "([^%.]+)") do
     settings = settings[tbl]
@@ -486,7 +481,7 @@ end
 
 --- Set vim options with a nested table like API with the format vim.<first_key>.<second_key>.<value>
 -- @param options the nested table of vim options
-function vimsharp.vim_opts(options)
+function v.vim_opts(options)
   for scope, table in pairs(options) do
     for setting, value in pairs(table) do
       vim[scope][setting] = value
@@ -500,7 +495,7 @@ end
 -- @param extend boolean value to either extend the default settings or overwrite them with the user settings entirely (default: true)
 -- @param prefix a module prefix for where to search (default: user)
 -- @return the new configuration settings with the user overrides applied
-function vimsharp.user_plugin_opts(module, default, extend, prefix)
+function v.user_plugin_opts(module, default, extend, prefix)
   -- default to extend = true
   if extend == nil then extend = true end
   -- if no default table is provided set it to an empty table
@@ -517,7 +512,7 @@ end
 
 -- --- Open a URL under the cursor with the current operating system (Supports Mac OS X and *nix)
 -- -- @param path the path of the file to open with the system opener
--- function vimsharp.system_open(path)
+-- function v.system_open(path)
 --   path = path or vim.fn.expand "<cfile>"
 --   if vim.fn.has "mac" == 1 then
 --     -- if mac use the open command
@@ -527,12 +522,12 @@ end
 --     vim.fn.jobstart({ "xdg-open", path }, { detach = true })
 --   else
 --     -- if any other operating system notify the user that there is currently no support
---     vimsharp.notify("System open is not supported on this OS!", "error")
+--     v.notify("System open is not supported on this OS!", "error")
 --   end
 -- end
 --- Open a URL under the cursor with the current operating system (Supports Mac OS X and *nix)
 -- @param path the path of the file to open with the system opener
-function vimsharp.system_open(path)
+function v.system_open(path)
   path = path or vim.fn.expand "<cfile>"
   if vim.fn.has "mac" == 1 then
     -- if mac use the open command
@@ -542,10 +537,10 @@ function vimsharp.system_open(path)
     vim.fn.jobstart({ "xdg-open", path }, { detach = true })
   else
     -- if any other operating system notify the user that there is currently no support
-    if vimsharp.is_available("OpenBrowserSmartSearch") then
+    if v.is_available("OpenBrowserSmartSearch") then
       vim.cmd.OpenBrowserSmartSearch(path)
     end
-    -- vimsharp.notify("System open is not supported on this OS!", "error")
+    -- v.notify("System open is not supported on this OS!", "error")
   end
 end
 
@@ -554,8 +549,8 @@ end
 
 --- Toggle a user terminal if it exists, if not then create a new one and save it
 -- @param term_details a terminal command string or a table of options for Terminal:new() (Check toggleterm.nvim documentation for table format)
-function vimsharp.toggle_term_cmd(opts)
-  local terms = vimsharp.user_terminals
+function v.toggle_term_cmd(opts)
+  local terms = v.user_terminals
   -- if a command string is provided, create a basic table for Terminal:new() options
   if type(opts) == "string" then opts = { cmd = opts, hidden = true } end
   local num = vim.v.count > 0 and vim.v.count or 1
@@ -566,20 +561,20 @@ function vimsharp.toggle_term_cmd(opts)
     terms[opts.cmd][num] = require("toggleterm.terminal").Terminal:new(opts)
   end
   -- toggle the terminal
-  vimsharp.user_terminals[opts.cmd][num]:toggle()
+  v.user_terminals[opts.cmd][num]:toggle()
 end
 
 --- register mappings table with which-key
 -- @param mappings nested table of mappings where the first key is the mode, the second key is the prefix, and the value is the mapping table for which-key
 -- @param opts table of which-key options when setting the mappings (see which-key documentation for possible values)
-function vimsharp.which_key_register(mappings, opts)
+function v.which_key_register(mappings, opts)
   local status_ok, which_key = pcall(require, "which-key")
   if not status_ok then return end
   for mode, prefixes in pairs(mappings) do
     for prefix, mapping_table in pairs(prefixes) do
       which_key.register(
         mapping_table,
-        vimsharp.default_tbl(opts, {
+        v.default_tbl(opts, {
           mode = mode,
           prefix = prefix,
           nowait = true,
@@ -592,7 +587,7 @@ end
 --- Get a list of registered null-ls providers for a given filetype
 -- @param filetype the filetype to search null-ls for
 -- @return a list of null-ls sources
-function vimsharp.null_ls_providers(filetype)
+function v.null_ls_providers(filetype)
   local registered = {}
   -- try to load null-ls
   local sources_avail, sources = pcall(require, "null-ls.sources")
@@ -614,16 +609,16 @@ end
 -- @param filetype the filetype to search null-ls for
 -- @param method the null-ls method (check null-ls documentation for available methods)
 -- @return the available sources for the given filetype and method
-function vimsharp.null_ls_sources(filetype, method)
+function v.null_ls_sources(filetype, method)
   local methods_avail, methods = pcall(require, "null-ls.methods")
-  return methods_avail and vimsharp.null_ls_providers(filetype)[methods.internal[method]] or {}
+  return methods_avail and v.null_ls_providers(filetype)[methods.internal[method]] or {}
 end
 
 --- Create a button entity to use with the alpha dashboard
 -- @param sc the keybinding string to convert to a button
 -- @param txt the explanation text of what the keybinding does
 -- @return a button entity table for an alpha configuration
-function vimsharp.alpha_button(sc, txt)
+function v.alpha_button(sc, txt)
   -- replace <leader> in shortcut text with LDR for nicer printing
   local sc_ = sc:gsub("%s", ""):gsub("LDR", "<leader>")
   -- if the leader is set, replace the text with the actual leader key for nicer printing
@@ -652,7 +647,7 @@ end
 --- Check if a plugin is defined in lazy. Useful with lazy loading when a plugin is not necessarily loaded yet
 -- @param plugin the plugin string to search for
 -- @return boolean value if the plugin is available
-function vimsharp.is_available(plugin)
+function v.is_available(plugin)
   local lazy_config_avail, lazy_config = pcall(require, "lazy.core.config")
   return lazy_config_avail and lazy_config.plugins and lazy_config.plugins[plugin]
 end
@@ -661,7 +656,7 @@ end
 -- @param plugin the plugin string to call `require("lazy").laod` with
 -- @param module the system module where the functions live (e.g. `vim.ui`)
 -- @param func_names a string or a list like table of strings for functions to wrap in the given moduel (e.g. `{ "ui", "select }`)
-function vimsharp.load_plugin_with_func(plugin, module, func_names)
+function v.load_plugin_with_func(plugin, module, func_names)
   if type(func_names) == "string" then func_names = { func_names } end
   for _, func in ipairs(func_names) do
     local old_func = module[func]
@@ -676,7 +671,7 @@ end
 --- Table based API for setting keybindings
 -- @param map_table A nested table where the first key is the vim mode, the second key is the key to map, and the value is the function to set the mapping to
 -- @param base A base set of options to set on every keybinding
-function vimsharp.set_mappings(map_table, base)
+function v.set_mappings(map_table, base)
   local wk_avail, wk = pcall(require, "which-key")
   -- iterate over the first keys for each mode
   for mode, maps in pairs(map_table) do
@@ -707,23 +702,23 @@ function vimsharp.set_mappings(map_table, base)
 end
 
 --- Delete the syntax matching rules for URLs/URIs if set
-function vimsharp.delete_url_match()
+function v.delete_url_match()
   for _, match in ipairs(vim.fn.getmatches()) do
     if match.group == "HighlightURL" then vim.fn.matchdelete(match.id) end
   end
 end
 
 --- Add syntax matching rules for highlighting URLs/URIs
-function vimsharp.set_url_match()
-  vimsharp.delete_url_match()
-  if vim.g.highlighturl_enabled then vim.fn.matchadd("HighlightURL", vimsharp.url_matcher, 15) end
+function v.set_url_match()
+  v.delete_url_match()
+  if vim.g.highlighturl_enabled then vim.fn.matchadd("HighlightURL", v.url_matcher, 15) end
 end
 
 --- Run a shell command and capture the output and if the command succeeded or failed
 -- @param cmd the terminal command to execute
 -- @param show_error boolean of whether or not to show an unsuccessful command as an error to the user
 -- @return the result of a successfully executed command or nil
-function vimsharp.cmd(cmd, show_error)
+function v.cmd(cmd, show_error)
   if vim.fn.has "win32" == 1 then cmd = { "cmd.exe", "/C", cmd } end
   local result = vim.fn.system(cmd)
   local success = vim.api.nvim_get_vvar "shell_error" == 0
@@ -736,14 +731,14 @@ end
 --- Check if a buffer is valid
 -- @param bufnr the buffer to check
 -- @return true if the buffer is valid or false
-function vimsharp.is_valid_buffer(bufnr)
+function v.is_valid_buffer(bufnr)
   if not bufnr or bufnr < 1 then return false end
   return vim.bo[bufnr].buflisted and vim.api.nvim_buf_is_valid(bufnr)
 end
 
 --- Move the current buffer tab n places in the bufferline
 -- @param n numer of tabs to move the current buffer over by (positive = right, negative = left)
-function vimsharp.move_buf(n)
+function v.move_buf(n)
   if n == 0 then return end -- if n = 0 then no shifts are needed
   local bufs = vim.t.bufs -- make temp variable
   for i, bufnr in ipairs(bufs) do -- loop to find current buffer
@@ -769,7 +764,7 @@ end
 
 --- Navigate left and right by n places in the bufferline
 -- @param n the number of tabs to navigate to (positive = right, negative = left)
-function vimsharp.nav_buf(n)
+function v.nav_buf(n)
   local current = vim.api.nvim_get_current_buf()
   for i, v in ipairs(vim.t.bufs) do
     if current == v then
@@ -781,13 +776,13 @@ end
 
 --- Close a given buffer
 -- @param bufnr? the buffer number to close or the current buffer if not provided
-function vimsharp.close_buf(bufnr, force)
+function v.close_buf(bufnr, force)
   if force == nil then force = false end
   local current = vim.api.nvim_get_current_buf()
   if not bufnr or bufnr == 0 then bufnr = current end
-  if bufnr == current then vimsharp.nav_buf(-1) end
+  if bufnr == current then v.nav_buf(-1) end
 
-  if vimsharp.is_available "bufdelete.nvim" then
+  if v.is_available "bufdelete.nvim" then
     require("bufdelete").bufdelete(bufnr, force)
   else
     vim.cmd((force and "bd!" or "confirm bd") .. bufnr)
@@ -795,7 +790,7 @@ function vimsharp.close_buf(bufnr, force)
 end
 
 --- Close the current tab
-function vimsharp.close_tab()
+function v.close_tab()
   if #vim.api.nvim_list_tabpages() > 1 then
     vim.t.bufs = nil
     vim.cmd.tabclose()
@@ -806,7 +801,7 @@ end
 
 --#region_VSCODE
 if vim.g.vscode then
-  vimsharp.set_mappings(require("vscode"))
+  v.set_mappings(require("vscode"))
   return
 else
   --#endregion_VSCODE
@@ -832,22 +827,22 @@ else
 
 
 
-  vimsharp.ui = {}
+  v.ui = {}
 
   local function bool2str(bool) return bool and "on" or "off" end
 
   local function ui_notify(str)
-    if vim.g.ui_notifications_enabled then vimsharp.notify(str) end
+    if vim.g.ui_notifications_enabled then v.notify(str) end
   end
 
   --- Toggle notifications for UI toggles
-  function vimsharp.ui.toggle_ui_notifications()
+  function v.ui.toggle_ui_notifications()
     vim.g.ui_notifications_enabled = not vim.g.ui_notifications_enabled
     ui_notify(string.format("ui notifications %s", bool2str(vim.g.ui_notifications_enabled)))
   end
 
   --- Toggle autopairs
-  function vimsharp.ui.toggle_autopairs()
+  function v.ui.toggle_autopairs()
     local ok, autopairs = pcall(require, "nvim-autopairs")
     if ok then
       if autopairs.state.disabled then
@@ -863,7 +858,7 @@ else
   end
 
   --- Toggle diagnostics
-  function vimsharp.ui.toggle_diagnostics()
+  function v.ui.toggle_diagnostics()
     local status = "on"
     if vim.g.status_diagnostics_enabled then
       if vim.g.diagnostics_enabled then
@@ -878,43 +873,43 @@ else
       vim.g.status_diagnostics_enabled = true
     end
 
-    vim.diagnostic.config(vimsharp.lsp.diagnostics[bool2str(vim.g.diagnostics_enabled)])
+    vim.diagnostic.config(v.lsp.diagnostics[bool2str(vim.g.diagnostics_enabled)])
     ui_notify(string.format("diagnostics %s", status))
   end
 
   --- Toggle background="dark"|"light"
-  function vimsharp.ui.toggle_background()
+  function v.ui.toggle_background()
     vim.go.background = vim.go.background == "light" and "dark" or "light"
     ui_notify(string.format("background=%s", vim.go.background))
   end
 
   --- Toggle cmp entrirely
-  function vimsharp.ui.toggle_cmp()
+  function v.ui.toggle_cmp()
     vim.g.cmp_enabled = not vim.g.cmp_enabled
     local ok, _ = pcall(require, "cmp")
     ui_notify(ok and string.format("completion %s", bool2str(vim.g.cmp_enabled)) or "completion not available")
   end
 
   --- Toggle auto format
-  function vimsharp.ui.toggle_autoformat()
+  function v.ui.toggle_autoformat()
     vim.g.autoformat_enabled = not vim.g.autoformat_enabled
     ui_notify(string.format("Autoformatting %s", bool2str(vim.g.autoformat_enabled)))
   end
 
   --- Toggle showtabline=2|0
-  function vimsharp.ui.toggle_tabline()
+  function v.ui.toggle_tabline()
     vim.opt.showtabline = vim.opt.showtabline:get() == 0 and 2 or 0
     ui_notify(string.format("tabline %s", bool2str(vim.opt.showtabline:get() == 2)))
   end
 
   --- Toggle conceal=2|0
-  function vimsharp.ui.toggle_conceal()
+  function v.ui.toggle_conceal()
     vim.opt.conceallevel = vim.opt.conceallevel:get() == 0 and 2 or 0
     ui_notify(string.format("conceal %s", bool2str(vim.opt.conceallevel:get() == 2)))
   end
 
   --- Toggle laststatus=3|2|0
-  function vimsharp.ui.toggle_statusline()
+  function v.ui.toggle_statusline()
     local laststatus = vim.opt.laststatus:get()
     local status
     if laststatus == 0 then
@@ -931,7 +926,7 @@ else
   end
 
   --- Toggle signcolumn="auto"|"no"
-  function vimsharp.ui.toggle_signcolumn()
+  function v.ui.toggle_signcolumn()
     if vim.wo.signcolumn == "no" then
       vim.wo.signcolumn = "yes"
     elseif vim.wo.signcolumn == "yes" then
@@ -943,7 +938,7 @@ else
   end
 
   --- Set the indent and tab related numbers
-  function vimsharp.ui.set_indent()
+  function v.ui.set_indent()
     local input_avail, input = pcall(vim.fn.input, "Set indent value (>0 expandtab, <=0 noexpandtab): ")
     if input_avail then
       local indent = tonumber(input)
@@ -958,7 +953,7 @@ else
   end
 
   --- Change the number display modes
-  function vimsharp.ui.change_number()
+  function v.ui.change_number()
     local number = vim.wo.number -- local to window
     local relativenumber = vim.wo.relativenumber -- local to window
     if not number and not relativenumber then
@@ -974,25 +969,25 @@ else
   end
 
   --- Toggle spell
-  function vimsharp.ui.toggle_spell()
+  function v.ui.toggle_spell()
     vim.wo.spell = not vim.wo.spell -- local to window
     ui_notify(string.format("spell %s", bool2str(vim.wo.spell)))
   end
 
   --- Toggle paste
-  function vimsharp.ui.toggle_paste()
+  function v.ui.toggle_paste()
     vim.opt.paste = not vim.opt.paste:get() -- local to window
     ui_notify(string.format("paste %s", bool2str(vim.opt.paste:get())))
   end
 
   --- Toggle wrap
-  function vimsharp.ui.toggle_wrap()
+  function v.ui.toggle_wrap()
     vim.wo.wrap = not vim.wo.wrap -- local to window
     ui_notify(string.format("wrap %s", bool2str(vim.wo.wrap)))
   end
 
   --- Toggle syntax highlighting and treesitter
-  function vimsharp.ui.toggle_syntax()
+  function v.ui.toggle_syntax()
     local ts_avail, parsers = pcall(require, "nvim-treesitter.parsers")
     if vim.g.syntax_on then -- global var for on//off
       if ts_avail and parsers.has_parser() then vim.cmd.TSBufDisable "highlight" end
@@ -1005,9 +1000,9 @@ else
   end
 
   --- Toggle URL/URI syntax highlighting rules
-  function vimsharp.ui.toggle_url_match()
+  function v.ui.toggle_url_match()
     vim.g.highlighturl_enabled = not vim.g.highlighturl_enabled
-    vimsharp.set_url_match()
+    v.set_url_match()
   end
 
   --#endregion_ui
@@ -1051,16 +1046,16 @@ else
 
   local git = { url = "https://github.com/" }
 
-  --- Run a git command from the vimsharp installation directory
+  --- Run a git command from the v installation directory
   -- @param args the git arguments
   -- @return the result of the command or nil if unsuccessful
-  function git.cmd(args, ...) return vimsharp.cmd("git -C " .. vimsharp.install.home .. " " .. args, ...) end
+  function git.cmd(args, ...) return v.cmd("git -C " .. v.install.home .. " " .. args, ...) end
 
-  --- Check if the vimsharp is able to reach the `git` command
+  --- Check if the v is able to reach the `git` command
   -- @return the result of running `git --help`
   function git.available() return vim.fn.executable "git" == 1 end
 
-  --- Check if the vimsharp home is a git repo
+  --- Check if the v home is a git repo
   -- @return the result of the command
   function git.is_repo() return git.cmd("rev-parse --is-inside-work-tree", false) end
 
@@ -1107,32 +1102,32 @@ else
   --- Get the URL of a given git remote
   -- @param remote the remote to get the URL of
   -- @return the url of the remote
-  function git.remote_url(remote, ...) return vimsharp.trim_or_nil(git.cmd("remote get-url " .. remote, ...)) end
+  function git.remote_url(remote, ...) return v.trim_or_nil(git.cmd("remote get-url " .. remote, ...)) end
 
   --- Get the current version with git describe including tags
   -- @return the current git describe string
-  function git.current_version(...) return vimsharp.trim_or_nil(git.cmd("describe --tags", ...)) end
+  function git.current_version(...) return v.trim_or_nil(git.cmd("describe --tags", ...)) end
 
   --- Get the current branch
-  -- @return the branch of the vimsharp installation
-  function git.current_branch(...) return vimsharp.trim_or_nil(git.cmd("rev-parse --abbrev-ref HEAD", ...)) end
+  -- @return the branch of the v installation
+  function git.current_branch(...) return v.trim_or_nil(git.cmd("rev-parse --abbrev-ref HEAD", ...)) end
 
   --- Get the current head of the git repo
   -- @return the head string
-  function git.local_head(...) return vimsharp.trim_or_nil(git.cmd("rev-parse HEAD", ...)) end
+  function git.local_head(...) return v.trim_or_nil(git.cmd("rev-parse HEAD", ...)) end
 
   --- Get the current head of a git remote
   -- @param remote the remote to check
   -- @param branch the branch to check
   -- @return the head string of the remote branch
   function git.remote_head(remote, branch, ...)
-    return vimsharp.trim_or_nil(git.cmd("rev-list -n 1 " .. remote .. "/" .. branch, ...))
+    return v.trim_or_nil(git.cmd("rev-list -n 1 " .. remote .. "/" .. branch, ...))
   end
 
   --- Get the commit hash of a given tag
   -- @param tag the tag to resolve
   -- @return the commit hash of a git tag
-  function git.tag_commit(tag, ...) return vimsharp.trim_or_nil(git.cmd("rev-list -n 1 " .. tag, ...)) end
+  function git.tag_commit(tag, ...) return v.trim_or_nil(git.cmd("rev-list -n 1 " .. tag, ...)) end
 
   --- Get the commit log between two commit hashes
   -- @param start_hash the start commit hash
@@ -1165,8 +1160,8 @@ else
   -- @param str the remote to parse to a full git url
   -- @return the full git url for the given remote string
   function git.parse_remote_url(str)
-    return vim.fn.match(str, vimsharp.url_matcher) == -1
-        and git.url .. str .. (vim.fn.match(str, "/") == -1 and "/vimsharp.git" or ".git")
+    return vim.fn.match(str, v.url_matcher) == -1
+        and git.url .. str .. (vim.fn.match(str, "/") == -1 and "/v.git" or ".git")
         or str
   end
 
@@ -1182,7 +1177,7 @@ else
 
   --- Generate a table of commit messages for neovim's echo API with highlighting
   -- @param commits an array like table of commit messages
-  -- @return an array like table of echo messages to provide to nvim_echo or vimsharp.echo
+  -- @return an array like table of echo messages to provide to nvim_echo or v.echo
   function git.pretty_changelog(commits)
     local changelog = {}
     for _, commit in ipairs(commits) do
@@ -1212,12 +1207,12 @@ else
   --#region_mason
   -- require "core.utils.mason"
 
-  vimsharp.mason = {}
+  v.mason = {}
 
   --- Update a mason package
   -- @param pkg_name string of the name of the package as defined in Mason (Not mason-lspconfig or mason-null-ls)
   -- @param auto_install boolean of whether or not to install a package that is not currently installed (default: True)
-  function vimsharp.mason.update(pkg_name, auto_install)
+  function v.mason.update(pkg_name, auto_install)
     if auto_install == nil then auto_install = true end
     local registry_avail, registry = pcall(require, "mason-registry")
     if not registry_avail then
@@ -1227,22 +1222,22 @@ else
 
     local pkg_avail, pkg = pcall(registry.get_package, pkg_name)
     if not pkg_avail then
-      vimsharp.notify(("Mason: %s is not available"):format(pkg_name), "error")
+      v.notify(("Mason: %s is not available"):format(pkg_name), "error")
     else
       if not pkg:is_installed() then
         if auto_install then
-          vimsharp.notify(("Mason: Installing %s"):format(pkg.name))
+          v.notify(("Mason: Installing %s"):format(pkg.name))
           pkg:install()
         else
-          vimsharp.notify(("Mason: %s not installed"):format(pkg.name), "warn")
+          v.notify(("Mason: %s not installed"):format(pkg.name), "warn")
         end
       else
         pkg:check_new_version(function(update_available, version)
           if update_available then
-            vimsharp.notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
-            pkg:install():on("closed", function() vimsharp.notify(("Mason: Updated %s"):format(pkg.name)) end)
+            v.notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
+            pkg:install():on("closed", function() v.notify(("Mason: Updated %s"):format(pkg.name)) end)
           else
-            vimsharp.notify(("Mason: No updates available for %s"):format(pkg.name))
+            v.notify(("Mason: No updates available for %s"):format(pkg.name))
           end
         end)
       end
@@ -1250,7 +1245,7 @@ else
   end
 
   --- Update all packages in Mason
-  function vimsharp.mason.update_all()
+  function v.mason.update_all()
     local registry_avail, registry = pcall(require, "mason-registry")
     if not registry_avail then
       vim.api.nvim_err_writeln "Unable to access mason registry"
@@ -1260,7 +1255,7 @@ else
     local any_pkgs = false
     local running = 0
     local updated = false
-    vimsharp.notify "Mason: Checking for package updates..."
+    v.notify "Mason: Checking for package updates..."
 
     for _, pkg in ipairs(registry.get_installed_packages()) do
       any_pkgs = true
@@ -1269,34 +1264,34 @@ else
         if update_available then
           updated = true
           running = running - 1
-          vimsharp.notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
+          v.notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
           pkg:install():on("closed", function()
             running = running - 1
             if running == 0 then
-              vimsharp.notify "Mason: Update Complete"
-              vimsharp.event "MasonUpdateComplete"
+              v.notify "Mason: Update Complete"
+              v.event "MasonUpdateComplete"
             end
           end)
         else
           running = running - 1
           if running == 0 then
             if updated then
-              vimsharp.notify "Mason: Update Complete"
+              v.notify "Mason: Update Complete"
             else
-              vimsharp.notify "Mason: No updates available"
+              v.notify "Mason: No updates available"
             end
-            vimsharp.event "MasonUpdateComplete"
+            v.event "MasonUpdateComplete"
           end
         end
       end)
     end
     if not any_pkgs then
-      vimsharp.notify "Mason: No updates available"
-      vimsharp.event "MasonUpdateComplete"
+      v.notify "Mason: No updates available"
+      v.event "MasonUpdateComplete"
     end
   end
 
-  -- return vimsharp.mason
+  -- return v.mason
   --#endregion_mason
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
@@ -1347,12 +1342,12 @@ else
   ---------------------------------------------------------------------------------------------------
   -- require "core.utils.lsp"
 
-  vimsharp.lsp = {}
+  v.lsp = {}
   local tbl_contains = vim.tbl_contains
   local tbl_isempty = vim.tbl_isempty
-  -- local user_plugin_opts = vimsharp.user_plugin_opts
-  local conditional_func = vimsharp.conditional_func
-  local is_available = vimsharp.is_available
+  -- local user_plugin_opts = v.user_plugin_opts
+  local conditional_func = v.conditional_func
+  local is_available = v.is_available
   local setup_handlers = nil
   -- user_plugin_opts("lsp.setup_handlers", nil, false)
   local skip_setup = {
@@ -1361,8 +1356,8 @@ else
     "clangd",
   }
 
-  vimsharp.lsp.formatting =
-  -- vimsharp.user_plugin_opts("lsp.formatting", { format_on_save = { enabled = true }, disabled = {} })
+  v.lsp.formatting =
+  -- v.user_plugin_opts("lsp.formatting", { format_on_save = { enabled = true }, disabled = {} })
   { format_on_save = {
     enabled = true,
     disabled = {
@@ -1378,21 +1373,21 @@ else
   },
   }
 
-  if type(vimsharp.lsp.formatting.format_on_save) == "boolean" then
-    vimsharp.lsp.formatting.format_on_save = { enabled = vimsharp.lsp.formatting.format_on_save }
+  if type(v.lsp.formatting.format_on_save) == "boolean" then
+    v.lsp.formatting.format_on_save = { enabled = v.lsp.formatting.format_on_save }
   end
-  vimsharp.lsp.format_opts = vim.deepcopy(vimsharp.lsp.formatting)
-  vimsharp.lsp.format_opts.filter = function(client)
-    local filter = vimsharp.lsp.formatting.filter
-    local disabled = vimsharp.lsp.formatting.disabled or {}
-    --vimsharp.lsp.format_opts.format_on_save = nil
-    --vimsharp.lsp.format_opts.disabled = nil
+  v.lsp.format_opts = vim.deepcopy(v.lsp.formatting)
+  v.lsp.format_opts.filter = function(client)
+    local filter = v.lsp.formatting.filter
+    local disabled = v.lsp.formatting.disabled or {}
+    --v.lsp.format_opts.format_on_save = nil
+    --v.lsp.format_opts.disabled = nil
     -- check if client is fully disabled or filtered by function
     return not (vim.tbl_contains(disabled, client.name) or (type(filter) == "function" and not filter(client)))
   end
 
 
-  vimsharp.path.AppendSlash = function(str)
+  v.path.AppendSlash = function(str)
     if str and (not str == "") then
       if string.sub(str, -1) ~= "/" then
         return str .. "/"
@@ -1401,26 +1396,26 @@ else
     return str
   end
 
-  ---- The default vimsharp LSP capabilities
-  vimsharp.lsp.capabilities = vim.lsp.protocol.make_client_capabilities()
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.documentationFormat = { "markdown", "plaintext" }
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.snippetSupport = true
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.preselectSupport = true
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.insertReplaceSupport = true
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.labelDetailsSupport = true
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.deprecatedSupport = true
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.commitCharactersSupport = true
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.tagSupport = { valueSet = { 1 } }
-  vimsharp.lsp.capabilities.textDocument.completion.completionItem.resolveSupport = {
+  ---- The default v LSP capabilities
+  v.lsp.capabilities = vim.lsp.protocol.make_client_capabilities()
+  v.lsp.capabilities.textDocument.completion.completionItem.documentationFormat = { "markdown", "plaintext" }
+  v.lsp.capabilities.textDocument.completion.completionItem.snippetSupport = true
+  v.lsp.capabilities.textDocument.completion.completionItem.preselectSupport = true
+  v.lsp.capabilities.textDocument.completion.completionItem.insertReplaceSupport = true
+  v.lsp.capabilities.textDocument.completion.completionItem.labelDetailsSupport = true
+  v.lsp.capabilities.textDocument.completion.completionItem.deprecatedSupport = true
+  v.lsp.capabilities.textDocument.completion.completionItem.commitCharactersSupport = true
+  v.lsp.capabilities.textDocument.completion.completionItem.tagSupport = { valueSet = { 1 } }
+  v.lsp.capabilities.textDocument.completion.completionItem.resolveSupport = {
     properties = { "documentation", "detail", "additionalTextEdits" },
   }
 
-  --- The `on_attach` function used by vimsharp
+  --- The `on_attach` function used by v
   -- @param client the LSP client details when attaching
   -- @param bufnr the number of the buffer that the LSP client is attaching to
-  vimsharp.lsp.on_attach = function(client, bufnr)
+  v.lsp.on_attach = function(client, bufnr)
     -- if not vim.tbl_isempty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
-    -- vimsharp.set_mappings(user_plugin_opts("lsp.mappings", lsp_mappings), { buffer = bufnr })
+    -- v.set_mappings(user_plugin_opts("lsp.mappings", lsp_mappings), { buffer = bufnr })
 
     -- local on_attach_override = user_plugin_opts("lsp.on_attach", nil, false)
     -- conditional_func(on_attach_override, true, client, bufnr)
@@ -1430,16 +1425,16 @@ else
       return (stringArg:gsub("^%l", string.upper))
     end
 
-    vimsharp.GetDirForFilename= function (s)
+    v.GetDirForFilename= function (s)
       return vim.fs.dirname(s)
     end
 
-    vimsharp.GetBaseFilenameForBufnr(bufnr)
+    v.GetBaseFilenameForBufnr(bufnr)
       local fileAbs = vim.api.nvim_buf_get_name(bufnr)
       return vim.fs.basename(fileAbs)
     end
 
-    vimsharp.FileRowColumnToPlusRegister= function ()
+    v.FileRowColumnToPlusRegister= function ()
       local fileAbs = vim.api.nvim_buf_get_name(0)
       local fname = vim.fs.basename(fileAbs)
       local line_col_pair = vim.api.nvim_win_get_cursor(0) -- row is 1, column is 0 indexed
@@ -1452,19 +1447,19 @@ else
     -- vim.notify(client.name .. " is running on_attach")
     if not vim.tbl_contains(ignore_lsp, client.name) then
       -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
-      local root = vimsharp.lsp.FindRoot(ignore_lsp, bufnr)
-      -- vimsharp.notify("lsp root should have found root of : " .. root)
-      local cwd = vimsharp.path.AppendSlash(upperDriveLetter(vim.fs.normalize(vim.fn.getcwd())))
+      local root = v.lsp.FindRoot(ignore_lsp, bufnr)
+      -- v.notify("lsp root should have found root of : " .. root)
+      local cwd = v.path.AppendSlash(upperDriveLetter(vim.fs.normalize(vim.fn.getcwd())))
       if not root then
-        vimsharp.notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
+        v.notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
         root = vim.cmd.expand("%:p:h")
       end
-      -- vimsharp.notify("i have the root and cwd now.. but ill check the number of buffers.. ")
+      -- v.notify("i have the root and cwd now.. but ill check the number of buffers.. ")
 
       local shouldAsk = vim.tbl_count(vim.fn.getbufinfo { buflisted = true }) > 1
       if root and cwd ~= root then
         if shouldAsk == true then
-          -- vimsharp.notify("at this point the buffers say i should ask about setting root.. " .. vim.inspect(shouldAsk))
+          -- v.notify("at this point the buffers say i should ask about setting root.. " .. vim.inspect(shouldAsk))
           if vim.fn.confirm(
             "Do you want to change the current working directory to lsp root?\nROOT: "
             .. root
@@ -1476,12 +1471,12 @@ else
           ) == 1
           then
             vim.cmd("cd " .. root)
-            vimsharp.notify("CWD : " .. root)
+            v.notify("CWD : " .. root)
           end
         else
 
           vim.cmd("cd " .. root)
-          vimsharp.notify("CWD : " .. root)
+          v.notify("CWD : " .. root)
         end
         vim.g["dotnet_last_proj_path"] = root
         -- vim.g.dotnet_startup_proj_path = client.root
@@ -1589,7 +1584,7 @@ else
 
     if capabilities.documentFormattingProvider then
       lsp_mappings.n["<leader>lf"] = {
-        function() vim.lsp.buf.format(vimsharp.lsp.format_opts) end,
+        function() vim.lsp.buf.format(v.lsp.format_opts) end,
         desc = "Format code",
       }
       lsp_mappings.v["<leader>lf"] = lsp_mappings.n["<leader>lf"]
@@ -1597,10 +1592,10 @@ else
       vim.api.nvim_buf_create_user_command(
         bufnr,
         "Format",
-        function() vim.lsp.buf.format(vimsharp.lsp.format_opts) end,
+        function() vim.lsp.buf.format(v.lsp.format_opts) end,
         { desc = "Format file with LSP" }
       )
-      local autoformat = vimsharp.lsp.formatting.format_on_save
+      local autoformat = v.lsp.formatting.format_on_save
       local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
       if autoformat.enabled
           and (tbl_isempty(autoformat.allow_filetypes or {}) or tbl_contains(autoformat.allow_filetypes, filetype))
@@ -1616,12 +1611,12 @@ else
           desc = "Auto format buffer " .. bufnr .. " before save",
           callback = function()
             if vim.g.autoformat_enabled then
-              vim.lsp.buf.format(vimsharp.default_tbl({ bufnr = bufnr }, vimsharp.lsp.format_opts))
+              vim.lsp.buf.format(v.default_tbl({ bufnr = bufnr }, v.lsp.format_opts))
             end
           end,
         })
         lsp_mappings.n["<leader>uf"] = {
-          function() vimsharp.ui.toggle_autoformat() end,
+          function() v.ui.toggle_autoformat() end,
           desc = "Toggle autoformatting",
         }
       end
@@ -1712,7 +1707,7 @@ else
 
       if capabilities.codeLensProvider then
         vim.defer_fn(function()
-          vimsharp.notify("now calling first codelens refresh..")
+          v.notify("now calling first codelens refresh..")
           vim.lsp.codelens.refresh()
         end, 4000)
 
@@ -1771,16 +1766,16 @@ else
       end
 
       if not vim.tbl_isempty(lsp_mappings.v) then lsp_mappings.v["<leader>l"] = { name = "LSP" } end
-      vimsharp.set_mappings(lsp_mappings, { buffer = bufnr })
+      v.set_mappings(lsp_mappings, { buffer = bufnr })
 
     end
   end
 
-  vimsharp.lsp.configs = {
+  v.lsp.configs = {
     clangd = { capabilities = { offsetEncoding = "utf-8" } },
     ionide = {
       cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
-      on_attach = vimsharp.lsp.on_attach,
+      on_attach = v.lsp.on_attach,
 
       -- handlers = require "ionide".handlers,
       settings = { FSharp = { use_sdk_scripts = 0 }, },
@@ -1818,20 +1813,20 @@ else
 
   }
 
-  -- vimsharp.lsp.capabilities = user_plugin_opts("lsp.capabilities", vimsharp.lsp.capabilities)
-  vimsharp.lsp.flags = {} -- Helper function to set up a given server with the Neovim LSP client
+  -- v.lsp.capabilities = user_plugin_opts("lsp.capabilities", v.lsp.capabilities)
+  v.lsp.flags = {} -- Helper function to set up a given server with the Neovim LSP client
   -- @param server the name of the server to be setup
-  vimsharp.lsp.setup = function(server)
+  v.lsp.setup = function(server)
     if not tbl_contains(skip_setup, server) then
       conditional_func(require, server == "sumneko_lua" and is_available "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
       if server == "ionide" then
         vim.cmd("let g:fsharp#use_recommended_server_config =0")
         vim.cmd("let g:fsharp#use_sdk_scripts =0")
 
-        local i = require "ionide".setup(vimsharp.lsp.configs.ionide)
+        local i = require "ionide".setup(v.lsp.configs.ionide)
 
         -- local isAttachd = vim.fn.confirm("Do you want to attachDebuggr before ionide does setup??\n", "&yes\n&no", 2) == 1
-        -- require "ionide".setup(vimsharp.lsp.configs.ionide)
+        -- require "ionide".setup(v.lsp.configs.ionide)
       end
       -- if server doesn't exist, set it up from user server definition
       local configs = require("lspconfig.configs")
@@ -1840,17 +1835,17 @@ else
       if ok then
         local fallbackmessage = " one found in " .. server .. " config handlers"
 
-        vimsharp.notify("server ok.")
+        v.notify("server ok.")
         if sv.default_config then
-          vimsharp.notify("server default config exists.")
+          v.notify("server default config exists.")
         end
         if sv.default_config.handlers then
-          vimsharp.notify("server default config handlers exist.")
+          v.notify("server default config handlers exist.")
           for n, h in pairs(sv.handlers) do
             if vim.tbl_contains(vim.lsp.handlers, n) then
-              vimsharp.notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
+              v.notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
                 fallbackmessage)
-              vimsharp.lsp.handlers[n] = h
+              v.lsp.handlers[n] = h
             end
           end
         end
@@ -1858,15 +1853,15 @@ else
       end
 
       if not (configs[server]) and not require("lspconfig.server_configurations." .. server) then
-        vimsharp.notify(server .. " was not found in lspconfig.configs or server_configurations.. ")
-        local server_definition = vimsharp.user_plugin_opts("lsp.server-settings." .. server)
+        v.notify(server .. " was not found in lspconfig.configs or server_configurations.. ")
+        local server_definition = v.user_plugin_opts("lsp.server-settings." .. server)
         if server_definition.cmd then
           configs[server] = { default_config = server_definition }
         end
 
       end
     end
-    local opts = vimsharp.lsp.server_settings(server)
+    local opts = v.lsp.server_settings(server)
 
     if type(setup_handlers) == "function" then
       setup_handlers(server, opts)
@@ -1878,7 +1873,7 @@ else
     end
 
     if server == "ionide" then
-      vimsharp.notify(vim.inspect(require 'lspconfig.configs'["ionide"]))
+      v.notify(vim.inspect(require 'lspconfig.configs'["ionide"]))
     end
 
 
@@ -1890,39 +1885,39 @@ else
   --- Get the server settings for a given language server to be provided to the server's `setup()` call
   -- @param  server_name the name of the server
   -- @return the table of LSP options used when setting up the given language server
-  function vimsharp.lsp.server_settings(server_name)
+  function v.lsp.server_settings(server_name)
 
     local server = require("lspconfig")[server_name]
     local lsp_settings
-    if server_name == "jsonls" and vimsharp.is_available "SchemaStore.nvim" then -- by default add json schemas
+    if server_name == "jsonls" and v.is_available "SchemaStore.nvim" then -- by default add json schemas
       lsp_settings = { json = { schemas = require("schemastore").json.schemas(), validate = { enable = true } } }
     end
 
     local de = vim.tbl_deep_extend
-    local upo = de("force", vimsharp.user_plugin_opts("lsp.configs." .. server_name), server) -- get user server-settings
+    local upo = de("force", v.user_plugin_opts("lsp.configs." .. server_name), server) -- get user server-settings
 
-    local defaultServerWithvimsharpSettings = de("force",
-      { settings = lsp_settings, capabilities = vimsharp.lsp.capabilities, flags = vimsharp.lsp.flags }
+    local defaultServerWithvSettings = de("force",
+      { settings = lsp_settings, capabilities = v.lsp.capabilities, flags = v.lsp.flags }
       ,
       { capabilities = server.capabilities, flags = server.flags }
     )
     local opts =
-    de("force", defaultServerWithvimsharpSettings, upo)
+    de("force", defaultServerWithvSettings, upo)
 
 
     local old_on_attach = server.on_attach
     local user_on_attach = opts.on_attach
     opts.on_attach = function(client, bufnr)
-      vimsharp.conditional_func(old_on_attach, true, client, bufnr)
-      vimsharp.lsp.on_attach(client, bufnr)
-      vimsharp.conditional_func(user_on_attach, true, client, bufnr)
+      v.conditional_func(old_on_attach, true, client, bufnr)
+      v.lsp.on_attach(client, bufnr)
+      v.conditional_func(user_on_attach, true, client, bufnr)
     end
 
 
     return opts
   end
 
-  -- return vimsharp.lsp
+  -- return v.lsp
 
   ---------------------------------------------------------------------------------------------------
   ---------------------------------------------------------------------------------------------------
@@ -1943,7 +1938,7 @@ else
   -- if vim.fn.has "nvim-0.9" == 1 then -- TODO v3 REMOVE THIS CONDITIONAL
   --   vim.opt.diffopt:append "linematch:60" -- enable linematch diff algorithm
   -- end
-  vimsharp.vim_opts({
+  v.vim_opts({
     opt = {
       backspace = vim.opt.backspace + { "nostop" }, -- Don't stop backspace at insert
       clipboard = "unnamedplus", -- Connection to the system clipboard
@@ -2011,7 +2006,7 @@ else
       ui_notifications_enabled = true, -- disable notifications when toggling UI elements
     },
     t = {
-      bufs = vim.tbl_filter(vimsharp.is_valid_buffer, vim.api.nvim_list_bufs()), -- buffers in tab
+      bufs = vim.tbl_filter(v.is_valid_buffer, vim.api.nvim_list_bufs()), -- buffers in tab
     },
   })
 
@@ -2061,7 +2056,7 @@ else
         vim.cmd.bw()
         vim.opt.cmdheight = oldcmdheight
         vim.tbl_map(function(module) pcall(require, module) end, { "nvim-treesitter", "mason" })
-        vimsharp.notify "Mason is installing packages if configured, check status with :Mason"
+        v.notify "Mason is installing packages if configured, check status with :Mason"
       end,
     })
   end
@@ -2080,9 +2075,9 @@ else
   end
 
   local function pin_plugins(plugins)
-    -- if not vimsharp.updater.snapshot then return plugins end
+    -- if not v.updater.snapshot then return plugins end
     -- for plugin, options in pairs(plugins) do
-    --   local pin = vimsharp.updater.snapshot[plugin:match "/([^/]*)$"]
+    --   local pin = v.updater.snapshot[plugin:match "/([^/]*)$"]
     --   if pin and pin.commit and not (options.version or options.commit) then
     --     options.commit = pin.commit
     --     options.branch = pin.branch
@@ -2095,7 +2090,7 @@ else
   require("lazy").setup(
     parse_plugins(
 
-    -- vimsharp.user_plugin_opts(
+    -- v.user_plugin_opts(
     -- "plugins.init",
 
     -- pin_plugins
@@ -2131,7 +2126,7 @@ else
         ["onsails/lspkind.nvim"] = { enabled = vim.g.icons_enabled,
           config = function()
             -- require "configs.lspkind"
-            vimsharp.lspkind = {
+            v.lspkind = {
               mode = "symbol_text",
               symbol_map = {
                 NONE = "",
@@ -2154,49 +2149,49 @@ else
                 Unit = "",
               },
             }
-            require("lspkind").init(vimsharp.lspkind)
+            require("lspkind").init(v.lspkind)
 
 
           end },
         ["rebelot/heirline.nvim"] = { event = "VimEnter", config = function()
           -- require "configs.heirline"
           local heirline = require "heirline"
-          if not vimsharp.status then return end
-          local C = require "vimsharp_theme.colors"
+          if not v.status then return end
+          local C = require "v_theme.colors"
 
           local function setup_colors()
-            local Normal = vimsharp.get_hlgroup("Normal", { fg = C.fg, bg = C.bg })
-            local Comment = vimsharp.get_hlgroup("Comment", { fg = C.grey_2, bg = C.bg })
-            local Error = vimsharp.get_hlgroup("Error", { fg = C.red, bg = C.bg })
-            local StatusLine = vimsharp.get_hlgroup("StatusLine", { fg = C.fg, bg = C.grey_4 })
-            local TabLine = vimsharp.get_hlgroup("TabLine", { fg = C.grey, bg = C.none })
-            local TabLineSel = vimsharp.get_hlgroup("TabLineSel", { fg = C.fg, bg = C.none })
-            local WinBar = vimsharp.get_hlgroup("WinBar", { fg = C.grey_2, bg = C.bg })
-            local WinBarNC = vimsharp.get_hlgroup("WinBarNC", { fg = C.grey, bg = C.bg })
-            local Conditional = vimsharp.get_hlgroup("Conditional", { fg = C.purple_1, bg = C.grey_4 })
-            local String = vimsharp.get_hlgroup("String", { fg = C.green, bg = C.grey_4 })
-            local TypeDef = vimsharp.get_hlgroup("TypeDef", { fg = C.yellow, bg = C.grey_4 })
-            local GitSignsAdd = vimsharp.get_hlgroup("GitSignsAdd", { fg = C.green, bg = C.grey_4 })
-            local GitSignsChange = vimsharp.get_hlgroup("GitSignsChange", { fg = C.orange_1, bg = C.grey_4 })
-            local GitSignsDelete = vimsharp.get_hlgroup("GitSignsDelete", { fg = C.red_1, bg = C.grey_4 })
-            local DiagnosticError = vimsharp.get_hlgroup("DiagnosticError", { fg = C.red_1, bg = C.grey_4 })
-            local DiagnosticWarn = vimsharp.get_hlgroup("DiagnosticWarn", { fg = C.orange_1, bg = C.grey_4 })
-            local DiagnosticInfo = vimsharp.get_hlgroup("DiagnosticInfo", { fg = C.white_2, bg = C.grey_4 })
-            local DiagnosticHint = vimsharp.get_hlgroup("DiagnosticHint", { fg = C.yellow_1, bg = C.grey_4 })
-            local HeirlineInactive = vimsharp.get_hlgroup("HeirlineInactive", { fg = nil }).fg
-                or vimsharp.status.hl.lualine_mode("inactive", C.grey_7)
-            local HeirlineNormal = vimsharp.get_hlgroup("HeirlineNormal", { fg = nil }).fg
-                or vimsharp.status.hl.lualine_mode("normal", C.blue)
-            local HeirlineInsert = vimsharp.get_hlgroup("HeirlineInsert", { fg = nil }).fg
-                or vimsharp.status.hl.lualine_mode("insert", C.green)
-            local HeirlineVisual = vimsharp.get_hlgroup("HeirlineVisual", { fg = nil }).fg
-                or vimsharp.status.hl.lualine_mode("visual", C.purple)
-            local HeirlineReplace = vimsharp.get_hlgroup("HeirlineReplace", { fg = nil }).fg
-                or vimsharp.status.hl.lualine_mode("replace", C.red_1)
-            local HeirlineCommand = vimsharp.get_hlgroup("HeirlineCommand", { fg = nil }).fg
-                or vimsharp.status.hl.lualine_mode("command", C.yellow_1)
-            local HeirlineTerminal = vimsharp.get_hlgroup("HeirlineTerminal", { fg = nil }).fg
-                or vimsharp.status.hl.lualine_mode("inactive", HeirlineInsert)
+            local Normal = v.get_hlgroup("Normal", { fg = C.fg, bg = C.bg })
+            local Comment = v.get_hlgroup("Comment", { fg = C.grey_2, bg = C.bg })
+            local Error = v.get_hlgroup("Error", { fg = C.red, bg = C.bg })
+            local StatusLine = v.get_hlgroup("StatusLine", { fg = C.fg, bg = C.grey_4 })
+            local TabLine = v.get_hlgroup("TabLine", { fg = C.grey, bg = C.none })
+            local TabLineSel = v.get_hlgroup("TabLineSel", { fg = C.fg, bg = C.none })
+            local WinBar = v.get_hlgroup("WinBar", { fg = C.grey_2, bg = C.bg })
+            local WinBarNC = v.get_hlgroup("WinBarNC", { fg = C.grey, bg = C.bg })
+            local Conditional = v.get_hlgroup("Conditional", { fg = C.purple_1, bg = C.grey_4 })
+            local String = v.get_hlgroup("String", { fg = C.green, bg = C.grey_4 })
+            local TypeDef = v.get_hlgroup("TypeDef", { fg = C.yellow, bg = C.grey_4 })
+            local GitSignsAdd = v.get_hlgroup("GitSignsAdd", { fg = C.green, bg = C.grey_4 })
+            local GitSignsChange = v.get_hlgroup("GitSignsChange", { fg = C.orange_1, bg = C.grey_4 })
+            local GitSignsDelete = v.get_hlgroup("GitSignsDelete", { fg = C.red_1, bg = C.grey_4 })
+            local DiagnosticError = v.get_hlgroup("DiagnosticError", { fg = C.red_1, bg = C.grey_4 })
+            local DiagnosticWarn = v.get_hlgroup("DiagnosticWarn", { fg = C.orange_1, bg = C.grey_4 })
+            local DiagnosticInfo = v.get_hlgroup("DiagnosticInfo", { fg = C.white_2, bg = C.grey_4 })
+            local DiagnosticHint = v.get_hlgroup("DiagnosticHint", { fg = C.yellow_1, bg = C.grey_4 })
+            local HeirlineInactive = v.get_hlgroup("HeirlineInactive", { fg = nil }).fg
+                or v.status.hl.lualine_mode("inactive", C.grey_7)
+            local HeirlineNormal = v.get_hlgroup("HeirlineNormal", { fg = nil }).fg
+                or v.status.hl.lualine_mode("normal", C.blue)
+            local HeirlineInsert = v.get_hlgroup("HeirlineInsert", { fg = nil }).fg
+                or v.status.hl.lualine_mode("insert", C.green)
+            local HeirlineVisual = v.get_hlgroup("HeirlineVisual", { fg = nil }).fg
+                or v.status.hl.lualine_mode("visual", C.purple)
+            local HeirlineReplace = v.get_hlgroup("HeirlineReplace", { fg = nil }).fg
+                or v.status.hl.lualine_mode("replace", C.red_1)
+            local HeirlineCommand = v.get_hlgroup("HeirlineCommand", { fg = nil }).fg
+                or v.status.hl.lualine_mode("command", C.yellow_1)
+            local HeirlineTerminal = v.get_hlgroup("HeirlineTerminal", { fg = nil }).fg
+                or v.status.hl.lualine_mode("inactive", HeirlineInsert)
 
             local colors = {
               close_fg = Error.fg,
@@ -2270,13 +2265,13 @@ else
           end
 
           --- a submodule of heirline specific functions and aliases
-          vimsharp.status.heirline = {}
+          v.status.heirline = {}
 
           --- A helper function to get the type a tab or buffer is
           -- @param self the self table from a heirline component function
           -- @param prefix the prefix of the type, either "tab" or "buffer" (Default: "buffer")
           -- @return the string of prefix with the type (i.e. "_active" or "_visible")
-          function vimsharp.status.heirline.tab_type(self, prefix)
+          function v.status.heirline.tab_type(self, prefix)
             local tab_type = ""
             if self.is_active then
               tab_type = "_active"
@@ -2289,20 +2284,20 @@ else
           --- Make a list of buffers, rendering each buffer with the provided component
           ---@param component table
           ---@return table
-          vimsharp.status.heirline.make_buflist = function(component)
-            local overflow_hl = vimsharp.status.hl.get_attributes("buffer_overflow", true)
+          v.status.heirline.make_buflist = function(component)
+            local overflow_hl = v.status.hl.get_attributes("buffer_overflow", true)
             return require("heirline.utils").make_buflist(
-              vimsharp.status.utils.surround(
+              v.status.utils.surround(
                 "tab",
                 function(self)
                   return {
-                    main = vimsharp.status.heirline.tab_type(self) .. "_bg",
+                    main = v.status.heirline.tab_type(self) .. "_bg",
                     left = "tabline_bg",
                     right = "tabline_bg",
                   }
                 end,
                 { -- bufferlist
-                  init = function(self) self.tab_type = vimsharp.status.heirline.tab_type(self) end,
+                  init = function(self) self.tab_type = v.status.heirline.tab_type(self) end,
                   on_click = { -- add clickable component to each buffer
                     callback = function(_, minwid) vim.api.nvim_win_set_buf(0, minwid) end,
                     minwid = function(self) return self.bufnr end,
@@ -2313,7 +2308,7 @@ else
                     update = false,
                     init = function(self)
                       if not (self.label and self._picker_labels[self.label]) then
-                        local bufname = vimsharp.status.provider.filename()(self)
+                        local bufname = v.status.provider.filename()(self)
                         local label = bufname:sub(1, 1)
                         local i = 2
                         while label ~= " " and self._picker_labels[label] do
@@ -2326,27 +2321,27 @@ else
                       end
                     end,
                     provider = function(self)
-                      return vimsharp.status.provider.str { str = self.label, padding = { left = 1, right = 1 } }
+                      return v.status.provider.str { str = self.label, padding = { left = 1, right = 1 } }
                     end,
-                    hl = vimsharp.status.hl.get_attributes "buffer_picker",
+                    hl = v.status.hl.get_attributes "buffer_picker",
                   },
                   component, -- create buffer component
                 },
                 false-- disable surrounding
               ),
-              { provider = vimsharp.get_icon "ArrowLeft" .. " ", hl = overflow_hl },
-              { provider = vimsharp.get_icon "ArrowRight" .. " ", hl = overflow_hl },
-              function() return vim.t.bufs end, -- use vimsharp bufs variable
+              { provider = v.get_icon "ArrowLeft" .. " ", hl = overflow_hl },
+              { provider = v.get_icon "ArrowRight" .. " ", hl = overflow_hl },
+              function() return vim.t.bufs end, -- use v bufs variable
               false-- disable internal caching
             )
           end
 
           --- Alias to require("heirline.utils").make_tablist
-          vimsharp.status.heirline.make_tablist = require("heirline.utils").make_tablist
+          v.status.heirline.make_tablist = require("heirline.utils").make_tablist
 
           --- Run the buffer picker and execute the callback function on the selected buffer
           -- @param callback function with a single parameter of the buffer number
-          function vimsharp.status.heirline.buffer_picker(callback)
+          function v.status.heirline.buffer_picker(callback)
             local tabline = require("heirline").tabline
             local buflist = tabline and tabline._buflist[1]
             if buflist then
@@ -2368,18 +2363,18 @@ else
           local heirline_opts = {
             statusline = { -- statusline
               hl = { fg = "fg", bg = "bg" },
-              vimsharp.status.component.mode(),
-              vimsharp.status.component.git_branch(),
-              vimsharp.status.component.file_info { filetype = {}, filename = false, file_modified = false },
-              vimsharp.status.component.git_diff(),
-              vimsharp.status.component.diagnostics(),
-              vimsharp.status.component.fill(),
-              vimsharp.status.component.cmd_info(),
-              vimsharp.status.component.fill(),
-              vimsharp.status.component.lsp(),
-              vimsharp.status.component.treesitter(),
-              vimsharp.status.component.nav(),
-              vimsharp.status.component.mode { surround = { separator = "right" } },
+              v.status.component.mode(),
+              v.status.component.git_branch(),
+              v.status.component.file_info { filetype = {}, filename = false, file_modified = false },
+              v.status.component.git_diff(),
+              v.status.component.diagnostics(),
+              v.status.component.fill(),
+              v.status.component.cmd_info(),
+              v.status.component.fill(),
+              v.status.component.lsp(),
+              v.status.component.treesitter(),
+              v.status.component.nav(),
+              v.status.component.mode { surround = { separator = "right" } },
             },
             winbar = { -- winbar
               static = {
@@ -2392,30 +2387,30 @@ else
               fallthrough = false,
               {
                 condition = function(self)
-                  -- local  k, c  = pcall (vim.opt.diff:get()) or vimsharp.status.condition.buffer_matches(self.disabled or {}))
+                  -- local  k, c  = pcall (vim.opt.diff:get()) or v.status.condition.buffer_matches(self.disabled or {}))
                   -- local r = if k then c else false end,
                   return false
 
                 end,
                 init = function() vim.opt_local.winbar = nil end,
               },
-              vimsharp.status.component.file_info {
-                condition = function() return not vimsharp.status.condition.is_active() end,
+              v.status.component.file_info {
+                condition = function() return not v.status.condition.is_active() end,
                 unique_path = {},
-                file_icon = { hl = vimsharp.status.hl.file_icon "winbar" },
+                file_icon = { hl = v.status.hl.file_icon "winbar" },
                 file_modified = false,
                 file_read_only = false,
-                hl = vimsharp.status.hl.get_attributes("winbarnc", true),
+                hl = v.status.hl.get_attributes("winbarnc", true),
                 surround = false,
                 update = "BufEnter",
               },
-              vimsharp.status.component.breadcrumbs { hl = vimsharp.status.hl.get_attributes("winbar", true) },
+              v.status.component.breadcrumbs { hl = v.status.hl.get_attributes("winbar", true) },
             },
             bufferline = { -- bufferline
               { -- file tree padding
                 condition = function(self)
                   self.winid = vim.api.nvim_tabpage_list_wins(0)[1]
-                  return vimsharp.status.condition.buffer_matches(
+                  return v.status.condition.buffer_matches(
                     { filetype = { "aerial", "dapui_.", "neo%-tree", "NvimTree" } },
                     vim.api.nvim_win_get_buf(self.winid)
                   )
@@ -2423,21 +2418,21 @@ else
                 provider = function(self) return string.rep(" ", vim.api.nvim_win_get_width(self.winid) + 1) end,
                 hl = { bg = "tabline_bg" },
               },
-              vimsharp.status.heirline.make_buflist(vimsharp.status.component.tabline_file_info()), -- component for each buffer tab
-              vimsharp.status.component.fill { hl = { bg = "tabline_bg" } }, -- fill the rest of the tabline with background color
+              v.status.heirline.make_buflist(v.status.component.tabline_file_info()), -- component for each buffer tab
+              v.status.component.fill { hl = { bg = "tabline_bg" } }, -- fill the rest of the tabline with background color
               { -- tab list
                 condition = function() return #vim.api.nvim_list_tabpages() >= 2 end, -- only show tabs if there are more than one
-                vimsharp.status.heirline.make_tablist { -- component for each tab
-                  provider = vimsharp.status.provider.tabnr(),
+                v.status.heirline.make_tablist { -- component for each tab
+                  provider = v.status.provider.tabnr(),
                   hl = function(self)
-                    return vimsharp.status.hl.get_attributes(vimsharp.status.heirline.tab_type(self, "tab"), true)
+                    return v.status.hl.get_attributes(v.status.heirline.tab_type(self, "tab"), true)
                   end,
                 },
                 { -- close button for current tab
-                  provider = vimsharp.status.provider.close_button { kind = "TabClose",
+                  provider = v.status.provider.close_button { kind = "TabClose",
                     padding = { left = 1, right = 1 } },
-                  hl = vimsharp.status.hl.get_attributes("tab_close", true),
-                  on_click = { callback = vimsharp.close_tab, name = "heirline_tabline_close_tab_callback" },
+                  hl = v.status.hl.get_attributes("tab_close", true),
+                  on_click = { callback = v.close_tab, name = "heirline_tabline_close_tab_callback" },
                 },
               },
             },
@@ -2460,7 +2455,7 @@ else
             callback = function()
               if not require "heirline".winbar["disabled"] then require "heirline".winbar["disabled"] = true end
               if vim.opt.diff:get()
-                  -- or vimsharp.status.condition.buffer_matches(require("heirline").winbar.disabled
+                  -- or v.status.condition.buffer_matches(require("heirline").winbar.disabled
                   or true
 
               then
@@ -2473,7 +2468,7 @@ else
         ["famiu/bufdelete.nvim"] = { cmd = { "Bdelete", "Bwipeout" } },
         ["s1n7ax/nvim-window-picker"] = { version = "^1", config = function()
           -- require "configs.window-picker"
-          local colors = require "vimsharp_theme.colors"
+          local colors = require "v_theme.colors"
           require("window-picker").setup(
             { use_winbar = "smart", other_win_hl_color = colors.grey_4 }
           )
@@ -2571,7 +2566,7 @@ else
           enabled = vim.g.icons_enabled,
           config = function()
             --  require "configs.nvim-web-devicons"
-            require("nvim-web-devicons").set_default_icon(vimsharp.get_icon "DefaultFile", "#6d8086", "66")
+            require("nvim-web-devicons").set_default_icon(v.get_icon "DefaultFile", "#6d8086", "66")
             require("nvim-web-devicons").set_icon({
               deb = { icon = "", name = "Deb" },
               lock = { icon = "", name = "Lock" },
@@ -2589,7 +2584,7 @@ else
           end,
         },
         ["Darazaki/indent-o-matic"] = {
-          init = function() table.insert(vimsharp.file_plugins, "indent-o-matic") end,
+          init = function() table.insert(v.file_plugins, "indent-o-matic") end,
           config = function()
             -- require "configs.indent-o-matic"
             local indent_o_matic = require "indent-o-matic"
@@ -2599,7 +2594,7 @@ else
         },
         ["rcarriga/nvim-notify"] = {
 
-          init = function() vimsharp.load_plugin_with_func("nvim-notify", vim, "notify") end,
+          init = function() v.load_plugin_with_func("nvim-notify", vim, "notify") end,
           config = function()
             -- local BUILTIN_RENDERERS = {
             --   DEFAULT = "default",
@@ -2649,7 +2644,7 @@ else
         },
         ["stevearc/dressing.nvim"] = {
           init = function()
-            vimsharp.load_plugin_with_func("dressing.nvim", vim.ui, { "input", "select" })
+            v.load_plugin_with_func("dressing.nvim", vim.ui, { "input", "select" })
           end,
           config = function()
             -- require "configs.dressing"
@@ -2680,31 +2675,31 @@ else
                 winbar = true,
                 content_layout = "center",
                 tab_labels = {
-                  filesystem = vimsharp.get_icon "FolderClosed" .. " File",
-                  buffers = vimsharp.get_icon "DefaultFile" .. " Bufs",
-                  git_status = vimsharp.get_icon "Git" .. " Git",
-                  diagnostics = vimsharp.get_icon "Diagnostic" .. " Diagnostic",
+                  filesystem = v.get_icon "FolderClosed" .. " File",
+                  buffers = v.get_icon "DefaultFile" .. " Bufs",
+                  git_status = v.get_icon "Git" .. " Git",
+                  diagnostics = v.get_icon "Diagnostic" .. " Diagnostic",
                 },
               },
               default_component_configs = {
                 indent = { padding = 0 },
                 icon = {
-                  folder_closed = vimsharp.get_icon "FolderClosed",
-                  folder_open = vimsharp.get_icon "FolderOpen",
-                  folder_empty = vimsharp.get_icon "FolderEmpty",
-                  default = vimsharp.get_icon "DefaultFile",
+                  folder_closed = v.get_icon "FolderClosed",
+                  folder_open = v.get_icon "FolderOpen",
+                  folder_empty = v.get_icon "FolderEmpty",
+                  default = v.get_icon "DefaultFile",
                 },
                 git_status = {
                   symbols = {
-                    added = vimsharp.get_icon "GitAdd",
-                    deleted = vimsharp.get_icon "GitDelete",
-                    modified = vimsharp.get_icon "GitChange",
-                    renamed = vimsharp.get_icon "GitRenamed",
-                    untracked = vimsharp.get_icon "GitUntracked",
-                    ignored = vimsharp.get_icon "GitIgnored",
-                    unstaged = vimsharp.get_icon "GitUnstaged",
-                    staged = vimsharp.get_icon "GitStaged",
-                    conflict = vimsharp.get_icon "GitConflict",
+                    added = v.get_icon "GitAdd",
+                    deleted = v.get_icon "GitDelete",
+                    modified = v.get_icon "GitChange",
+                    renamed = v.get_icon "GitRenamed",
+                    untracked = v.get_icon "GitUntracked",
+                    ignored = v.get_icon "GitIgnored",
+                    unstaged = v.get_icon "GitUnstaged",
+                    staged = v.get_icon "GitStaged",
+                    conflict = v.get_icon "GitConflict",
                   },
                 },
               },
@@ -2714,7 +2709,7 @@ else
               --     ["<space>"] = false, -- disable space until we figure out which-key disabling
               --     u = "navigate_up",
               --     o = "open",
-              --     O = function(state) vimsharp.system_open(state.tree:get_node():get_id()) end,
+              --     O = function(state) v.system_open(state.tree:get_node():get_id()) end,
               --     H = "prev_source",
               --     L = "next_source",
               --   },
@@ -2734,7 +2729,7 @@ else
                   ["<space>"] = false, -- disable space until we figure out which-key disabling
                   u = "navigate_up",
                   o = "open",
-                  O = function(state) vimsharp.system_open(state.tree:get_node():get_id()) end,
+                  O = function(state) v.system_open(state.tree:get_node():get_id()) end,
                   H = "prev_source",
                   L = "next_source",
                 },
@@ -2751,7 +2746,7 @@ else
                   },
                 },
                 commands = {
-                  system_open = function(state) vimsharp.system_open(state.tree:get_node():get_id()) end,
+                  system_open = function(state) v.system_open(state.tree:get_node():get_id()) end,
                 },
               },
               event_handlers = {
@@ -2762,7 +2757,7 @@ else
         },
 
         ["nvim-treesitter/nvim-treesitter"] = {
-          init = function() table.insert(vimsharp.file_plugins, "nvim-treesitter") end,
+          init = function() table.insert(v.file_plugins, "nvim-treesitter") end,
           cmd = {
             "TSBufDisable",
             "TSBufEnable",
@@ -2892,7 +2887,7 @@ else
           end,
         },
         ["NvChad/nvim-colorizer.lua"] = {
-          init = function() table.insert(vimsharp.file_plugins, "nvim-colorizer.lua") end,
+          init = function() table.insert(v.file_plugins, "nvim-colorizer.lua") end,
           cmd = { "ColorizerToggle", "ColorizerAttachToBuffer", "ColorizerDetachFromBuffer", "ColorizerReloadAllBuffers" },
           config = function()
             -- require "configs.colorizer"
@@ -2918,7 +2913,7 @@ else
           end,
         },
         ["lukas-reineke/indent-blankline.nvim"] = {
-          init = function() table.insert(vimsharp.file_plugins, "indent-blankline.nvim") end,
+          init = function() table.insert(v.file_plugins, "indent-blankline.nvim") end,
           config = function()
             -- require "configs.indent-line"
             require("indent_blankline").setup({
@@ -2972,7 +2967,7 @@ else
         ["lewis6991/gitsigns.nvim"] = {
           enabled = vim.fn.executable "git" == 1,
           ft = "gitcommit",
-          init = function() table.insert(vimsharp.git_plugins, "gitsigns.nvim") end,
+          init = function() table.insert(v.git_plugins, "gitsigns.nvim") end,
           config = function()
             -- require "configs.gitsigns"
             require("gitsigns").setup({
@@ -3005,8 +3000,8 @@ else
             telescope.setup(
               {
                 defaults = {
-                  prompt_prefix = string.format("%s ", vimsharp.get_icon "Search"),
-                  selection_caret = string.format("%s ", vimsharp.get_icon "Selected"),
+                  prompt_prefix = string.format("%s ", v.get_icon "Search"),
+                  selection_caret = string.format("%s ", v.get_icon "Selected"),
                   path_display = { "truncate" },
                   sorting_strategy = "ascending",
                   layout_config = {
@@ -3076,9 +3071,9 @@ else
                 },
               })
 
-            vimsharp.conditional_func(telescope.load_extension, pcall(require, "notify"), "notify")
-            vimsharp.conditional_func(telescope.load_extension, pcall(require, "aerial"), "aerial")
-            vimsharp.conditional_func(telescope.load_extension, vimsharp.is_available "telescope-fzf-native.nvim",
+            v.conditional_func(telescope.load_extension, pcall(require, "notify"), "notify")
+            v.conditional_func(telescope.load_extension, pcall(require, "aerial"), "aerial")
+            v.conditional_func(telescope.load_extension, v.is_available "telescope-fzf-native.nvim",
               "fzf")
           end,
 
@@ -3131,7 +3126,7 @@ else
           end,
         },
         ["stevearc/aerial.nvim"] = {
-          init = function() table.insert(vimsharp.file_plugins, "aerial.nvim") end,
+          init = function() table.insert(v.file_plugins, "aerial.nvim") end,
           config = function()
             -- require "configs.aerial"
             require("aerial").setup({
@@ -3370,11 +3365,11 @@ else
                 --   local prsnt, _ = pcall(require, "lspkind")
                 --   if not prsnt then
                 --     -- From kind_icons array
-                --     local kind_icons = vimsharp.lspkind.symbol_map
+                --     local kind_icons = v.lspkind.symbol_map
                 --     vim_item.kind = string.format('%s %s', kind_icons[vim_item.kind], vim_item.kind) -- This concatonates the icons with the name of the item kind
                 --   else
                 --     -- From lspkind
-                --     return lspkind.cmp_format(vimsharp.lspkind) or nil
+                --     return lspkind.cmp_format(v.lspkind) or nil
                 --   end
                 --   -- Source
                 --   vim_item.menu = ({
@@ -3387,7 +3382,7 @@ else
                 --   return vim_item or nil
                 -- end,
 
-                lspkind_status_ok and lspkind.cmp_format(vimsharp.lspkind) or nil,
+                lspkind_status_ok and lspkind.cmp_format(v.lspkind) or nil,
               },
               duplicates = {
                 nvim_lsp = 1,
@@ -3505,7 +3500,7 @@ else
         },
         ["neovim/nvim-lspconfig"] = {
           lazy = false,
-          init = function() table.insert(vimsharp.file_plugins, "nvim-lspconfig") end,
+          init = function() table.insert(v.file_plugins, "nvim-lspconfig") end,
           config = function()
             -- require "configs.lspconfig"
             if vim.g.lsp_handlers_enabled then
@@ -3514,7 +3509,7 @@ else
                 { border = "rounded" })
             end
             local setup_servers = function()
-              vim.tbl_map(vimsharp.lsp.setup,
+              vim.tbl_map(v.lsp.setup,
                 {
                   "sumneko_lua",
                   "ionide",
@@ -3537,7 +3532,7 @@ else
               )
               vim.api.nvim_exec_autocmds("FileType", {})
             end
-            if vimsharp.is_available "mason-lspconfig.nvim" then
+            if v.is_available "mason-lspconfig.nvim" then
               vim.api.nvim_create_autocmd("User", { pattern = "AstroLspSetup", once = true, callback = setup_servers })
             else
               setup_servers()
@@ -3572,16 +3567,16 @@ else
                   },
                 })
                 require "mason-lspconfig".setup_handlers { function(server)
-                  vimsharp.lsp.setup(server)
+                  v.lsp.setup(server)
                 end }
-                vimsharp.event "LspSetup"
+                v.event "LspSetup"
 
               end,
             },
           },
         },
         ["jose-elias-alvarez/null-ls.nvim"] = {
-          init = function() table.insert(vimsharp.file_plugins, "null-ls.nvim") end,
+          init = function() table.insert(v.file_plugins, "null-ls.nvim") end,
           config = function()
             -- require "configs.null-ls"
 
@@ -3592,7 +3587,7 @@ else
               config = function()
                 -- require "configs.mason-null-ls"
                 local mason_null_ls = require "mason-null-ls"
-                mason_null_ls.setup({ automatic_setup = true, on_attach = vimsharp.lsp.on_attach })
+                mason_null_ls.setup({ automatic_setup = true, on_attach = v.lsp.on_attach })
                 mason_null_ls.setup_handlers {}
 
               end,
@@ -3601,7 +3596,7 @@ else
         },
 
         ["mfussenegger/nvim-dap"] = {
-          init = function() table.insert(vimsharp.file_plugins, "nvim-dap") end,
+          init = function() table.insert(v.file_plugins, "nvim-dap") end,
 
           -- config = function() require "configs.dap" end,
           config = function()
@@ -3766,7 +3761,7 @@ else
                   end,
                 }
 
-                -- vimsharp.user_plugin_opts("plugins.mason-nvim-dap", { automatic_init = true }
+                -- v.user_plugin_opts("plugins.mason-nvim-dap", { automatic_init = true }
 
               end,
             },
@@ -3779,8 +3774,8 @@ else
             "MasonUninstall",
             "MasonUninstallAll",
             "MasonLog",
-            "MasonUpdate", -- vimsharp command
-            "MasonUpdateAll", -- vimsharp command
+            "MasonUpdate", -- v command
+            "MasonUpdateAll", -- v command
           },
           config = function()
             -- require "configs.mason"
@@ -3797,8 +3792,8 @@ else
             }
 
             local cmd = vim.api.nvim_create_user_command
-            cmd("MasonUpdateAll", function() vimsharp.mason.update_all() end, { desc = "Update Mason Packages" })
-            cmd("MasonUpdate", function(opts) vimsharp.mason.update(opts.args) end,
+            cmd("MasonUpdateAll", function() v.mason.update_all() end, { desc = "Update Mason Packages" })
+            cmd("MasonUpdate", function(opts) v.mason.update(opts.args) end,
               { nargs = 1, desc = "Update Mason Package" })
             vim.tbl_map(function(module) pcall(require, module) end, { "nvim-lspconfig", "null-ls", "dap" })
           end,
@@ -3813,7 +3808,7 @@ else
         },
         ["arsham/indent-tools.nvim"] = {
 
-          init = function() table.insert(vimsharp.file_plugins, "indent-tools.nvim") end,
+          init = function() table.insert(v.file_plugins, "indent-tools.nvim") end,
           dependencies = { ["arsham/arshlib.nvim"] = {} },
           config = function()
             -- require "indent-tools"
@@ -3868,7 +3863,7 @@ else
         },
         ["ethanholz/nvim-lastplace"] = {
           lazy = true,
-          init = function() table.insert(vimsharp.file_plugins, "nvim-lastplace") end,
+          init = function() table.insert(v.file_plugins, "nvim-lastplace") end,
           config = function()
             -- require "nvim-lastplace"
             require("nvim-lastplace").setup {
@@ -3887,12 +3882,12 @@ else
         },
         ["junegunn/vim-easy-align"] = {
           lazy = true,
-          init = function() table.insert(vimsharp.file_plugins, "vim-easy-align") end,
+          init = function() table.insert(v.file_plugins, "vim-easy-align") end,
         },
 
         ["machakann/vim-sandwich"] = {
           lazy = true,
-          init = function() table.insert(vimsharp.file_plugins, "vim-sandwich") end,
+          init = function() table.insert(v.file_plugins, "vim-sandwich") end,
         },
 
         ["nanotee/sqls.nvim"] = {},
@@ -3903,17 +3898,17 @@ else
 
           config = function()
             -- require "clangd_extensions"
-            require("clangd_extensions").setup { server = vimsharp.lsp.server_settings "clangd" }
+            require("clangd_extensions").setup { server = v.lsp.server_settings "clangd" }
           end,
         },
         ["sindrets/diffview.nvim"] = {
           lazy = true,
-          init = function() table.insert(vimsharp.git_plugins, "diffview.nvim") end,
+          init = function() table.insert(v.git_plugins, "diffview.nvim") end,
           config = function()
             -- require "diffview"
             local actions = require "diffview.actions"
 
-            vimsharp.which_key_register {
+            v.which_key_register {
               n = {
                 ["<leader>"] = {
                   d = {
@@ -3929,7 +3924,7 @@ else
             local build_keymaps = function(maps)
               local out = {}
               local i = 1
-              for lhs, def in pairs(vimsharp.default_tbl({
+              for lhs, def in pairs(v.default_tbl({
                 ["<leader>dq"] = { "<cmd>DiffviewClose<cr>", desc = "Quit Diffview" }, -- Toggle the file panel.
                 ["]D"] = { actions.select_next_entry, desc = "Next Difference" }, -- Open the diff for the next file
                 ["[D"] = { actions.select_prev_entry, desc = "Previous Difference" }, -- Open the diff for the previous file
@@ -4247,9 +4242,9 @@ else
         --     "nvim-lua/plenary.nvim",
         --     "nvim-telescope/telescope.nvim"
         --   } },
-        -- ["WillEhrendreich/ionide-vim"] = { config = vimsharp.lsp.configs.ionide, },
+        -- ["WillEhrendreich/ionide-vim"] = { config = v.lsp.configs.ionide, },
         ["WillEhrendreich/ionide-vim"] = {},
-        -- ["ionide/ionide-vim"] = { lazy = false, config = function() require("ionide").setup(vimsharp.lsp.configs.ionide) end, },
+        -- ["ionide/ionide-vim"] = { lazy = false, config = function() require("ionide").setup(v.lsp.configs.ionide) end, },
 
         ["hood/popui.nvim"] = {
 
@@ -4369,10 +4364,10 @@ else
     {
       defaults = { lazy = true },
       concurrency = 50,
-      install = { colorscheme = { "vimsharp" } },
+      install = { colorscheme = { "v" } },
       performance = {
         rtp = {
-          paths = { vimsharp.install.config },
+          paths = { v.install.config },
           disabled_plugins = { "tohtml", "gzip", "matchit", "zipPlugin", "netrwPlugin", "tarPlugin", "matchparen" },
         },
       },
@@ -4401,15 +4396,15 @@ else
   --#region_Diagnostics
 
   local signs = {
-    { name = "DiagnosticSignError", text = vimsharp.get_icon "DiagnosticError" },
-    { name = "DiagnosticSignWarn", text = vimsharp.get_icon "DiagnosticWarn" },
-    { name = "DiagnosticSignHint", text = vimsharp.get_icon "DiagnosticHint" },
-    { name = "DiagnosticSignInfo", text = vimsharp.get_icon "DiagnosticInfo" },
-    { name = "DapStopped", text = vimsharp.get_icon "DapStopped", texthl = "DiagnosticWarn" },
-    { name = "DapBreakpoint", text = vimsharp.get_icon "DapBreakpoint", texthl = "DiagnosticInfo" },
-    { name = "DapBreakpointRejected", text = vimsharp.get_icon "DapBreakpointRejected", texthl = "DiagnosticError" },
-    { name = "DapBreakpointCondition", text = vimsharp.get_icon "DapBreakpointCondition", texthl = "DiagnosticInfo" },
-    { name = "DapLogPoint", text = vimsharp.get_icon "DapLogPoint", texthl = "DiagnosticInfo" },
+    { name = "DiagnosticSignError", text = v.get_icon "DiagnosticError" },
+    { name = "DiagnosticSignWarn", text = v.get_icon "DiagnosticWarn" },
+    { name = "DiagnosticSignHint", text = v.get_icon "DiagnosticHint" },
+    { name = "DiagnosticSignInfo", text = v.get_icon "DiagnosticInfo" },
+    { name = "DapStopped", text = v.get_icon "DapStopped", texthl = "DiagnosticWarn" },
+    { name = "DapBreakpoint", text = v.get_icon "DapBreakpoint", texthl = "DiagnosticInfo" },
+    { name = "DapBreakpointRejected", text = v.get_icon "DapBreakpointRejected", texthl = "DiagnosticError" },
+    { name = "DapBreakpointCondition", text = v.get_icon "DapBreakpointCondition", texthl = "DiagnosticInfo" },
+    { name = "DapLogPoint", text = v.get_icon "DapLogPoint", texthl = "DiagnosticInfo" },
   }
 
   for _, sign in ipairs(signs) do
@@ -4417,7 +4412,7 @@ else
     vim.fn.sign_define(sign.name, sign)
   end
 
-  vimsharp.lsp.diagnostics = {
+  v.lsp.diagnostics = {
     off = {
       underline = false,
       virtual_text = false,
@@ -4441,7 +4436,7 @@ else
     },
   }
 
-  vim.diagnostic.config(vimsharp.lsp.diagnostics[vim.g.diagnostics_enabled and "on" or "off"])
+  vim.diagnostic.config(v.lsp.diagnostics[vim.g.diagnostics_enabled and "on" or "off"])
 
 
   --#endregion_Diagnostics
@@ -4487,7 +4482,7 @@ else
         table.insert(bufs, args.buf)
         vim.t.bufs = bufs
       end
-      vim.t.bufs = vim.tbl_filter(vimsharp.is_valid_buffer, vim.t.bufs)
+      vim.t.bufs = vim.tbl_filter(v.is_valid_buffer, vim.t.bufs)
     end,
   })
   autocmd("BufDelete", {
@@ -4506,7 +4501,7 @@ else
           end
         end
       end
-      vim.t.bufs = vim.tbl_filter(vimsharp.is_valid_buffer, vim.t.bufs)
+      vim.t.bufs = vim.tbl_filter(v.is_valid_buffer, vim.t.bufs)
       vim.cmd.redrawtabline()
     end,
   })
@@ -4515,7 +4510,7 @@ else
     desc = "URL Highlighting",
     group = grp("highlighturl", { clear = true }),
     pattern = "*",
-    callback = function() vimsharp.set_url_match() end,
+    callback = function() v.set_url_match() end,
   })
 
   autocmd("TextYankPost", {
@@ -4533,7 +4528,7 @@ else
   })
 
   autocmd("BufEnter", {
-    desc = "Quit vimsharp if more than one window is open and only sidebar windows are list",
+    desc = "Quit v if more than one window is open and only sidebar windows are list",
     group = grp("auto_quit", { clear = true }),
     callback = function()
       local wins = vim.api.nvim_tabpage_list_wins(0)
@@ -4625,16 +4620,16 @@ else
 
   -- autocmd({ "VimEnter", "ColorScheme" }, {
   --   desc = "Load custom highlights from user configuration",
-  --   group = grp("vimsharp_highlights", { clear = true }),
+  --   group = grp("v_highlights", { clear = true }),
   --   callback = function()
   --     if vim.g.colors_name then
   --       for _, module in ipairs { "init", vim.g.colors_name } do
-  --         for group, spec in pairs(vimsharp.highlights[module]) do
+  --         for group, spec in pairs(v.highlights[module]) do
   --           vim.api.nvim_set_hl(0, group, spec)
   --         end
   --       end
   --     end
-  --     vimsharp.event "ColorScheme"
+  --     v.event "ColorScheme"
   --   end,
   -- })
 
@@ -4646,8 +4641,8 @@ else
       vim.fn.system("git -C " .. vim.fn.expand "%:p:h" .. " rev-parse")
       if vim.v.shell_error == 0 then
         vim.api.nvim_del_augroup_by_name "git_plugin_lazy_load"
-        if #vimsharp.git_plugins > 0 then
-          vim.schedule(function() require("lazy").load { plugins = vimsharp.git_plugins } end)
+        if #v.git_plugins > 0 then
+          vim.schedule(function() require("lazy").load { plugins = v.git_plugins } end)
         end
       end
     end,
@@ -4657,22 +4652,22 @@ else
     callback = function(args)
       if not (vim.fn.expand "%" == "" or vim.api.nvim_get_option_value("buftype", { buf = args.buf }) == "nofile") then
         vim.api.nvim_del_augroup_by_name "file_plugin_lazy_load"
-        if #vimsharp.file_plugins > 0 then
-          if vim.tbl_contains(vimsharp.file_plugins, "nvim-treesitter") then
+        if #v.file_plugins > 0 then
+          if vim.tbl_contains(v.file_plugins, "nvim-treesitter") then
             require("lazy").load { plugins = { "nvim-treesitter" } }
           end
-          vim.schedule(function() require("lazy").load { plugins = vimsharp.file_plugins } end)
+          vim.schedule(function() require("lazy").load { plugins = v.file_plugins } end)
         end
       end
     end,
   })
 
   local cmd = vim.api.nvim_create_user_command
-  -- cmd("AstroUpdatePackages", function() vimsharp.updater.update_packages() end, { desc = "Update Plugins and Mason" })
-  -- cmd("AstroUpdate", function() vimsharp.updater.update() end, { desc = "Update vimsharp" })
-  -- cmd("AstroVersion", function() vimsharp.updater.version() end, { desc = "Check vimsharp Version" })
-  -- cmd("AstroChangelog", function() vimsharp.updater.changelog() end, { desc = "Check vimsharp Changelog" })
-  cmd("ToggleHighlightURL", function() vimsharp.ui.toggle_url_match() end, { desc = "Toggle URL Highlights" })
+  -- cmd("AstroUpdatePackages", function() v.updater.update_packages() end, { desc = "Update Plugins and Mason" })
+  -- cmd("AstroUpdate", function() v.updater.update() end, { desc = "Update v" })
+  -- cmd("AstroVersion", function() v.updater.version() end, { desc = "Check v Version" })
+  -- cmd("AstroChangelog", function() v.updater.changelog() end, { desc = "Check v Changelog" })
+  cmd("ToggleHighlightURL", function() v.ui.toggle_url_match() end, { desc = "Toggle URL Highlights" })
 
   -- Check if we need to reload the file when it changed
   vim.api.nvim_create_autocmd("FocusGained", { command = "checktime" })
@@ -4933,9 +4928,9 @@ else
       ["<leader>V"] = { function() vim.cmd('e $myvimrc') end, desc = "edit init.lua" },
 
       ["<leader>."] = { function()
-        local here = vimsharp.path.AppendSlash(vim.fs.normalize(vim.fn.expand("%:p:h")))
+        local here = v.path.AppendSlash(vim.fs.normalize(vim.fn.expand("%:p:h")))
         vim.cmd("cd " .. here)
-        vimsharp.notify("CWD set to: " .. here)
+        v.notify("CWD set to: " .. here)
       end, desc = "Set CWD to here" },
 
       ["<leader>w"] = { "<cmd>w<cr>", desc = "Save" },
@@ -4943,7 +4938,7 @@ else
 
       ["<leader>nf"] = { "<cmd>vnew<cr>", desc = "New File" },
 
-      ["gx"] = { function() vimsharp.system_open() end, desc = "Open the file under cursor with system app" },
+      ["gx"] = { function() v.system_open() end, desc = "Open the file under cursor with system app" },
       ["Q"] = "<Nop>",
       ["K"] = { function()
 
@@ -4962,11 +4957,11 @@ else
       ["<leader>pu"] = { function() require("lazy").check() end, desc = "Plugins Check Updates" },
       ["<leader>pU"] = { function() require("lazy").update() end, desc = "Plugins Update" },
 
-      -- -- vimsharp
+      -- -- v
       -- ["<leader>pa"] = { "<cmd>AstroUpdatePackages<cr>", desc = "Update Plugins and Mason" },
-      -- ["<leader>pA"] = { "<cmd>AstroUpdate<cr>", desc = "vimsharp Update" },
-      -- ["<leader>pv"] = { "<cmd>AstroVersion<cr>", desc = "vimsharp Version" },
-      -- ["<leader>pl"] = { "<cmd>AstroChangelog<cr>", desc = "vimsharp Changelog" },
+      -- ["<leader>pA"] = { "<cmd>AstroUpdate<cr>", desc = "v Update" },
+      -- ["<leader>pv"] = { "<cmd>AstroVersion<cr>", desc = "v Version" },
+      -- ["<leader>pl"] = { "<cmd>AstroChangelog<cr>", desc = "v Changelog" },
 
       -- -- Alpha
       -- if is_available "alpha-nvim" then
@@ -4975,28 +4970,28 @@ else
 
       --["<C-'>"] = ["<F7>"],
       -- Manage Buffers
-      ["<leader>c"] = { function() vimsharp.close_buf(0) end, desc = "Close buffer" },
-      ["<leader>C"] = { function() vimsharp.close_buf(0, true) end, desc = "Force close buffer" },
-      ["<S-l>"] = { function() vimsharp.nav_buf(vim.v.count > 0 and vim.v.count or 1) end, desc = "Next buffer" },
+      ["<leader>c"] = { function() v.close_buf(0) end, desc = "Close buffer" },
+      ["<leader>C"] = { function() v.close_buf(0, true) end, desc = "Force close buffer" },
+      ["<S-l>"] = { function() v.nav_buf(vim.v.count > 0 and vim.v.count or 1) end, desc = "Next buffer" },
       ["<S-h>"] =
-      { function() vimsharp.nav_buf(-(vim.v.count > 0 and vim.v.count or 1)) end, desc = "Previous buffer" },
+      { function() v.nav_buf(-(vim.v.count > 0 and vim.v.count or 1)) end, desc = "Previous buffer" },
       [">b"] =
-      { function() vimsharp.move_buf(vim.v.count > 0 and vim.v.count or 1) end, desc = "Move buffer tab right" },
+      { function() v.move_buf(vim.v.count > 0 and vim.v.count or 1) end, desc = "Move buffer tab right" },
       ["<b"] =
-      { function() vimsharp.move_buf(-(vim.v.count > 0 and vim.v.count or 1)) end, desc = "Move buffer tab left" },
+      { function() v.move_buf(-(vim.v.count > 0 and vim.v.count or 1)) end, desc = "Move buffer tab left" },
 
-      ["<leader>bb"] = { function() vimsharp.status.heirline.buffer_picker(function(bufnr) vim.api.nvim_win_set_buf(0,
+      ["<leader>bb"] = { function() v.status.heirline.buffer_picker(function(bufnr) vim.api.nvim_win_set_buf(0,
             bufnr)
         end)
       end, desc = "Select buffer from tabline", },
-      ["<leader>bd"] = { function() vimsharp.status.heirline.buffer_picker(function(bufnr) vimsharp.close_buf(bufnr) end) end,
+      ["<leader>bd"] = { function() v.status.heirline.buffer_picker(function(bufnr) v.close_buf(bufnr) end) end,
         desc = "Delete buffer from tabline", },
-      ["<leader>b\\"] = { function() vimsharp.status.heirline.buffer_picker(function(bufnr) vim.cmd.split()
+      ["<leader>b\\"] = { function() v.status.heirline.buffer_picker(function(bufnr) vim.cmd.split()
           vim.api.nvim_win_set_buf(0
             , bufnr)
         end)
       end, desc = "Horizontal split buffer from tabline", },
-      ["<leader>b|"] = { function() vimsharp.status.heirline.buffer_picker(function(bufnr) vim.cmd.vsplit()
+      ["<leader>b|"] = { function() v.status.heirline.buffer_picker(function(bufnr) vim.cmd.vsplit()
           vim.api.nvim_win_set_buf(0
             , bufnr)
         end)
@@ -5095,7 +5090,7 @@ else
       ["<leader>fe"] = { function() require("telescope").extensions.everything.everything() end, desc = "Everything" },
       ["<leader>fk"] = { function() require("telescope.builtin").keymaps() end, desc = "Search keymaps" },
       ["<leader>fc"] = { function() require("telescope.builtin").commands() end, desc = "Search commands" },
-      ["<leader>fn"] = { function() if vimsharp.is_available "nvim-notify" then require("telescope").extensions.notify.notify() end end,
+      ["<leader>fn"] = { function() if v.is_available "nvim-notify" then require("telescope").extensions.notify.notify() end end,
         desc = "Search notifications" },
       ["<leader>ls"] = { function() local aerial_avail, _ = pcall(require, "aerial")
         if aerial_avail then require("telescope")
@@ -5109,20 +5104,20 @@ else
       -- Terminal
       --if is_available "toggleterm.nvim" then
       --if vim.fn.executable "lazygit" == 1 then
-      ["<leader>gg"] = { function() vimsharp.toggle_term_cmd "lazygit" end, desc = "ToggleTerm lazygit" },
-      ["<leader>tl"] = { function() vimsharp.toggle_term_cmd "lazygit" end, desc = "ToggleTerm lazygit" },
+      ["<leader>gg"] = { function() v.toggle_term_cmd "lazygit" end, desc = "ToggleTerm lazygit" },
+      ["<leader>tl"] = { function() v.toggle_term_cmd "lazygit" end, desc = "ToggleTerm lazygit" },
       --end
       --if vim.fn.executable "node" == 1 then
-      ["<leader>tn"] = { function() vimsharp.toggle_term_cmd "node" end, desc = "ToggleTerm node" },
+      ["<leader>tn"] = { function() v.toggle_term_cmd "node" end, desc = "ToggleTerm node" },
       --end
       --if vim.fn.executable "gdu" == 1 then
-      ["<leader>tu"] = { function() vimsharp.toggle_term_cmd "gdu" end, desc = "ToggleTerm gdu" },
+      ["<leader>tu"] = { function() v.toggle_term_cmd "gdu" end, desc = "ToggleTerm gdu" },
       --end
       --if vim.fn.executable "btm" == 1 then
-      ["<leader>tb"] = { function() vimsharp.toggle_term_cmd "btm" end, desc = "ToggleTerm btm" },
+      ["<leader>tb"] = { function() v.toggle_term_cmd "btm" end, desc = "ToggleTerm btm" },
       --end
       --if vim.fn.executable "python" == 1 then
-      ["<leader>tp"] = { function() vimsharp.toggle_term_cmd "python" end, desc = "ToggleTerm python" },
+      ["<leader>tp"] = { function() v.toggle_term_cmd "python" end, desc = "ToggleTerm python" },
       --end
       ["<leader>tf"] = { "<cmd>ToggleTerm direction=float<cr>", desc = "ToggleTerm float" },
       ["<leader>th"] = { "<cmd>ToggleTerm size=10 direction=horizontal<cr>", desc = "ToggleTerm horizontal split" },
@@ -5176,30 +5171,30 @@ else
 
       -- Custom menu for modification of the user experience
 
-      ["<leader>ua"] = { function() if is_available "nvim-autopairs" then vimsharp.ui.toggle_autopairs() end end,
+      ["<leader>ua"] = { function() if is_available "nvim-autopairs" then v.ui.toggle_autopairs() end end,
         desc = "Toggle autopairs" },
-      ["<leader>ub"] = { function() if is_available "nvim-autopairs" then vimsharp.ui.toggle_background() end end,
+      ["<leader>ub"] = { function() if is_available "nvim-autopairs" then v.ui.toggle_background() end end,
         desc = "Toggle background" },
 
-      ["<leader>uc"] = { function() if is_available "nvim-cmp" then vimsharp.ui.toggle_cmp() end end,
+      ["<leader>uc"] = { function() if is_available "nvim-cmp" then v.ui.toggle_cmp() end end,
         desc = "Toggle autocompletion" },
 
       ["<leader>uC"] = { function() if is_available "nvim-colorizer.lua" then vim.cmd.ColorizerToggle() end end,
         desc = "Toggle color highlight" },
 
-      ["<leader>uS"] = { function() vimsharp.ui.toggle_conceal() end, desc = "Toggle conceal" },
-      ["<leader>ud"] = { function() vimsharp.ui.toggle_diagnostics() end, desc = "Toggle diagnostics" },
-      ["<leader>ug"] = { function() vimsharp.ui.toggle_signcolumn() end, desc = "Toggle signcolumn" },
-      ["<leader>ui"] = { function() vimsharp.ui.set_indent() end, desc = "Change indent setting" },
-      ["<leader>ul"] = { function() vimsharp.ui.toggle_statusline() end, desc = "Toggle statusline" },
-      ["<leader>un"] = { function() vimsharp.ui.change_number() end, desc = "Change line numbering" },
-      ["<leader>us"] = { function() vimsharp.ui.toggle_spell() end, desc = "Toggle spellcheck" },
-      ["<leader>up"] = { function() vimsharp.ui.toggle_paste() end, desc = "Toggle paste mode" },
-      ["<leader>ut"] = { function() vimsharp.ui.toggle_tabline() end, desc = "Toggle tabline" },
-      ["<leader>uu"] = { function() vimsharp.ui.toggle_url_match() end, desc = "Toggle URL highlight" },
-      ["<leader>uw"] = { function() vimsharp.ui.toggle_wrap() end, desc = "Toggle wrap" },
-      ["<leader>uy"] = { function() vimsharp.ui.toggle_syntax() end, desc = "Toggle syntax highlight" },
-      ["<leader>uN"] = { function() vimsharp.ui.toggle_ui_notifications() end, desc = "Toggle UI notifications" },
+      ["<leader>uS"] = { function() v.ui.toggle_conceal() end, desc = "Toggle conceal" },
+      ["<leader>ud"] = { function() v.ui.toggle_diagnostics() end, desc = "Toggle diagnostics" },
+      ["<leader>ug"] = { function() v.ui.toggle_signcolumn() end, desc = "Toggle signcolumn" },
+      ["<leader>ui"] = { function() v.ui.set_indent() end, desc = "Change indent setting" },
+      ["<leader>ul"] = { function() v.ui.toggle_statusline() end, desc = "Toggle statusline" },
+      ["<leader>un"] = { function() v.ui.change_number() end, desc = "Change line numbering" },
+      ["<leader>us"] = { function() v.ui.toggle_spell() end, desc = "Toggle spellcheck" },
+      ["<leader>up"] = { function() v.ui.toggle_paste() end, desc = "Toggle paste mode" },
+      ["<leader>ut"] = { function() v.ui.toggle_tabline() end, desc = "Toggle tabline" },
+      ["<leader>uu"] = { function() v.ui.toggle_url_match() end, desc = "Toggle URL highlight" },
+      ["<leader>uw"] = { function() v.ui.toggle_wrap() end, desc = "Toggle wrap" },
+      ["<leader>uy"] = { function() v.ui.toggle_syntax() end, desc = "Toggle syntax highlight" },
+      ["<leader>uN"] = { function() v.ui.toggle_ui_notifications() end, desc = "Toggle UI notifications" },
 
 
       -- -- Move Lines
@@ -5427,8 +5422,8 @@ else
     end
   end
 
-  --vimsharp.set_mappings(vim.tbl_deep_extend("force", mappings, maps))
-  vimsharp.set_mappings(mappings)
+  --v.set_mappings(vim.tbl_deep_extend("force", mappings, maps))
+  v.set_mappings(mappings)
 
   --#endregion_mappings
   ---------------------------------------------------------------------------------------------------
@@ -5451,9 +5446,9 @@ else
 
   local colorscheme = nil
   if colorscheme then colorscheme = pcall(vim.cmd.colorscheme, colorscheme) end
-  if not colorscheme then vim.cmd.colorscheme "vimsharp" end
+  if not colorscheme then vim.cmd.colorscheme "v" end
 
-  -- vimsharp.conditional_func(vimsharp.user_plugin_opts("polish", nil, false), true)
+  -- v.conditional_func(v.user_plugin_opts("polish", nil, false), true)
 
   --#endregion_polish
   ---------------------------------------------------------------------------------------------------
