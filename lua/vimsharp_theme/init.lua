@@ -2,45 +2,43 @@ vim.cmd.highlight "clear"
 if vim.fn.exists "syntax_on" then vim.cmd.syntax "reset" end
 vim.o.background = "dark"
 vim.o.termguicolors = true
-vim.g.colors_name = "astronvim"
+vim.g.colors_name = "vimsharp"
 
--- local user_plugin_opts = astronvim.user_plugin_opts
+-- local user_plugin_opts = vimsharp.user_plugin_opts
 
-C = require "astronvim_theme.colors"
+C = require "vimsharp_theme.colors"
 
 local highlights = {}
 
 for _, module in ipairs { "base", "lsp" } do
-  highlights = vim.tbl_deep_extend("force", highlights, require("astronvim_theme." .. module))
+  highlights = vim.tbl_deep_extend("force", highlights, require("vimsharp_theme." .. module))
 end
 
-for plugin, enabled in
-  pairs( {
-    aerial = true,
-    beacon = false,
-    bufferline = false,
-    cmp = true,
-    dapui = true,
-    dashboard = true,
-    gitsigns = true,
-    highlighturl = true,
-    hop = false,
-    indent_blankline = true,
-    lightspeed = false,
-    ["neo-tree"] = true,
-    notify = true,
-    ["nvim-tree"] = false,
-    ["nvim-web-devicons"] = true,
-    rainbow = true,
-    symbols_outline = false,
-    telescope = true,
-    treesitter = true,
-    vimwiki = false,
-    ["which-key"] = true,
-  })
-do
+for plugin, enabled in pairs({
+  aerial = true,
+  beacon = false,
+  bufferline = false,
+  cmp = true,
+  dapui = true,
+  dashboard = true,
+  gitsigns = true,
+  highlighturl = true,
+  hop = false,
+  indent_blankline = true,
+  lightspeed = false,
+  ["neo-tree"] = true,
+  notify = true,
+  ["nvim-tree"] = false,
+  ["nvim-web-devicons"] = true,
+  rainbow = true,
+  symbols_outline = false,
+  telescope = true,
+  treesitter = true,
+  vimwiki = false,
+  ["which-key"] = true,
+}) do
   if enabled then
-    highlights = vim.tbl_deep_extend("force", highlights, require("astronvim_theme.plugins." .. plugin))
+    highlights = vim.tbl_deep_extend("force", highlights, require("vimsharp_theme.plugins." .. plugin))
   end
 end
 
@@ -48,7 +46,7 @@ for group, spec in pairs(highlights) do
   vim.api.nvim_set_hl(0, group, spec)
 end
 
-astronvim.vim_opts {
+vimsharp.vim_opts {
   g = {
     terminal_color_0 = C.terminal_color_0 or C.bg,
     terminal_color_1 = C.terminal_color_1 or C.red,

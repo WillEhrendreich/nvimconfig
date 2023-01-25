@@ -511,7 +511,7 @@
               vim.g['fsharp#fsi_keymap_send'] = "<M-cr>"
               vim.g['fsharp#fsi_keymap_toggle'] = "<M-@>"
 
-              --astronvim.notify("fsautocomplete command is : " .. vim.inspect(vim.g['fsharp#fsautocomplete_command']))
+              --vimsharp.notify("fsautocomplete command is : " .. vim.inspect(vim.g['fsharp#fsautocomplete_command']))
 
               return getServerConfig()
             end
@@ -571,8 +571,8 @@
                   vim.g['fsharp#lsp_codelens'] == 1 then
 
                 print("fsharp.backend is nvim and lsp_codelens is true.. ")
-                local is_available = astronvim.is_available
-                -- local user_plugin_opts = astronvim.user_plugin_opts
+                local is_available = vimsharp.is_available
+                -- local user_plugin_opts = vimsharp.user_plugin_opts
                 local namespace = vim.api.nvim_create_namespace
                 local autocmd = vim.api.nvim_create_autocmd
                 local a = vim.api
@@ -770,7 +770,7 @@
               local auto_init = vim.g['fsharp#automatic_workspace_init']
               local result = {
                 name = "ionide",
-                on_attach = astronvim.lsp.on_attach,
+                on_attach = vimsharp.lsp.on_attach,
                 cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
                 cmd_env = { DOTNET_ROLL_FORWARD = "LatestMajor" },
                 filetypes = { "fsharp" },
@@ -818,7 +818,7 @@
             end
 
             local function delegate_to_lspconfig(config)
-              -- astronvim.notify("delegating to lspconfig for ionide")
+              -- vimsharp.notify("delegating to lspconfig for ionide")
               local lspconfig = require('lspconfig')
               local configs = require('lspconfig.configs')
               if not (configs['ionide']) then
@@ -918,7 +918,7 @@
             --- end ftplugin section ---
             -- vim.cmd "let g:fsharp#use_sdk_scripts = true"
             --
-            -- astronvim.load_plugin_with_func("lspconfig", module, func_names)
+            -- vimsharp.load_plugin_with_func("lspconfig", module, func_names)
 
             local con = {
               cmd = { "fsautocomplete", "--adaptive-lsp-server-enabled",

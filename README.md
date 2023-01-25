@@ -1,3 +1,7 @@
+VimSharp - 
+
+Neovim that plays nice with dotnet. 
+
 This is my personal nvim config files. 
 
 Heavily borrowed and adapted from Astronvim, but I wanted the whole config in one place, or at least moreso.

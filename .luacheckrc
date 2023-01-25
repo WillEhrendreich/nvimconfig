@@ -1,12 +1,12 @@
 -- Global objects
 globals = {
-  "PACKER_BOOTSTRAP",
-  "astronvim",
-  "astronvim_installation",
+  -- "PACKER_BOOTSTRAP",
+  "vimsharp",
+  "vimsharp_installation",
   "vim",
   "bit",
   "C",
-  "packer_plugins",
+  -- "packer_plugins",
 }
 
 -- Rerun tests only if their modification time changed
