@@ -1,5 +1,5 @@
-!colors/vimsharp.lua
-colors/*
+# !colors/vimsharp.lua
+# colors/*
 docs
 ginit.vim
 lua/user
