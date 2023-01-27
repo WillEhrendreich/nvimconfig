@@ -1773,44 +1773,6 @@ v.lsp.on_attach = function(client, bufnr)
       end
     end
 
-    if capabilities.implementationProvider then
-      lsp_mappings.n["gI"] = { function() vim.lsp.buf.implementation() end, desc = "Implementation of current symbol" }
-    end
-
-    if capabilities.referencesProvider then
-      lsp_mappings.n["gr"] = { function() vim.lsp.buf.references() end, desc = "References of current symbol" }
-    end
-
-    if capabilities.renameProvider then
-      lsp_mappings.n["<leader>lr"] = { function() vim.lsp.buf.rename() end, desc = "Rename current symbol" }
-    end
-
-    if capabilities.signatureHelpProvider then
-      lsp_mappings.n["<leader>lh"] = { function() vim.lsp.buf.signature_help() end, desc = "Signature help" }
-    end
-
-    if capabilities.typeDefinitionProvider then
-      lsp_mappings.n["gT"] = { function() vim.lsp.buf.type_definition() end, desc = "Definition of current type" }
-    end
-
-    -- original version from VimSharpvim --
-    --
-    -- if capabilities.documentHighlightProvider then
-    --   local highlight_name = fn.printf("lsp_document_highlight_%d", bufnr)
-    --   vim.api.nvim_create_augroup(highlight_name, {})
-    --   vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-    --     group = highlight_name,
-    --     buffer = bufnr,
-    --     callback = function() vim.lsp.buf.document_highlight() end,
-    --   })
-    --   vim.api.nvim_create_autocmd("CursorMoved", {
-    --     group = highlight_name,
-    --     buffer = bufnr,
-    --     callback = function() vim.lsp.buf.clear_references() end,
-    --   })
-    -- end
-    --
-
     if capabilities.documentHighlightProvider then
       local highlight_name = fn.printf("lsp_document_highlight_%d", bufnr)
       vim.api.nvim_create_augroup(highlight_name, { clear = true })
@@ -1818,27 +1780,6 @@ v.lsp.on_attach = function(client, bufnr)
         group = highlight_name,
         buffer = bufnr,
         callback = function()
-          -- local cursor = vim.api.nvim_win_get_cursor(0)
-          -- -- check if cursor is on an empty column
-          -- local row, col = cursor[1] - 1, cursor[2]
-          -- local line = vim.api.nvim_buf_get_lines(0, row, row + 1, true)[1]
-          -- if line
-          --     and (
-          --     #line == 0
-          --         or line:sub(col + 1, col + 1):match "^%s+$"
-          --         or line:sub(col + 1, col + 1):match "let"
-          --         or line:sub(col + 1, col + 1):match "="
-          --         or line:sub(col + 1, col + 1):match "-"
-          --         or line:sub(col + 1, col + 1):match ">"
-          --         or line:sub(col + 1, col + 1):match "<"
-          --         or line:sub(col + 1, col + 1):match "/\\W"
-          --
-          --     )
-          -- then
-          --   return
-          -- end
-          --
-          --vim.lsp.buf.document_highlight()
           vim.lsp.buf.document_highlight()
         end
         ,
@@ -1850,12 +1791,12 @@ v.lsp.on_attach = function(client, bufnr)
       })
     end
 
+
     if capabilities.codeLensProvider then
       vim.defer_fn(function()
         -- v.notify("now calling first codelens refresh..")
         vim.lsp.codelens.refresh()
       end, 4000)
-
       local group_name = "codelens_" .. bufnr
       vim.api.nvim_create_augroup(group_name, { clear = true })
       -- default VimSharpvim version
@@ -1913,11 +1854,26 @@ end
 v.lsp.configs = {
   clangd = { capabilities = { offsetEncoding = "utf-8" } },
   ionide = {
-    cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
+
+    -- cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
+    cmd = (function()
+      -- local ok, m = pcall(require, "mason")
+      -- if ok then
+      -- local m =require("mason-lspconfig").get_available_servers()["fsautocomplete"]
+      -- local path = stdpath("data") .. "mason/packages/fsautocomplete/fsautocomplete.exe"
+      -- local path = [[C:\.local\share\nvim-data\mason\bin\fsautocomplete.CMD]]
+      -- v.notify("passing through path of " .. path)
+      -- v.notify("config for ionide, mason was available, passing through path of " .. path)
+      -- return { path, '--adaptive-lsp-server-enabled', '-v' }
+      -- else
+      -- v.notify("config for ionide, mason was not available, default of fsautocomplete for first arg ")
+      return { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' }
+      -- end
+    end)(),
     on_attach = v.lsp.on_attach,
 
     -- handlers = re "ionide".handlers,
-    settings = { FSharp = { use_sdk_scripts = 0 }, },
+    settings = { FSharp = { UseSdkScripts = false }, },
     -- root_dir = function(fname)
     --   local util = re("lspconfig.util")
     --   local get_root_dir = function(filename, _)
@@ -1958,6 +1914,10 @@ v.lsp.flags = {} -- Helper function to set up a given server with the Neovim LSP
 v.lsp.setup = function(server)
   if not tContains(v.lsp.skip_setup, server) then
     executeIfTrue(require, server == "sumneko_lua" and v.isAvalable "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
+    if server == "fsautocomplete" then
+
+      return
+    end
     if server == "ionide" then
       -- vim.cmd("let g:fsharp#use_recommended_server_config =0")
       -- vim.cmd("let g:fsharp#use_sdk_scripts =0")
@@ -3587,17 +3547,17 @@ require("lazy").setup(
               }),
             },
             sources = cmp.config.sources {
-              { name = "nvim_lsp", priority = 1000 },
-              { name = "luasnip", priority = 750 },
-              { name = "nvim-lua", priority = 600 },
+              { name = "luasnip", priority = 1000 },
+              { name = "nvim_lsp", priority = 900 },
+              { name = "omni", priority = 750 },
               { name = "nuget", priority = 500 },
               { name = "path", priority = 400 },
               { name = "cmdline", priority = 350 },
               { name = "calc", priority = 300 },
               { name = "buffer", priority = 275 },
-              { name = "omni", priority = 250 },
               { name = "emoji", priority = 200 },
               { name = "pandoc-references", priority = 150 },
+              { name = "nvim-lua", priority = 100 },
               { name = "latex-symbols", priority = 50 },
 
             },
@@ -3608,6 +3568,7 @@ require("lazy").setup(
         dependencies = {
           ["hrsh7th/cmp-nvim-lsp"] = {},
           ["saadparwaiz1/cmp_luasnip"] = {},
+          ["hrsh7th/cmp-nvim-lsp-signature-help"] = {},
           ["hrsh7th/cmp-nvim-lua"] = {},
           ["hrsh7th/cmp-buffer"] = {},
           ["hrsh7th/cmp-path"] = {},
@@ -3687,9 +3648,9 @@ require("lazy").setup(
             config = function()
 
               require "mason-lspconfig".setup({
-                automatic_installation = true,
+                automatic_installation = { exclude = { "fsautocomplete" } },
                 ensure_installed = {
-                  -- "fsautocomplete",
+                  "fsautocomplete",
                   "omnisharp",
                   "clangd",
                   "cmake",
@@ -4387,7 +4348,8 @@ require("lazy").setup(
       --     "nvim-telescope/telescope.nvim"
       --   } },
       -- ["WillEhrendreich/ionide-vim"] = { config = v.lsp.configs.ionide, },
-      ["WillEhrendreich/ionide-vim"] = {},
+      ["WillEhrendreich/ionide-vim"] = { config = v.lsp.configs.ionide, },
+      -- ["WillEhrendreich/ionide-vim"] = {},
       -- ["ionide/ionide-vim"] = { lazy = false, config = function() re("ionide").setup(v.lsp.configs.ionide) end, },
 
       ["hood/popui.nvim"] = {
