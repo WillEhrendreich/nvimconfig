@@ -16,10 +16,14 @@ local vimsharp_installation = vimsharp_installation or nil
 _G.vimsharp = {
   --local v = {
   lsp = {
-    ignoredLspServersForFindingRoot = { "null-ls", "stylua", "lemminx", "editorconfig_checker" },
+    IgnoredLspServersForFindingRoot = { "null-ls", "stylua", "lemminx", "editorconfig_checker" },
   },
   module = {},
-  dotnet = {},
+  dotnet = {
+    LastProjectFileName = "",
+    StartupProjectPath = "",
+    LastDllPath = "",
+  },
   debug = {},
   buf = {},
   ui = {},
@@ -47,12 +51,10 @@ local inp = fn.input
 --- Call function if a condition is met
 -- @param func the function to run
 -- @param condition a boolean value of whether to run the function or not
-function v.executeIfTrue(func, condition, ...)
+function v.ExecuteIfTrue(func, condition, ...)
   -- if the condition is true or no condition is provided, evaluate the function with the rest of the parameters and return the result
   if condition and type(func) == "function" then return func(...) end
 end
-
-local executeIfTrue = v.executeIfTrue
 
 --#region_utils
 --- installation details from external installers
@@ -66,7 +68,7 @@ local supported_configs = { v.install.home, v.install.config }
 --- Looks to see if a module path references a lua file in a configuration folder and tries to load it. If there is an error loading the file, write an error and continue
 -- @param module the module path to try and load
 -- @return the loaded module if successful or nil
-v.module.load = function(module)
+function v.module.Load(module)
   -- placeholder for final return value
   local found_module = nil
   -- search through each of the supported configuration locations
@@ -98,7 +100,7 @@ function v.FindRoot(ignored_lsp_servers, bufnr)
   -- Get lsp client for current buffer
   -- local bufDir = v.path.GetDirForBufnr(bufnr)
   local ignore = ignored_lsp_servers or
-      v.lsp.ignoredLspServersForFindingRoot
+      v.lsp.IgnoredLspServersForFindingRoot
       or {}
   -- vim.notify(vim.inspect(ignore) .. "are being ignored when finding root")
   -- vim.notify(vim.inspect(b) .. " is the bufnumber with filename " .. v.path.GetBaseFilenameForBufnr(b))
@@ -111,30 +113,29 @@ function v.FindRoot(ignored_lsp_servers, bufnr)
   local i       = ignore or {}
   for _, c in pairs(clients) do
     local cname = c.name
-    -- v.notify("client name is " .. (cname or "not found"))
+    -- v.Notify("client name is " .. (cname or "not found"))
     -- local bufname = vim.api.nvim_buf_get_name(bufnr)
-    -- v.notify("buf name is " .. (bufname or "not found"))
+    -- v.Notify("buf name is " .. (bufname or "not found"))
     -- local lspConfigForClient = re 'lspconfig.configs'[cname]
-    -- v.notify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
+    -- v.Notify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
     local filetypes = c.config.filetypes
     if filetypes and tContains(filetypes, buf_ft) then
       if not tContains(i, cname) then
         -- local rootDirFunction = lspConfigForClient.get_root_dir
-        -- v.notify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
+        -- v.Notify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
         local activeConfigRootDir = c.config.root_dir
         -- local rootresult
-        -- v.notify("active root dir is " .. (activeConfigRootDir or "not found"))
+        -- v.Notify("active root dir is " .. (activeConfigRootDir or "not found"))
         -- if rootDirFunction then
         -- rootresult = rootDirFunction(bufname)
-        -- if rootresult and not rootresult == nil and not rootresult == "" then v.notify("result of rootDirFunction is: "
+        -- if rootresult and not rootresult == nil and not rootresult == "" then v.Notify("result of rootDirFunction is: "
         --     ..
         --     upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult))))
         -- end
         -- end
         if activeConfigRootDir then
-          result = string.gsub(v.path.AppendSlash(v.path.UpperDriveLetter(vim.fs.normalize(activeConfigRootDir .. "/")))
-            , "//", "/")
-          -- v.notify("active root dir is " .. (result or "not found"))
+          result = v.StringReplace(vim.fs.normalize(activeConfigRootDir), "//", "/")
+          -- v.Notify("active root dir is " .. (result or "not found"))
           -- else
           -- result = upperDriveLetter(vim.fs.normalize(v.path.AppendSlash(rootresult) )))
         end
@@ -151,8 +152,8 @@ end
 -- IMPORTANT! package.json file is found only if lsp root
 -- where package.json is or vim-rooter (or something similar) is activated
 --
-v.is_in_package_json = function(field)
-  local root = v.FindRoot(v.lsp.ignoredLspServersForFindingRoot)
+function v.IsInPackageJson(field)
+  local root = v.FindRoot(v.lsp.IgnoredLspServersForFindingRoot)
   if fn.filereadable(root .. "/package.json") ~= 0 then
     local package_json = fn.json_decode(fn.readfile "package.json")
     if package_json == nil then
@@ -173,15 +174,15 @@ v.is_in_package_json = function(field)
   return false
 end
 
-v.is_web_project = function()
+function v.IsWebProject()
   return (fn.glob "package.json" ~= "" or fn.glob "yarn.lock" ~= "" or fn.glob "node_modules" ~= "")
 end
 
-v.is_arduino_project = function()
+function v.IsArduinoProject()
   return (fn.glob "*.ino" ~= "")
 end
 
-v.decode_json_file = function(filename)
+function v.DecodeJsonFile(filename)
   if fn.filereadable(filename) == 0 then
     return nil
   end
@@ -189,144 +190,243 @@ v.decode_json_file = function(filename)
   return fn.json_decode(fn.readfile(filename))
 end
 
-v.stringReplace = function(x, to_replace, replace_with)
+function v.StringEndsWith(str, ending)
+  return ending == "" or string.sub(str, -string.len(ending)) == ending
+end
+
+function v.StringReplace(x, to_replace, replace_with)
   if type(x) == "string" or type(x) == "number" then
     return string.gsub(x, to_replace, replace_with)
   end
 
   if type(x) == "table" then
     for key, value in pairs(x) do
-      x[key] = v.stringReplace(value, to_replace, replace_with)
+      x[key] = v.StringReplace(value, to_replace, replace_with)
     end
   end
 
   return x
 end
 
-v.dotnet.StartupProjectPath = nil
-v.dotnet.GetProjectPath = function()
-  if v.dotnet.StartupProjectPath == nil then
-    v.dotnet.StartupProjectPath = vim.fn.getcwd()
+function v.GetCurrentBufDirname()
+  local p = vim.fs.dirname(string.sub(vim.uri_from_bufnr(vim.api.nvim_get_current_buf()), 9))
+  return p
+end
+
+function v.dotnet.GetProjectPath()
+
+  local dirname = v.GetCurrentBufDirname()
+  local projectName = v.dotnet.LastProjectFileName
+
+  local nearestProj
+  local files = vim.fn.readdir(dirname)
+  for _, file in ipairs(files) do
+    if not nearestProj then
+      if v.StringEndsWith(file, "*proj") then
+        -- local full_path = dirname .. '/' .. file
+        nearestProj = string.sub(file, 0, string.len(file) - 8)
+        -- nearestProj = string.sub(n, string.len(dirname), string.len(n) - 8)
+      end
+    end
   end
-  v.debug.getConfig()
-  local path = fn.input({ "Path to your startup *proj file ", v.dotnet.StartupProjectPath, "file" })
-  v.dotnet.lastProjectPath = path
-  v.dotnet.StartupProjectPath = path
+  if not nearestProj then nearestProj = "" end
+  if not projectName then projectName = nearestProj end
+  if not v.dotnet.LastProjectFileName or v.dotnet.LastProjectFileName == "" then v.dotnet["LastProjectFileName"] = projectName end
+  local path = dirname .. "/" .. projectName .. ".dll"
+  if not v.dotnet.StartupProjectPath or v.dotnet.StartupProjectPath == "" then
+    v.dotnet["StartupProjectPath"] = path
+  end
+
+  local path = v.dotnet.StartupProjectPath or ""
+  if path == "" then
+    -- vim.notify("StartupProjectPath was either blank or nil")
+    path = v.GetCurrentBufDirname()
+  end
+  local function request(initialPath)
+    local response = vim.fn.input("Path to project: ", initialPath, "file")
+    if not v.StringEndsWith(response, "proj") then
+      response = fn.input({ "Given path didn't end with 'proj'.. " ..
+          "\nPlease provide an actual path to the startup project: \n",
+        initialPath, "file" })
+    end
+    if not v.StringEndsWith(response, "proj") then
+      vim.notify("Fine.. BE that way.. You don't want to give an actual path? I'm setting the path to ERROR.BADproj, and you will get errors.. but it's out of my hands now. *tsk tsk.* you try to help someone.. geeez.. ")
+      response = "ERROR.BADproj"
+    end
+    return response
+  end
+
+  if fn.confirm("Do you want to change the path to project?\n" .. vim.inspect(path), "&yes\n&no", 2) == 1
+  then
+    path = request(v.GetCurrentBufDirname())
+  end
+  print("Path to startup project is set to: " .. path)
+  -- v.debug.GetConfig()
+  -- local path = fn.input({ "Path to your startup *proj file ", v.dotnet.StartupProjectPath, "file" })
+  v.dotnet["StartupProjectPath"] = path
   return path
 end
 
-local openFileInNewBuffer = function(f)
-  if fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim.cmd.bufload(f) end
+function v.OpenFileInNewBuffer(f)
+  local file_exists = os.rename(f, f)
+  if not file_exists then
+    local file = io.open(f, "w")
+    file:close()
+  end
+
+  local choice = vim.fn.confirm("Do you want to open the file\n" .. f .. "\nin a new buffer? \n", "&yes\n&no", "y")
+  if choice == "y" then
+    local cmd = "vnew " .. f
+    vim.cmd.vnew(cmd)
+  end
+  -- if fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim.fn.bufload(f) end
 end
 
-v.dotnet["buildRelease"] = function(p)
+function v.dotnet.BuildRelease(p)
   local logfile = "c:/temp/dotnet-release-Log.txt"
   -- local cmd = "dotnet build -c Release " .. p .. '" *> ' .. logfile
-  local cmd = "dotnet build -c Release --project " .. p
+  local cmd = "dotnet build " .. p .. "-c Release"
   print ""
   print("Cmd to execute: " .. cmd)
   local f = os.execute(cmd)
   if f == 0 then
     print "\nBuild: ✔️ "
   else
-    print("\nBuild: ❌ (code: " .. f .. ")")
-    openFileInNewBuffer(logfile)
+    print("\nBuild failed: ❌ (code: " .. f .. ")")
+    v.OpenFileInNewBuffer(logfile)
   end
   return f
 end
 
-v.dotnet["buildDebug"] = function(p)
+function v.dotnet.BuildDebug(p)
   local logfile = "c:/temp/dap-debug-nvim-dotnet.txt"
   -- local cmd = "dotnet build -c Debug " .. p .. '" *> ' .. logfile
-  local cmd = "dotnet build -c Debug --project " .. p
+  local cmd = "dotnet build " .. p .. " -c Debug"
+
   print ""
   print("Cmd to execute: " .. cmd)
   local f = os.execute(cmd)
   if f == 0 then
     print "\nBuild: ✔️ "
   else
-    print("\nBuild: ❌ (code: " .. f .. ")")
-    openFileInNewBuffer(logfile)
+    print("\nBuild failed: ❌ (code: " .. f .. ")")
+    v.OpenFileInNewBuffer(logfile)
   end
   return f
 end
 
-v.dotnet["getDllPath"] = function()
-  local request = function()
-    return fn.input({ "Path to dll ",
-      vim.fs.normalize(vim.lsp.buf.list_workspace_folders()[1]) .. "/bin/Debug/", "file" })
+function v.dotnet.GetDllPath()
+
+  local dirname = vim.fs.dirname(v.dotnet.StartupProjectPath)
+  local projectName = v.dotnet.LastProjectFileName or
+      string.sub(v.dotnet.StartupProjectPath, string.len(dirname), string.len(v.dotnet.StartupProjectPath) - 8) or ""
+
+  local path = dirname .. "/bin/debug/" .. projectName .. ".dll"
+  if not v.dotnet.LastDllPath or v.dotnet.LastDllPath == "" then
+    v.dotnet["LastDllPath"] = path
   end
-  if v.dotnet["dotnet_last_dll_path"] == nil then
-    v.dotnet["dotnet_last_dll_path"] = request()
-  else
-    if fn.confirm("Do you want to change the path to dll?\n" .. v.dotnet["dotnet_last_dll_path"],
-      "&yes\n&no", 2) == 1
-    then
-      v.dotnet["dotnet_last_dll_path"] = request()
+
+  local request = function(givenPath)
+    local p = fn.input({ prompt = "Path to dll ", default = givenPath, completion = "file", cancelreturn = "" })
+    if not v.StringEndsWith(p, ".dll") then
+      local pathWithExt = p .. ".dll"
+      if not os.rename(pathWithExt, pathWithExt) then
+        p = fn.input({ prompt = "Could not find " .. p .. ".dll, please try entering another path? ", default = p,
+          completion = "file" })
+      end
     end
-    print("path to dll is set to: " .. v.dotnet["dotnet_last_dll_path"])
+    if not os.rename(p, p) then
+      p = fn.input({ prompt = "Could not find " .. p .. ", please try entering another path? ", default = p,
+        completion = "file" })
+    end
+    return p
   end
-  return v.dotnet["dotnet_last_dll_path"]
+
+  if fn.confirm("Do you want to change the path to dll?\n" .. v.dotnet.LastDllPath,
+    "&yes\n&no", 2) == 1
+  then
+
+    path = request(vim.fs.dirname(v.dotnet.StartupProjectPath) .. "/bin/debug/")
+  end
+  v.dotnet["LastDllPath"] = path
+  print("path to dll is set to: " .. v.dotnet["LastDllPath"])
+  return path
 end
 
-v.dotnet["build"] = function(path, buildType)
+function v.dotnet.Build(path, buildType)
   local t = buildType or "debug"
   if t == "r" or t == "release" or t == "Release" or t == "R" then
     print("building project: " .. path .. "with build type " .. t)
-    return v.dotnet.buildRelease(path)
+    return v.dotnet.BuildRelease(path)
   else
     print("building project: " .. path .. "with build type " .. t)
-    return v.dotnet.buildDebug(path)
+    return v.dotnet.BuildDebug(path)
   end
 end
 
-
-v.dotNetDapConfig = {
-  {
+v.dotnetDapConfig = {
+  ["coreclr"] = {
     type = "coreclr",
     name = "launch - netcoredbg",
     request = "launch",
     program = function()
-      if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
-        v.dotnet.build(v.dotnet.getProjectPath())
+      local dap = require "dap"
+      if not dap.adapters.coreclr then
+        dap.adapters["coreclr"] = {
+          type = "executable",
+          command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
+          -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+          -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
+          args = { "--interpreter=vscode" },
+        }
       end
-      return v.dotnet.getDllPath()
+      vim.notify("just set dap.adapters.coreclr to " .. vim.inspect(dap.adapters.coreclr or "NOTHING:?:???!+?@!?"))
+      if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
+        v.dotnet.Build(v.dotnet.GetProjectPath())
+      end
+      return v.dotnet.GetDllPath()
     end,
   },
 }
 
-v.dotnet["run"] = function(proj, runtype)
-  local c = "dotnet run --project " .. proj
+function v.dotnet.Run(proj, runtype)
+  local r = " -c " .. (runtype or "debug")
+  local c = "dotnet run --project " .. proj .. r
   os.execute(c)
 end
 
-v.debug.getConfig = function()
-  local root = v.FindRoot(v.lsp.ignoredLspServersForFindingRoot)
-  local dap_config = v.decode_json_file(root .. "/.dap.json")
+function v.debug.GetConfig()
+  local root = v.FindRoot(v.lsp.IgnoredLspServersForFindingRoot) or vim.fn.getcwd()
+
+  -- vim.notify("just set dap.adapters.coreclr to " .. vim.inspect(dap.adapters.coreclr or "NOTHING:?:???!+?@!?"))
+  local dap_config = v.DecodeJsonFile(root .. "/.dap.json") or v.dotnetDapConfig
   if dap_config ~= nil then
+    -- vim.notify("just set dap.adapters.coreclr to " .. vim.inspect(dap.adapters.coreclr or "NOTHING:?:???!+?@!?"))
     return { dap_config }
   end
 
-  local status_ok, vscode_launch_file = pcall(v.decode_json_file, root .. "/.vscode/launch.json")
+  local status_ok, vscode_launch_file = pcall(v.DecodeJsonFile, root .. "/.vscode/launch.json")
   if status_ok and vscode_launch_file ~= nil then
     local configs = vscode_launch_file["configurations"]
     if configs ~= nil then
       for j = 1, #configs do
         if configs[j]["request"] == "launch" then
-          local config = v.stringReplace(configs[j], "${workspaceRoot}", root)
+          local config = v.StringReplace(configs[j], "${workspaceRoot}", root)
           return { config }
         end
       end
-      return v.stringReplace(configs, "${workspaceRoot}", root)
+      return vim.json_encode(v.StringReplace(configs, "${workspaceRoot}", root))
     end
   end
 
+
+  -- vim.notify("just set dap.adapters.coreclr to " .. vim.inspect(dap.adapters.coreclr or "NOTHING:?:???!+?@!?"))
   return nil
 end
 
-v.get_debug_program = function()
+v.GetDebugProgram = function()
   local root = v.FindRoot()
-  local dap_config = v.decode_json_file(root .. ".dap.json")
+  local dap_config = v.DecodeJsonFile(root .. ".dap.json")
 
   if dap_config ~= nil then
     local program = dap_config["program"]
@@ -335,7 +435,7 @@ v.get_debug_program = function()
     end
   end
 
-  local status_ok, vscode_launch_file = pcall(v.decode_json_file, root .. ".vscode/launch.json")
+  local status_ok, vscode_launch_file = pcall(v.DecodeJsonFile, root .. ".vscode/launch.json")
   if not status_ok or vscode_launch_file == nil then
     print(root .. ".vscode/launch.json file not found or is invalid for json decoding.")
     return ""
@@ -345,7 +445,7 @@ v.get_debug_program = function()
   if configs ~= nil then
     for j = 1, #configs do
       if configs[j]["request"] == "launch" then
-        return v.stringReplace(configs[j]["program"], "${workspaceRoot}", root)
+        return v.StringReplace(configs[j]["program"], "${workspaceRoot}", root)
       end
     end
   end
@@ -353,7 +453,7 @@ v.get_debug_program = function()
 end
 
 -- Returns the index of a item in the list
-v.indexOf = function(l, value)
+v.IndexOf = function(l, value)
   for i, x in ipairs(l) do
     if x == value then
       return i
@@ -364,11 +464,11 @@ end
 
 -- Does the current project have a Prettier configuration?
 -- Assumes, that LunarVim has been opened in the root of the project
-v.project_has_prettier_config = function()
+v.ProjectHasPrettierConfig = function()
   local hasprettier = (
       fn.glob ".prettierrc*" ~= ""
           or fn.glob "prettier.*" ~= ""
-          or v.is_in_package_json "prettier"
+          or v.IsInPackageJson "prettier"
       )
   -- print("Project does has prettier configured? " .. tostring(hasprettier))
   return hasprettier
@@ -377,7 +477,7 @@ end
 
 
 --- user settings from the base `user/init.lua` file
-v.user_settings = v.module.load "user.init"
+v.user_settings = v.module.Load "user.init"
 --- table of user created terminals
 v.user_terminals = {}
 --- table of plugins to load with git
@@ -561,7 +661,7 @@ end
 -- @param msg the notification body
 -- @param type the type of the notification (:help vim.log.levels)
 -- @param opts table of nvim-notify options to use (:help notify-options)
-function v.notify(msg, type, opts)
+function v.Notify(msg, type, opts)
   vim.schedule(function() vim.notify(msg, type, v.default_tbl(opts, { title = "VimSharp" })) end)
 end
 
@@ -627,7 +727,7 @@ function v.userConfigs(module, default, extend, prefix)
   -- if no default table is provided set it to an empty table
   if default == nil then default = {} end
   -- try to load a module file if it exists
-  local user_settings = v.module.load((prefix or "user") .. "." .. module)
+  local user_settings = v.module.Load((prefix or "user") .. "." .. module)
   -- if no user module file is found, try to load an override from the user settings table from user/init.lua
   if user_settings == nil and prefix == nil then user_settings = user_setting_table(module) end
   -- if a user override was found call the configuration engine
@@ -638,7 +738,7 @@ end
 
 -- --- Open a URL under the cursor with the current operating system (Supports Mac OS X and *nix)
 -- -- @param path the path of the file to open with the system opener
--- function v.system_open(path)
+-- function v.SystemOpen(path)
 --   path = path or fn.expand "<cfile>"
 --   if fn.has "mac" == 1 then
 --     -- if mac use the open command
@@ -648,12 +748,12 @@ end
 --     fn.jobstart({ "xdg-open", path }, { detach = true })
 --   else
 --     -- if any other operating system notify the user that there is currently no support
---     v.notify("System open is not supported on this OS!", "error")
+--     v.Notify("System open is not supported on this OS!", "error")
 --   end
 -- end
 --- Open a URL under the cursor with the current operating system (Supports Mac OS X and *nix)
 -- @param path the path of the file to open with the system opener
-function v.system_open(path)
+function v.SystemOpen(path)
   path = path or fn.expand "<cfile>"
   if fn.has "mac" == 1 then
     -- if mac use the open command
@@ -666,7 +766,7 @@ function v.system_open(path)
     if v.isAvalable("OpenBrowserSmartSearch") then
       vim.cmd.OpenBrowserSmartSearch(path)
     end
-    -- v.notify("System open is not supported on this OS!", "error")
+    -- v.Notify("System open is not supported on this OS!", "error")
   end
 end
 
@@ -952,7 +1052,7 @@ v.ui = {}
 local function bool2str(bool) return bool and "on" or "off" end
 
 local function ui_notify(str)
-  if vim.g.ui_notifications_enabled then v.notify(str) end
+  if vim.g.ui_notifications_enabled then v.Notify(str) end
 end
 
 --- Toggle notifications for UI toggles
@@ -1341,22 +1441,22 @@ function v.mason.update(pkg_name, auto_install)
 
   local pkg_avail, pkg = pcall(registry.get_package, pkg_name)
   if not pkg_avail then
-    v.notify(("Mason: %s is not available"):format(pkg_name), "error")
+    v.Notify(("Mason: %s is not available"):format(pkg_name), "error")
   else
     if not pkg:is_installed() then
       if auto_install then
-        v.notify(("Mason: Installing %s"):format(pkg.name))
+        v.Notify(("Mason: Installing %s"):format(pkg.name))
         pkg:install()
       else
-        v.notify(("Mason: %s not installed"):format(pkg.name), "warn")
+        v.Notify(("Mason: %s not installed"):format(pkg.name), "warn")
       end
     else
       pkg:check_new_version(function(update_available, version)
         if update_available then
-          v.notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
-          pkg:install():on("closed", function() v.notify(("Mason: Updated %s"):format(pkg.name)) end)
+          v.Notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
+          pkg:install():on("closed", function() v.Notify(("Mason: Updated %s"):format(pkg.name)) end)
         else
-          v.notify(("Mason: No updates available for %s"):format(pkg.name))
+          v.Notify(("Mason: No updates available for %s"):format(pkg.name))
         end
       end)
     end
@@ -1374,7 +1474,7 @@ function v.mason.update_all()
   local any_pkgs = false
   local running = 0
   local updated = false
-  v.notify "Mason: Checking for package updates..."
+  v.Notify "Mason: Checking for package updates..."
 
   for _, pkg in ipairs(registry.get_installed_packages()) do
     any_pkgs = true
@@ -1383,11 +1483,11 @@ function v.mason.update_all()
       if update_available then
         updated = true
         running = running - 1
-        v.notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
+        v.Notify(("Mason: Updating %s to %s"):format(pkg.name, version.latest_version))
         pkg:install():on("closed", function()
           running = running - 1
           if running == 0 then
-            v.notify "Mason: Update Complete"
+            v.Notify "Mason: Update Complete"
             v.event "MasonUpdateComplete"
           end
         end)
@@ -1395,9 +1495,9 @@ function v.mason.update_all()
         running = running - 1
         if running == 0 then
           if updated then
-            v.notify "Mason: Update Complete"
+            v.Notify "Mason: Update Complete"
           else
-            v.notify "Mason: No updates available"
+            v.Notify "Mason: No updates available"
           end
           v.event "MasonUpdateComplete"
         end
@@ -1405,7 +1505,7 @@ function v.mason.update_all()
     end)
   end
   if not any_pkgs then
-    v.notify "Mason: No updates available"
+    v.Notify "Mason: No updates available"
     v.event "MasonUpdateComplete"
   end
 end
@@ -1461,7 +1561,6 @@ end
 ---------------------------------------------------------------------------------------------------
 -- re "core.utils.lsp"
 
-v.lsp = {}
 -- local user_plugin_opts = v.user_plugin_opts
 -- local setup_handlers = nil
 -- user_plugin_opts("lsp.setup_handlers", nil, false)
@@ -1560,8 +1659,8 @@ v.lsp.on_attach = function(client, bufnr)
 
   local ignored = { "null-ls", "stylua", "lemminx", "editorconfig_checker" }
   -- local ignored = v.lsp.ignoredLspServersForFindingRoot
-  -- v.notify(client.name .. " is running on_attach")
-  -- v.notify(vim.inspect(ignored) .. " are servers being ignored")
+  -- v.Notify(client.name .. " is running on_attach")
+  -- v.Notify(vim.inspect(ignored) .. " are servers being ignored")
   -- local on_attach_override = user_plugin_opts("lsp.on_attach", nil, false)
   -- conditional_func(on_attach_override, true, client, bufnr)
   local capabilities = client.server_capabilities
@@ -1569,18 +1668,17 @@ v.lsp.on_attach = function(client, bufnr)
   if not tContains(ignored, client.name) then
     -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
     local root = v.FindRoot(ignored, bufnr)
-    -- v.notify("lsp root should have found root of : " .. root)
-    local cwd = v.stringReplace(v.path.AppendSlash(v.path.UpperDriveLetter(vim.fs.normalize(fn.getcwd() .. "/"))), "//"
-      , "/")
+    -- v.Notify("lsp root should have found root of : " .. root)
+    local cwd = v.StringReplace(fn.getcwd(), "//", "/")
     if not root then
-      v.notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
+      v.Notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
       root = vim.cmd.expand("%:p:h")
     end
-    -- v.notify("i have the root and cwd now.. but ill check the number of buffers.. ")
+    -- v.Notify("i have the root and cwd now.. but ill check the number of buffers.. ")
     local shouldAsk = vim.tbl_count(fn.getbufinfo { buflisted = true }) > 1
     if root and cwd ~= root then
       if shouldAsk == true then
-        -- v.notify("at this point the buffers say i should ask about setting root.. " .. vim.inspect(shouldAsk))
+        -- v.Notify("at this point the buffers say i should ask about setting root.. " .. vim.inspect(shouldAsk))
         if fn.confirm(
           "Do you want to change the current working directory to lsp root?\nROOT: "
           .. root
@@ -1592,12 +1690,12 @@ v.lsp.on_attach = function(client, bufnr)
         ) == 1
         then
           vim.cmd("cd " .. root)
-          v.notify("CWD : " .. root)
+          v.Notify("CWD : " .. root)
         end
       else
 
         vim.cmd("cd " .. root)
-        v.notify("CWD : " .. root)
+        v.Notify("CWD : " .. root)
       end
       vim.g["dotnet_last_proj_path"] = root
       -- vim.g.dotnet_startup_proj_path = client.root
@@ -1698,13 +1796,13 @@ v.lsp.on_attach = function(client, bufnr)
     if tContains(dotnetClients, client.name) then
 
       -- lsp_mappings.n.l["b"] = { desc = "build dotnet..." }
-      -- lsp_mappings.n["<leader>lbd"] = { function() v.notify("I haven't implemented this yet. ") end,
+      -- lsp_mappings.n["<leader>lbd"] = { function() v.Notify("I haven't implemented this yet. ") end,
       --   desc = "dotnet build debug" }
-      -- lsp_mappings.n["<leader>lbr"] = { function() v.notify("I haven't implemented this yet. ") end,
+      -- lsp_mappings.n["<leader>lbr"] = { function() v.Notify("I haven't implemented this yet. ") end,
       --   desc = "dotnet build release" }
-      -- lsp_mappings.n["<leader>lbp"] = { function() v.notify("I haven't implemented this yet. ") end,
+      -- lsp_mappings.n["<leader>lbp"] = { function() v.Notify("I haven't implemented this yet. ") end,
       --   desc = "dotnet publish" }
-      -- lsp_mappings.n["<leader>lbR"] = { function() v.notify("I haven't implemented this yet. ") end,
+      -- lsp_mappings.n["<leader>lbR"] = { function() v.Notify("I haven't implemented this yet. ") end,
       --   desc = "dotnet run" }
     end
 
@@ -1794,7 +1892,7 @@ v.lsp.on_attach = function(client, bufnr)
 
     if capabilities.codeLensProvider then
       vim.defer_fn(function()
-        -- v.notify("now calling first codelens refresh..")
+        -- v.Notify("now calling first codelens refresh..")
         vim.lsp.codelens.refresh()
       end, 4000)
       local group_name = "codelens_" .. bufnr
@@ -1856,17 +1954,19 @@ v.lsp.configs = {
   ionide = {
 
     -- cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
+
     cmd = (function()
+      vim.g["use_recommended_server_config"] = false
       -- local ok, m = pcall(require, "mason")
       -- if ok then
       -- local m =require("mason-lspconfig").get_available_servers()["fsautocomplete"]
       -- local path = stdpath("data") .. "mason/packages/fsautocomplete/fsautocomplete.exe"
       -- local path = [[C:\.local\share\nvim-data\mason\bin\fsautocomplete.CMD]]
-      -- v.notify("passing through path of " .. path)
-      -- v.notify("config for ionide, mason was available, passing through path of " .. path)
+      -- v.Notify("passing through path of " .. path)
+      -- v.Notify("config for ionide, mason was available, passing through path of " .. path)
       -- return { path, '--adaptive-lsp-server-enabled', '-v' }
       -- else
-      -- v.notify("config for ionide, mason was not available, default of fsautocomplete for first arg ")
+      -- v.Notify("config for ionide, mason was not available, default of fsautocomplete for first arg ")
       return { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' }
       -- end
     end)(),
@@ -1913,7 +2013,7 @@ v.lsp.flags = {} -- Helper function to set up a given server with the Neovim LSP
 -- @param server the name of the server to be setup
 v.lsp.setup = function(server)
   if not tContains(v.lsp.skip_setup, server) then
-    executeIfTrue(require, server == "sumneko_lua" and v.isAvalable "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
+    v.ExecuteIfTrue(require, server == "sumneko_lua" and v.isAvalable "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
     if server == "fsautocomplete" then
 
       return
@@ -1934,15 +2034,15 @@ v.lsp.setup = function(server)
     if ok then
       local fallbackmessage = " one found in " .. server .. " config handlers"
 
-      v.notify("server ok.")
+      v.Notify("server ok.")
       if sv.default_config then
-        v.notify("server default config exists.")
+        v.Notify("server default config exists.")
       end
       if sv.default_config.handlers then
-        v.notify("server default config handlers exist.")
+        v.Notify("server default config handlers exist.")
         for n, h in pairs(sv.handlers) do
           if tContains(vim.lsp.handlers, n) then
-            v.notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
+            v.Notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
               fallbackmessage)
             v.lsp.handlers[n] = h
           end
@@ -1952,7 +2052,7 @@ v.lsp.setup = function(server)
     end
 
     if not (configs[server]) and not require("lspconfig.server_configurations." .. server) then
-      v.notify(server .. " was not found in lspconfig.configs or server_configurations.. ")
+      v.Notify(server .. " was not found in lspconfig.configs or server_configurations.. ")
       local server_definition = v.userConfigs("lsp.server-settings." .. server)
       if server_definition.cmd then
         configs[server] = { default_config = server_definition }
@@ -1972,7 +2072,7 @@ v.lsp.setup = function(server)
   end
 
   if server == "ionide" then
-    -- v.notify(vim.inspect(require 'lspconfig.configs'["ionide"]))
+    -- v.Notify(vim.inspect(require 'lspconfig.configs'["ionide"]))
   end
 
 
@@ -2007,9 +2107,9 @@ function v.lsp.server_settings(server_name)
   local old_on_attach = server.on_attach
   local user_on_attach = opts.on_attach
   opts.on_attach = function(client, bufnr)
-    v.executeIfTrue(old_on_attach, true, client, bufnr)
+    v.ExecuteIfTrue(old_on_attach, true, client, bufnr)
     v.lsp.on_attach(client, bufnr)
-    v.executeIfTrue(user_on_attach, true, client, bufnr)
+    v.ExecuteIfTrue(user_on_attach, true, client, bufnr)
   end
 
 
@@ -2155,7 +2255,7 @@ if not vim.loop.fs_stat(lazypath) then
       vim.cmd.bw()
       vim.opt.cmdheight = oldcmdheight
       vim.tbl_map(function(module) pcall(require, module) end, { "nvim-treesitter", "mason" })
-      v.notify "Mason is installing packages if configured, check status with :Mason"
+      v.Notify "Mason is installing packages if configured, check status with :Mason"
     end,
   })
 end
@@ -2809,7 +2909,7 @@ require("lazy").setup(
             --     ["<space>"] = false, -- disable space until we figure out which-key disabling
             --     u = "navigate_up",
             --     o = "open",
-            --     O = function(state) v.system_open(state.tree:get_node():get_id()) end,
+            --     O = function(state) v.SystemOpen(state.tree:get_node():get_id()) end,
             --     H = "prev_source",
             --     L = "next_source",
             --   },
@@ -2829,7 +2929,7 @@ require("lazy").setup(
                 ["<space>"] = false, -- disable space until we figure out which-key disabling
                 u = "navigate_up",
                 o = "open",
-                O = function(state) v.system_open(state.tree:get_node():get_id()) end,
+                O = function(state) v.SystemOpen(state.tree:get_node():get_id()) end,
                 H = "prev_source",
                 L = "next_source",
               },
@@ -2846,7 +2946,7 @@ require("lazy").setup(
                 },
               },
               commands = {
-                system_open = function(state) v.system_open(state.tree:get_node():get_id()) end,
+                system_open = function(state) v.SystemOpen(state.tree:get_node():get_id()) end,
               },
             },
             event_handlers = {
@@ -3171,9 +3271,9 @@ require("lazy").setup(
               },
             })
 
-          v.executeIfTrue(telescope.load_extension, pcall(require, "notify"), "notify")
-          v.executeIfTrue(telescope.load_extension, pcall(require, "aerial"), "aerial")
-          v.executeIfTrue(telescope.load_extension, v.isAvalable "telescope-fzf-native.nvim",
+          v.ExecuteIfTrue(telescope.load_extension, pcall(require, "notify"), "notify")
+          v.ExecuteIfTrue(telescope.load_extension, pcall(require, "aerial"), "aerial")
+          v.ExecuteIfTrue(telescope.load_extension, v.isAvalable "telescope-fzf-native.nvim",
             "fzf")
         end,
 
@@ -3699,12 +3799,29 @@ require("lazy").setup(
       ["mfussenegger/nvim-dap"] = {
         init = function() table.insert(v.filePlugins, "nvim-dap") end,
 
-        -- config = function() re "configs.dap" end,
+        -- config = function() require "configs.dap" end,
         config = function()
 
+
+
           local dap = require "dap"
-          dap.adapters = dap.adapters
-          dap.configurations = dap.configurations
+          local adapters = {
+            ["coreclr"] = {
+              type = "executable",
+              command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
+              -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+              -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
+              args = { "--interpreter=vscode" },
+            },
+          }
+          local configurations =
+          {
+            ["cs"] = v.debug.GetConfig(),
+            ["fsharp"] = v.debug.GetConfig()
+          }
+
+          dap.adapters = adapters
+          dap.configurations = configurations
 
         end,
 
@@ -3719,106 +3836,116 @@ require("lazy").setup(
 
           end },
           ["jayp0521/mason-nvim-dap.nvim"] = {
+            lazy = false,
             cmd = { "DapInstall", "DapUninstall" },
             config = function()
 
               local dap = require("dap")
 
-              v.dotnet.projectPath = function()
-                if v.dotnet.lastProjectPath == nil then
-                  default_path = fn.getcwd()
-                end
-                local path = fn.input({ "Path to your *proj file ", default_path, "file" })
-                vim.g["dotnet_last_proj_path"] = path
-                return path
-              end
-
-              local util = require "neo-tree.utils"
-
-              local openFileInNewBuffer = function(f)
-                if fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim.cmd.bufload(f) end
-              end
-
-              vim.g["dotnet_build_release_project"] = function(p)
-                local logfile = "c:/temp/dotnet-release-Log.txt"
-                -- local cmd = "dotnet build -c Release " .. p .. '" *> ' .. logfile
-                local cmd = "dotnet build -c Release --project " .. p
-                print ""
-                print("Cmd to execute: " .. cmd)
-                local f = os.execute(cmd)
-                if f == 0 then
-                  print "\nBuild: ✔️ "
-                else
-                  print("\nBuild: ❌ (code: " .. f .. ")")
-                  openFileInNewBuffer(logfile)
-                end
-                return f
-              end
-
-              vim.g["dotnet_build_debug_project"] = function(p)
-                local logfile = "c:/temp/dap-debug-nvim-dotnet.txt"
-                -- local cmd = "dotnet build -c Debug " .. p .. '" *> ' .. logfile
-                local cmd = "dotnet build -c Debug --project " .. p
-                print ""
-                print("Cmd to execute: " .. cmd)
-                local f = os.execute(cmd)
-                if f == 0 then
-                  print "\nBuild: ✔️ "
-                else
-                  print("\nBuild: ❌ (code: " .. f .. ")")
-                  openFileInNewBuffer(logfile)
-                end
-                return f
-              end
-
-              vim.g["dotnet_get_dll_path"] = function()
-                local request = function()
-                  return fn.input({ "Path to dll ",
-                    vim.fs.normalize(vim.lsp.buf.list_workspace_folders()[1]) .. "/bin/Debug/", "file" })
-                end
-                if vim.g["dotnet_last_dll_path"] == nil then
-                  vim.g["dotnet_last_dll_path"] = request()
-                else
-                  if fn.confirm("Do you want to change the path to dll?\n" .. vim.g["dotnet_last_dll_path"],
-                    "&yes\n&no", 2) == 1
-                  then
-                    vim.g["dotnet_last_dll_path"] = request()
-                  end
-                  print("path to dll is set to: " .. vim.g["dotnet_last_dll_path"])
-                end
-                return vim.g["dotnet_last_dll_path"]
-              end
-
-              vim.g["dotnet_build_project"] = function(path, buildType)
-                local t = buildType or "debug"
-                if t == "r" or "release" or "Release" or "R" then
-                  print("building project: " .. path .. "with build type " .. t)
-                  return vim.g.dotnet_build_release_project(path)
-                else
-                  print("building project: " .. path .. "with build type " .. t)
-                  return vim.g.dotnet_build_debug_project(path)
-                end
-              end
-
-
-              local config = {
-                {
-                  type = "coreclr",
-                  name = "launch - netcoredbg",
-                  request = "launch",
-                  program = function()
-                    if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
-                      vim.g.dotnet_build_project(vim.g.dotnet_get_project_path())
-                    end
-                    return vim.g.dotnet_get_dll_path()
-                  end,
-                },
+              dap.adapters["coreclr"] = {
+                type = "executable",
+                command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
+                -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+                -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
+                args = { "--interpreter=vscode" },
               }
+              dap.configurations["cs"] = v.debug.GetConfig()
+              dap.configurations["fsharp"] = v.debug.GetConfig()
+              -- v.dotnet.projectPath = function()
+              --   if v.dotnet.lastProjectPath == nil then
+              --     default_path = fn.getcwd()
+              --   end
+              --   local path = fn.input({ "Path to your *proj file ", default_path, "file" })
+              --   return path
+              -- end
 
-              vim.g["dotnet_run"] = function(proj, runtype)
-                local c = ":!dotnet run --project " .. proj
-                vim.cmd(c)
-              end
+              -- local util = require "neo-tree.utils"
+
+              -- local openFileInNewBuffer = function(f)
+              --   if fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim.cmd.bufload(f) end
+              -- end
+
+              -- vim.g["dotnet_build_release_project"] = function(p)
+              --   local logfile = "c:/temp/dotnet-release-Log.txt"
+              --   -- local cmd = "dotnet build -c Release " .. p .. '" *> ' .. logfile
+              --   local cmd = "dotnet build -c Release --project " .. p
+              --   print ""
+              --   print("Cmd to execute: " .. cmd)
+              --   local f = os.execute(cmd)
+              --   if f == 0 then
+              --     print "\nBuild: ✔️ "
+              --   else
+              --     print("\nBuild: ❌ (code: " .. f .. ")")
+              --     openFileInNewBuffer(logfile)
+              --   end
+              --   return f
+              -- end
+
+              -- vim.g["dotnet_build_debug_project"] = function(p)
+              --   local logfile = "c:/temp/dap-debug-nvim-dotnet.txt"
+              --   -- local cmd = "dotnet build -c Debug " .. p .. '" *> ' .. logfile
+              --   local cmd = "dotnet build -c Debug --project " .. p
+              --   print ""
+              --   print("Cmd to execute: " .. cmd)
+              --   local f = os.execute(cmd)
+              --   if f == 0 then
+              --     print "\nBuild: ✔️ "
+              --   else
+              --     print("\nBuild: ❌ (code: " .. f .. ")")
+              --     openFileInNewBuffer(logfile)
+              --   end
+              --   return f
+              -- end
+
+              -- function vim.g["dotnet_get_dll_path"] = function()
+              --   local request = function()
+              --     return fn.input({ "Path to dll ",
+              --       vim.fs.normalize(vim.lsp.buf.list_workspace_folders()[1]) .. "/bin/Debug/", "file" })
+              --   end
+              --   if vim.g["dotnet_last_dll_path"] == nil then
+              --     vim.g["dotnet_last_dll_path"] = request()
+              --   else
+              --     if fn.confirm("Do you want to change the path to dll?\n" .. vim.g["dotnet_last_dll_path"],
+              --       "&yes\n&no", 2) == 1
+              --     then
+              --       vim.g["dotnet_last_dll_path"] = request()
+              --     end
+              --     print("path to dll is set to: " .. vim.g["dotnet_last_dll_path"])
+              --   end
+              --   return vim.g["dotnet_last_dll_path"]
+              -- end
+
+              -- function vim.g["dotnet_build_project"] (path, buildType)
+              --   local t = buildType or "debug"
+              --   if t == "r" or "release" or "Release" or "R" then
+              --     print("building project: " .. path .. "with build type " .. t)
+              --     return vim.g.dotnet_build_release_project(path)
+              --   else
+              --     print("building project: " .. path .. "with build type " .. t)
+              --     return vim.g.dotnet_build_debug_project(path)
+              --   end
+              -- end
+
+
+              -- local config = {
+              --   {
+              --     type = "coreclr",
+              --     name = "launch - netcoredbg",
+              --     request = "launch",
+              --     program = function()
+              --       if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
+              --         vim.g.dotnet_build_project(vim.g.dotnet_get_project_path())
+              --       end
+              --       return vim.g.dotnet_get_dll_path()
+              --     end,
+              --   },
+              -- }
+
+
+              -- vim.g["dotnet_run"] = function(proj, runtype)
+              --   local c = ":!dotnet run --project " .. proj
+              --   vim.cmd(c)
+              -- end
 
               require("mason-nvim-dap").setup {
                 automatic_installation = true,
@@ -3834,6 +3961,7 @@ require("lazy").setup(
                 end,
 
                 coreclr = function(source_name)
+                  local dap = require "dap"
                   dap.adapters.coreclr = {
                     type = "executable",
                     command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
@@ -3841,9 +3969,10 @@ require("lazy").setup(
                     -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
                     args = { "--interpreter=vscode" },
                   }
-                  dap.configurations.cs = config
-                  dap.configurations.fsharp = config
+                  dap.configurations.cs = v.debug.GetConfig()
+                  dap.configurations.fsharp = v.debug.GetConfig()
                 end,
+
                 python = function(source_name)
                   dap.adapters.python = {
                     type = "executable",
@@ -5029,7 +5158,7 @@ local mappings =
     ["<leader>."] = { function()
       local here = v.path.AppendSlash(vim.fs.normalize(fn.expand("%:p:h")))
       vim.cmd("cd " .. here)
-      v.notify("CWD set to: " .. here)
+      v.Notify("CWD set to: " .. here)
     end, desc = "Set CWD to here" },
 
     ["<leader>w"] = { "<cmd>w<cr>", desc = "Save" },
@@ -5037,7 +5166,7 @@ local mappings =
 
     ["<leader>nf"] = { "<cmd>vnew<cr>", desc = "New File" },
 
-    ["gx"] = { function() v.system_open() end, desc = "Open the file under cursor with system app" },
+    ["gx"] = { function() v.SystemOpen() end, desc = "Open the file under cursor with system app" },
     ["Q"] = "<Nop>",
     ["K"] = { function()
 
