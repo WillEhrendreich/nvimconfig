@@ -12,15 +12,22 @@
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
 ---@diagnostic disable-next-line: undefined-global
+-- vim.fn.input({ prompt = "Attach your debugger, to process " .. vim.inspect(vim.fn.getpid()) })
 local vimsharp_installation = vimsharp_installation or nil
 _G.vimsharp = {
-  --local v = {
+  --local v = vim.defaulttable()
   lsp = {
     IgnoredLspServersForFindingRoot = { "null-ls", "stylua", "lemminx", "editorconfig_checker" },
+    SkipSetupForServers = {
+      "fsautocomplete",
+      "tsserver",
+      "clangd",
+    },
   },
   module = {},
   dotnet = {
     LastProjectFileName = "",
+    LastProjectFileExtension = "",
     StartupProjectPath = "",
     LastDllPath = "",
   },
@@ -217,22 +224,27 @@ function v.dotnet.GetProjectPath()
 
   local dirname = v.GetCurrentBufDirname()
   local projectName = v.dotnet.LastProjectFileName
+  local ext = v.dotnet.LastProjectFileExtension
 
   local nearestProj
   local files = vim.fn.readdir(dirname)
   for _, file in ipairs(files) do
     if not nearestProj then
-      if v.StringEndsWith(file, "*proj") then
+      if v.StringEndsWith(file, "proj") then
         -- local full_path = dirname .. '/' .. file
-        nearestProj = string.sub(file, 0, string.len(file) - 8)
+        nearestProj = string.sub(file, 0, string.len(file) - 7)
+        ext = string.sub(file, string.len(file) - 6)
         -- nearestProj = string.sub(n, string.len(dirname), string.len(n) - 8)
       end
     end
   end
   if not nearestProj then nearestProj = "" end
-  if not projectName then projectName = nearestProj end
+  if not projectName or projectName == "" then projectName = nearestProj end
   if not v.dotnet.LastProjectFileName or v.dotnet.LastProjectFileName == "" then v.dotnet["LastProjectFileName"] = projectName end
-  local path = dirname .. "/" .. projectName .. ".dll"
+  if not v.dotnet.LastProjectFileExtension or v.dotnet.LastProjectFileExtension == "" then v.dotnet[
+        "LastProjectFileExtension"] = ext
+  end
+  local path = dirname .. "/" .. projectName .. ext
   if not v.dotnet.StartupProjectPath or v.dotnet.StartupProjectPath == "" then
     v.dotnet["StartupProjectPath"] = path
   end
@@ -284,33 +296,33 @@ end
 
 function v.dotnet.BuildRelease(p)
   local logfile = "c:/temp/dotnet-release-Log.txt"
-  -- local cmd = "dotnet build -c Release " .. p .. '" *> ' .. logfile
-  local cmd = "dotnet build " .. p .. "-c Release"
+  --   local cmd = "dotnet build " .. p .. " -c release *> " .. logfile
+  local cmd = "dotnet build " .. p .. " -c Release"
   print ""
   print("Cmd to execute: " .. cmd)
   local f = os.execute(cmd)
   if f == 0 then
-    print "\nBuild: ✔️ "
+    print "\nBuild Release: ✔️ "
   else
-    print("\nBuild failed: ❌ (code: " .. f .. ")")
-    v.OpenFileInNewBuffer(logfile)
+    print("\nBuild Release failed: ❌ (code: " .. f .. ")")
+    --    v.OpenFileInNewBuffer(logfile)
   end
   return f
 end
 
 function v.dotnet.BuildDebug(p)
   local logfile = "c:/temp/dap-debug-nvim-dotnet.txt"
-  -- local cmd = "dotnet build -c Debug " .. p .. '" *> ' .. logfile
+  --   local cmd = "dotnet build " .. p .. " -c Debug *> " .. logfile
   local cmd = "dotnet build " .. p .. " -c Debug"
 
   print ""
   print("Cmd to execute: " .. cmd)
   local f = os.execute(cmd)
   if f == 0 then
-    print "\nBuild: ✔️ "
+    print "\nBuild debug: ✔️ "
   else
-    print("\nBuild failed: ❌ (code: " .. f .. ")")
-    v.OpenFileInNewBuffer(logfile)
+    print("\nBuild debug failed: ❌ (code: " .. f .. ")")
+    --    v.OpenFileInNewBuffer(logfile)
   end
   return f
 end
@@ -349,7 +361,7 @@ function v.dotnet.GetDllPath()
     path = request(vim.fs.dirname(v.dotnet.StartupProjectPath) .. "/bin/debug/")
   end
   v.dotnet["LastDllPath"] = path
-  print("path to dll is set to: " .. v.dotnet["LastDllPath"])
+  --  print("path to dll is set to: " .. v.dotnet["LastDllPath"])
   return path
 end
 
@@ -365,29 +377,28 @@ function v.dotnet.Build(path, buildType)
 end
 
 v.dotnetDapConfig = {
-  ["coreclr"] = {
-    type = "coreclr",
-    name = "launch - netcoredbg",
-    request = "launch",
-    program = function()
-      local dap = require "dap"
-      if not dap.adapters.coreclr then
-        dap.adapters["coreclr"] = {
-          type = "executable",
-          command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
-          -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
-          -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
-          args = { "--interpreter=vscode" },
-        }
-      end
-      vim.notify("just set dap.adapters.coreclr to " .. vim.inspect(dap.adapters.coreclr or "NOTHING:?:???!+?@!?"))
-      if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
-        v.dotnet.Build(v.dotnet.GetProjectPath())
-      end
-      return v.dotnet.GetDllPath()
-    end,
-  },
+  type = "coreclr",
+  name = "launch - netcoredbg",
+  request = "launch",
+  program = function()
+    local dap = require "dap"
+    if not dap.adapters.coreclr then
+      dap.adapters["coreclr"] = {
+        type = "executable",
+        command = unpack(vim.inspect(vim.fs.find("netcoredbg.exe", { path = stdpath "data" })))[1],
+        -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+        -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
+        args = { "--interpreter=vscode" },
+      }
+    end
+    vim.notify("just set dap.adapters.coreclr to " .. vim.inspect(dap.adapters.coreclr or "NOTHING:?:???!+?@!?"))
+    if fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
+      v.dotnet.Build(v.dotnet.GetProjectPath())
+    end
+    return v.dotnet.GetDllPath()
+  end,
 }
+
 
 function v.dotnet.Run(proj, runtype)
   local r = " -c " .. (runtype or "debug")
@@ -547,6 +558,18 @@ function v.trim_or_nil(str) return type(str) == "string" and vim.trim(str) or ni
 -- @return the padded string
 function v.pad_string(str, padding)
   padding = padding or {}
+  local s
+  if not str == nil then
+    if type(str) == "table" then
+      --   for _,x in ipairs(str) do
+      --    s= s .. x
+      -- end
+      --     str = s
+      str = vim.inspect(str)
+    end
+  else
+    str = " "
+  end
   return str and str ~= "" and string.rep(" ", padding.left or 0) .. str .. string.rep(" ", padding.right or 0) or ""
 end
 
@@ -1243,7 +1266,9 @@ end
 ---------------------------------------------------------------------------------------------------
 --#region_status
 
+--_G.vimsharp = v
 
+--v.status =
 require "status"
 
 
@@ -1564,11 +1589,6 @@ end
 -- local user_plugin_opts = v.user_plugin_opts
 -- local setup_handlers = nil
 -- user_plugin_opts("lsp.setup_handlers", nil, false)
-v.lsp.skip_setup = {
-  "fsautocomplete",
-  "tsserver",
-  "clangd",
-}
 
 v.lsp.formatting =
 -- v.user_plugin_opts("lsp.formatting", { format_on_save = { enabled = true }, disabled = {} })
@@ -1669,7 +1689,7 @@ v.lsp.on_attach = function(client, bufnr)
     -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
     local root = v.FindRoot(ignored, bufnr)
     -- v.Notify("lsp root should have found root of : " .. root)
-    local cwd = v.StringReplace(fn.getcwd(), "//", "/")
+    local cwd = vim.fs.normalize(v.StringReplace(fn.getcwd(), "//", "/"))
     if not root then
       v.Notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
       root = vim.cmd.expand("%:p:h")
@@ -1973,7 +1993,7 @@ v.lsp.configs = {
     on_attach = v.lsp.on_attach,
 
     -- handlers = re "ionide".handlers,
-    settings = { FSharp = { UseSdkScripts = false }, },
+    settings = { FSharp = { useSdkScripts = false }, },
     -- root_dir = function(fname)
     --   local util = re("lspconfig.util")
     --   local get_root_dir = function(filename, _)
@@ -2012,7 +2032,7 @@ v.lsp.configs = {
 v.lsp.flags = {} -- Helper function to set up a given server with the Neovim LSP client
 -- @param server the name of the server to be setup
 v.lsp.setup = function(server)
-  if not tContains(v.lsp.skip_setup, server) then
+  if not tContains(v.lsp.SkipSetupForServers, server) then
     v.ExecuteIfTrue(require, server == "sumneko_lua" and v.isAvalable "neodev.nvim", "neodev") -- setup neodev for sumneko_lua
     if server == "fsautocomplete" then
 
@@ -2022,7 +2042,8 @@ v.lsp.setup = function(server)
       -- vim.cmd("let g:fsharp#use_recommended_server_config =0")
       -- vim.cmd("let g:fsharp#use_sdk_scripts =0")
 
-      local i = require "ionide".setup(v.lsp.configs.ionide)
+      -- local input = vim.fn.input({ prompt = "Attach your debugger, to process " .. vim.inspect(vim.fn.getpid()) })
+      -- local i = require "ionide".setup(v.lsp.configs.ionide)
 
       -- local isAttachd = fn.confirm("Do you want to attachDebuggr before ionide does setup??\n", "&yes\n&no", 2) == 1
       -- re "ionide".setup(v.lsp.configs.ionide)
@@ -2030,27 +2051,35 @@ v.lsp.setup = function(server)
     -- if server doesn't exist, set it up from user server definition
     local configs = require("lspconfig.configs")
     --local server_definition = fn.default
-    local ok, sv = pcall(require, "lspconfig.configs" .. server)
-    if ok then
-      local fallbackmessage = " one found in " .. server .. " config handlers"
+    -- local ok, sv = pcall(require, "lspconfig.configs" .. server)
+    -- if ok then
+    local fallbackmessage = " one found in " .. server .. " config handlers"
 
-      v.Notify("server ok.")
-      if sv.default_config then
-        v.Notify("server default config exists.")
-      end
-      if sv.default_config.handlers then
-        v.Notify("server default config handlers exist.")
+    if server == "ionide" then
+      local sv = configs["ionide"]
+      v.Notify("ionide server ok.\n" .. vim.inspect(sv))
+
+      -- if sv.default_config then
+      -- v.Notify("server default config exists.")
+      -- end
+      if sv.handlers then
+        -- v.Notify("server handlers exist.")
         for n, h in pairs(sv.handlers) do
-          if tContains(vim.lsp.handlers, n) then
-            v.Notify("overriding default vim.lsp.handlers." .. n .. " with " .. vim.pretty_print(h) or
-              fallbackmessage)
-            v.lsp.handlers[n] = h
-          end
+          -- if tContains(vim.lsp.handlers, n) then
+          -- if tContains(vim.lsp.handlers, n) then
+          v.Notify("overriding vim.lsp.handlers." .. vim.inspect(n) .. " with " .. vim.inspect(h) or
+            fallbackmessage)
+          vim.lsp.handlers[n] = h
+          -- else
+
+          -- end
+          -- end
         end
+        -- end
+
       end
 
     end
-
     if not (configs[server]) and not require("lspconfig.server_configurations." .. server) then
       v.Notify(server .. " was not found in lspconfig.configs or server_configurations.. ")
       local server_definition = v.userConfigs("lsp.server-settings." .. server)
@@ -3647,6 +3676,7 @@ require("lazy").setup(
               }),
             },
             sources = cmp.config.sources {
+              { name = "codeium" },
               { name = "luasnip", priority = 1000 },
               { name = "nvim_lsp", priority = 900 },
               { name = "omni", priority = 750 },
@@ -3667,6 +3697,32 @@ require("lazy").setup(
         end,
         dependencies = {
           ["hrsh7th/cmp-nvim-lsp"] = {},
+          -- ["willehrendreich/codeium.nvim"] = {
+          --   -- lazy = false,
+          --   dependencies = {
+          --     "nvim-lua/plenary.nvim",
+          --     "MunifTanjim/nui.nvim",
+          --     "hrsh7th/nvim-cmp",
+          --   },
+          --   config = function()
+          --     require("codeium").setup({
+          --       bin_path = "c:/codeium/bin",
+          --       config_path = "c:/codeium/config.json",
+          --       manager_dir = "c:/codeium/manager",
+          --
+          --       -- api = {
+          --       --   host = "server.codeium.com",
+          --       --   port = "443",
+          --       -- },
+          --       -- tools = {
+          --       -- uname = "Get-ComputerInfo",
+          --       -- genuuid = "genuuid",
+          --       -- },
+          --       -- wrapper = nil,
+          --     })
+          --
+          --   end
+          -- },
           ["saadparwaiz1/cmp_luasnip"] = {},
           ["hrsh7th/cmp-nvim-lsp-signature-help"] = {},
           ["hrsh7th/cmp-nvim-lua"] = {},
@@ -3677,30 +3733,31 @@ require("lazy").setup(
           ["hrsh7th/cmp-emoji"] = {},
           ["jc-doyle/cmp-pandoc-references"] = {},
           ["PasiBergman/cmp-nuget"] = {
-            config =
-            {
-              filetypes = {}, -- on which filetypes cmp-nuget is active
-              file_extensions = { "csproj", "fsproj" }, -- on which file extensions cmp-nuget is active
-              nuget = {
-                packages = { -- configuration for searching packages
-                  limit = 100, -- limit package serach to first 100 packages
-                  prerelease = true, -- include prerelase (preview, rc, etc.) packages
-                  sem_ver_level = "2.0.0", -- semantic version level (*
-                  package_type = "", -- package type to use to filter packages (*
+            config = function()
+              return {
+                filetypes = {}, -- on which filetypes cmp-nuget is active
+                file_extensions = { "csproj", "fsproj" }, -- on which file extensions cmp-nuget is active
+                nuget = {
+                  packages = { -- configuration for searching packages
+                    limit = 100, -- limit package serach to first 100 packages
+                    prerelease = true, -- include prerelase (preview, rc, etc.) packages
+                    sem_ver_level = "2.0.0", -- semantic version level (*
+                    package_type = "", -- package type to use to filter packages (*
+                  },
+                  versions = {
+                    prerelease = true, -- include prerelase (preview, rc, etc.) versions
+                    sem_ver_level = "2.0.0", -- semantic version level (*
+                  },
                 },
-                versions = {
-                  prerelease = true, -- include prerelase (preview, rc, etc.) versions
-                  sem_ver_level = "2.0.0", -- semantic version level (*
-                },
-              },
-            }
+              }
 
+            end,
           },
           ["kdheepak/cmp-latex-symbols"] = {},
         },
       },
       ["neovim/nvim-lspconfig"] = {
-        lazy = false,
+        -- lazy = false,
         init = function() table.insert(v.filePlugins, "nvim-lspconfig") end,
         config = function()
           -- re "configs.lspconfig"
@@ -3742,8 +3799,14 @@ require("lazy").setup(
 
         end,
         dependencies = {
+
+          ["WillEhrendreich/ionide-vim"] = { config = function()
+
+            -- local input = vim.fn.input({ prompt = "Attach your debugger, to process " .. vim.inspect(vim.fn.getpid()) })
+            require "ionide".setup(v.lsp.configs.ionide)
+          end },
           ["williamboman/mason-lspconfig.nvim"] = {
-            lazy = false,
+            -- lazy = false,
             cmd = { "LspInstall", "LspUninstall" },
             config = function()
 
@@ -3768,7 +3831,10 @@ require("lazy").setup(
                 },
               })
               require "mason-lspconfig".setup_handlers { function(server)
-                v.lsp.setup(server)
+                if not tContains(v.lsp.SkipSetupForServers, server) then
+
+                  v.lsp.setup(server)
+                end
               end }
               v.event "LspSetup"
 
@@ -3801,27 +3867,25 @@ require("lazy").setup(
 
         -- config = function() require "configs.dap" end,
         config = function()
+          -- local dap = require "dap"
+          -- local adapters = {
+          --   ["coreclr"] = {
+          --     type = "executable",
+          --     command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
+          --     -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+          --     -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
+          --     args = { "--interpreter=vscode" },
+          --   },
+          -- }
+          -- dap.adapters = adapters
+          --
+          -- local configurations =
+          -- {
+          --   ["cs"] = v.debug.GetConfig(),
+          --   ["fsharp"] = v.debug.GetConfig()
+          -- }
 
-
-
-          local dap = require "dap"
-          local adapters = {
-            ["coreclr"] = {
-              type = "executable",
-              command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
-              -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
-              -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
-              args = { "--interpreter=vscode" },
-            },
-          }
-          local configurations =
-          {
-            ["cs"] = v.debug.GetConfig(),
-            ["fsharp"] = v.debug.GetConfig()
-          }
-
-          dap.adapters = adapters
-          dap.configurations = configurations
+          -- dap.configurations = configurations
 
         end,
 
@@ -3842,13 +3906,13 @@ require("lazy").setup(
 
               local dap = require("dap")
 
-              dap.adapters["coreclr"] = {
-                type = "executable",
-                command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
-                -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
-                -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
-                args = { "--interpreter=vscode" },
-              }
+              -- dap.adapters["coreclr"] = {
+              --   type = "executable",
+              --   command = unpack(vim.inspect(vim.fs.find("netcoredbg.exe", { path = stdpath "data" })))[1],
+              --   -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+              --   -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
+              --   args = { "--interpreter=vscode" },
+              -- }
               dap.configurations["cs"] = v.debug.GetConfig()
               dap.configurations["fsharp"] = v.debug.GetConfig()
               -- v.dotnet.projectPath = function()
@@ -3949,7 +4013,7 @@ require("lazy").setup(
 
               require("mason-nvim-dap").setup {
                 automatic_installation = true,
-                automatic_init = true,
+                automatic_setup = true,
                 ensure_installed = { "coreclr" },
               }
               require("mason-nvim-dap").setup_handlers {
@@ -3961,10 +4025,18 @@ require("lazy").setup(
                 end,
 
                 coreclr = function(source_name)
+                  local function get_first_string_value(t)
+                    for _, value in pairs(t) do
+                      if type(value) == "string" then
+                        return value
+                      end
+                    end
+                  end
+
                   local dap = require "dap"
                   dap.adapters.coreclr = {
                     type = "executable",
-                    command = vim.fs.find("netcoredbg.exe", { path = stdpath "data" }),
+                    command = get_first_string_value(vim.fs.find("netcoredbg.exe", { path = stdpath "data" })),
                     -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
                     -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
                     args = { "--interpreter=vscode" },
@@ -4277,103 +4349,129 @@ require("lazy").setup(
           --nothing here yet
         end
       },
-      ["Exafunction/codeium.vim"] = {
-        cmd = { "Codeium" },
-        config = function()
-          vim.g["codeium_no_map_tab"] = true
-          vim.g["codeium_disable_bindings"] = false
-          vim.g["codium_map_ctrl_enter"] = true
-          local cocmpt = function() fn["codeium#DebouncedComplete"]() end
-          local coclr = function() fn["codeium#Clear"]() end
-          local con = function() fn["codeium#CycleCompletions"](1) end
-          local cop = function() fn["codeium#CycleCompletions"](-1) end
-          local coac = function() fn["codeium#accept"]() end
-
-          local grp = vim.api.nvim_create_augroup
-          local ac = vim.api.nvim_create_autocmd
-
-          local function set_style()
-            if vim.g.term_color == 256 then
-              vim.cmd("hi def CodeiumSuggestion guifg=#808080 ctermfg=244")
-            else
-              vim.cmd("hi def CodeiumSuggestion guifg=#808080 ctermfg=8")
-            end
-            vim.cmd("hi def link CodeiumAnnotation Normal")
-          end
-
-          local function mapAccept()
-            if not vim.g.codeium_disable_bindings then
-              if not vim.g.codeium_no_map_tab then
-                vim.keymap.set({ "i", "n" }, "<Tab>", function() coac() end, { noremap = true, silent = true })
-              end
-              if vim.g.codium_map_ctrl_enter then
-                vim.keymap.set({ "i", "n" }, "<C-Enter>", function() coac() end, { noremap = true, silent = true })
-              end
-            end
-          end
-
-          local autocmd_group = "codeium_group"
-          grp(autocmd_group, { clear = true })
-
-          ac("InsertEnter", {
-            group = autocmd_group,
-            desc = "Call codeium#DebouncedComplete on InsertEnter",
-            callback = function() cocmpt() end,
-          })
-
-          ac("CursorMovedI", {
-            group = autocmd_group,
-            desc = "Call codeium#DebouncedComplete on CursorMovedI",
-            callback = function() cocmpt() end,
-          })
-
-          ac("CompleteChanged", {
-            group = autocmd_group,
-            desc = "Call codeium#DebouncedComplete on CompleteChanged",
-            callback = function() cocmpt() end,
-          })
-
-          ac("BufEnter", {
-            group = autocmd_group,
-            desc = "Call codeium#DebouncedComplete on BufEnter",
-            callback = function()
-              if fn.mode() == "i" or fn.mode() == "R" then
-                cocmpt()
-              end
-            end,
-          })
-          ac("InsertLeave", {
-            group = autocmd_group,
-            desc = "Call codeium#Clear on InsertLeave",
-            callback = function() coclr() end,
-          })
-
-          ac("BufLeave", {
-            group = autocmd_group,
-            desc = "Call Codium Clear on BufLeave",
-            callback = function()
-              if fn.mode() == "i" or fn.mode() == "R" then
-                coclr()
-              end
-            end,
-          })
-
-          ac("ColorScheme", {
-            group = autocmd_group,
-            desc = "Call SetStyle on ColorScheme",
-            callback = function() set_style() end,
-          })
-
-          ac("VimEnter", {
-            group = autocmd_group,
-            desc = "Call MapAccept on VimEnter",
-            callback = function() mapAccept() end,
-          })
-          -- vim.g["codeium_"]
-          -- vim.g["codeium_"]
-          --nothing here yet
-        end
-      },
+      -- ["WillEhrendreich/codeium.nvim"] = {
+      --   -- lazy = false,
+      --   dependencies = {
+      --     "nvim-lua/plenary.nvim",
+      --     "MunifTanjim/nui.nvim",
+      --     "hrsh7th/nvim-cmp",
+      --   },
+      --   config = function()
+      --     require("codeium").setup({
+      --       bin_path = "c:/codeium/bin",
+      --       config_path = "c:/codeium/config.json",
+      --       manager_path = "c:/codeium/manager",
+      --
+      --       -- api = {
+      --       --   host = "server.codeium.com",
+      --       --   port = "443",
+      --       -- },
+      --       -- tools = {
+      --       -- uname = "Get-ComputerInfo",
+      --       -- genuuid = "genuuid",
+      --       -- },
+      --       -- wrapper = nil,
+      --     })
+      --
+      --   end
+      -- },
+      -- ["Exafunction/codeium.vim"] = {
+      --   cmd = { "Codeium" },
+      --   config = function()
+      --     vim.g["codeium_no_map_tab"] = true
+      --     vim.g["codeium_disable_bindings"] = false
+      --     vim.g["codium_map_ctrl_enter"] = true
+      --     local cocmpt = function() fn["codeium#DebouncedComplete"]() end
+      --     local coclr = function() fn["codeium#Clear"]() end
+      --     local con = function() fn["codeium#CycleCompletions"](1) end
+      --     local cop = function() fn["codeium#CycleCompletions"](-1) end
+      --     local coac = function() fn["codeium#accept"]() end
+      --
+      --     local grp = vim.api.nvim_create_augroup
+      --     local ac = vim.api.nvim_create_autocmd
+      --
+      --     local function set_style()
+      --       if vim.g.term_color == 256 then
+      --         vim.cmd("hi def CodeiumSuggestion guifg=#808080 ctermfg=244")
+      --       else
+      --         vim.cmd("hi def CodeiumSuggestion guifg=#808080 ctermfg=8")
+      --       end
+      --       vim.cmd("hi def link CodeiumAnnotation Normal")
+      --     end
+      --
+      --     local function mapAccept()
+      --       if not vim.g.codeium_disable_bindings then
+      --         if not vim.g.codeium_no_map_tab then
+      --           vim.keymap.set({ "i", "n" }, "<Tab>", function() coac() end, { noremap = true, silent = true })
+      --         end
+      --         if vim.g.codium_map_ctrl_enter then
+      --           vim.keymap.set({ "i", "n" }, "<C-Enter>", function() coac() end, { noremap = true, silent = true })
+      --         end
+      --       end
+      --     end
+      --
+      --     local autocmd_group = "codeium_group"
+      --     grp(autocmd_group, { clear = true })
+      --
+      --     ac("InsertEnter", {
+      --       group = autocmd_group,
+      --       desc = "Call codeium#DebouncedComplete on InsertEnter",
+      --       callback = function() cocmpt() end,
+      --     })
+      --
+      --     ac("CursorMovedI", {
+      --       group = autocmd_group,
+      --       desc = "Call codeium#DebouncedComplete on CursorMovedI",
+      --       callback = function() cocmpt() end,
+      --     })
+      --
+      --     ac("CompleteChanged", {
+      --       group = autocmd_group,
+      --       desc = "Call codeium#DebouncedComplete on CompleteChanged",
+      --       callback = function() cocmpt() end,
+      --     })
+      --
+      --     ac("BufEnter", {
+      --       group = autocmd_group,
+      --       desc = "Call codeium#DebouncedComplete on BufEnter",
+      --       callback = function()
+      --         if fn.mode() == "i" or fn.mode() == "R" then
+      --           cocmpt()
+      --         end
+      --       end,
+      --     })
+      --     ac("InsertLeave", {
+      --       group = autocmd_group,
+      --       desc = "Call codeium#Clear on InsertLeave",
+      --       callback = function() coclr() end,
+      --     })
+      --
+      --     ac("BufLeave", {
+      --       group = autocmd_group,
+      --       desc = "Call Codium Clear on BufLeave",
+      --       callback = function()
+      --         if fn.mode() == "i" or fn.mode() == "R" then
+      --           coclr()
+      --         end
+      --       end,
+      --     })
+      --
+      --     ac("ColorScheme", {
+      --       group = autocmd_group,
+      --       desc = "Call SetStyle on ColorScheme",
+      --       callback = function() set_style() end,
+      --     })
+      --
+      --     ac("VimEnter", {
+      --       group = autocmd_group,
+      --       desc = "Call MapAccept on VimEnter",
+      --       callback = function() mapAccept() end,
+      --     })
+      --     -- vim.g["codeium_"]
+      --     -- vim.g["codeium_"]
+      --     --nothing here yet
+      --   end
+      -- },
       -- ["jackMort/ChatGPT.nvim"] =
       -- { config = function()
       --   re("chatgpt").setup(
@@ -4477,7 +4575,7 @@ require("lazy").setup(
       --     "nvim-telescope/telescope.nvim"
       --   } },
       -- ["WillEhrendreich/ionide-vim"] = { config = v.lsp.configs.ionide, },
-      ["WillEhrendreich/ionide-vim"] = { config = v.lsp.configs.ionide, },
+      -- ["WillEhrendreich/ionide-vim"] = { config = v.lsp.configs.ionide, },
       -- ["WillEhrendreich/ionide-vim"] = {},
       -- ["ionide/ionide-vim"] = { lazy = false, config = function() re("ionide").setup(v.lsp.configs.ionide) end, },
 
