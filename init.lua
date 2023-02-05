@@ -298,8 +298,8 @@ function v.dotnet.BuildRelease(p)
   local logfile = "c:/temp/dotnet-release-Log.txt"
   --   local cmd = "dotnet build " .. p .. " -c release *> " .. logfile
   local cmd = "dotnet build " .. p .. " -c Release"
-  print ""
-  print("Cmd to execute: " .. cmd)
+  print("Building ... ")
+  -- print("Cmd to execute: " .. cmd)
   local f = os.execute(cmd)
   if f == 0 then
     print "\nBuild Release: ✔️ "
@@ -315,8 +315,8 @@ function v.dotnet.BuildDebug(p)
   --   local cmd = "dotnet build " .. p .. " -c Debug *> " .. logfile
   local cmd = "dotnet build " .. p .. " -c Debug"
 
-  print ""
-  print("Cmd to execute: " .. cmd)
+  print("Building ... ")
+  -- print("Cmd to execute: " .. cmd)
   local f = os.execute(cmd)
   if f == 0 then
     print "\nBuild debug: ✔️ "
@@ -1976,7 +1976,7 @@ v.lsp.configs = {
     -- cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
 
     cmd = (function()
-      vim.g["use_recommended_server_config"] = false
+      -- vim.g["use_recommended_server_config"] = false
       -- local ok, m = pcall(require, "mason")
       -- if ok then
       -- local m =require("mason-lspconfig").get_available_servers()["fsautocomplete"]
@@ -1987,13 +1987,25 @@ v.lsp.configs = {
       -- return { path, '--adaptive-lsp-server-enabled', '-v' }
       -- else
       -- v.Notify("config for ionide, mason was not available, default of fsautocomplete for first arg ")
-      return { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' }
+      --      return { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' }
+      -- return { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v', '--wait-for-debugger', '--project-graph-enabled', '-l' }
+      return {
+        'fsautocomplete',
+        '--adaptive-lsp-server-enabled',
+        '-l .fsautocomplete.log',
+        '-v',
+        -- '--attach-debugger',
+        '--project-graph-enabled',
+      }
       -- end
     end)(),
     on_attach = v.lsp.on_attach,
-
     -- handlers = re "ionide".handlers,
-    settings = { FSharp = { useSdkScripts = false }, },
+    settings = {
+      FSharp = {
+        UseSdkScripts = false,
+      },
+    },
     -- root_dir = function(fname)
     --   local util = re("lspconfig.util")
     --   local get_root_dir = function(filename, _)
@@ -2053,11 +2065,12 @@ v.lsp.setup = function(server)
     --local server_definition = fn.default
     -- local ok, sv = pcall(require, "lspconfig.configs" .. server)
     -- if ok then
-    local fallbackmessage = " one found in " .. server .. " config handlers"
+    -- local fallbackmessage = " one found in " .. server .. " config handlers"
 
     if server == "ionide" then
       local sv = configs["ionide"]
-      v.Notify("ionide server ok.\n" .. vim.inspect(sv))
+      -- v.Notify("ionide server ok.\n" .. vim.inspect(sv))
+      v.Notify("Neovim process Id :" .. vim.inspect(vim.fn.getpid()))
 
       -- if sv.default_config then
       -- v.Notify("server default config exists.")
@@ -2067,8 +2080,8 @@ v.lsp.setup = function(server)
         for n, h in pairs(sv.handlers) do
           -- if tContains(vim.lsp.handlers, n) then
           -- if tContains(vim.lsp.handlers, n) then
-          v.Notify("overriding vim.lsp.handlers." .. vim.inspect(n) .. " with " .. vim.inspect(h) or
-            fallbackmessage)
+          --          v.Notify("overriding vim.lsp.handlers." .. vim.inspect(n) .. " with " .. vim.inspect(h) or
+          --            fallbackmessage)
           vim.lsp.handlers[n] = h
           -- else
 
