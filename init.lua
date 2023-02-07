@@ -1692,7 +1692,7 @@ v.lsp.on_attach = function(client, bufnr)
     local cwd = vim.fs.normalize(v.StringReplace(fn.getcwd(), "//", "/"))
     if not root then
       v.Notify("lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! ")
-      root = vim.cmd.expand("%:p:h")
+      root = vim.cmd.expand("%:h")
     end
     -- v.Notify("i have the root and cwd now.. but ill check the number of buffers.. ")
     local shouldAsk = vim.tbl_count(fn.getbufinfo { buflisted = true }) > 1
