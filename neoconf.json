@@ -1,0 +1,29 @@
+{
+  "neodev": {
+    "library": {
+      "enabled": true,
+      "plugins": [
+        "nvim-lspconfig",
+        "lsp"
+      ]
+    }
+  },
+  "neoconf": {
+    "plugins": {
+      "sumneko_lua": {
+        "enabled": true
+      }
+    }
+  },
+  "lspconfig": {
+    "fsautocomplete": {
+      "settings.Fsharp.useSdkScripts": false
+    },
+    "ionide": {
+      "settings.Fsharp.useSdkScripts": false
+    },
+    "sumneko_lua": {
+      "Lua.completion.callSnippet": "Replace"
+    }
+  }
+}
