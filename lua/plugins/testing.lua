@@ -17,7 +17,7 @@ return {
       "WillEhrendreich/neotest-dotnet",
       "antoinemadec/FixCursorHold.nvim",
       "nvim-neotest/neotest-plenary",
-      "nvim-neotest/neotest-vim-test",
+      -- "nvim-neotest/neotest-vim-test",
     },
     config = function()
       require("neotest").setup({
@@ -27,9 +27,9 @@ return {
           --   dap = { justMyCode = false },
           -- },
           require("neotest-plenary"),
-          require("neotest-vim-test")({
-            ignore_file_types = { "python", "vim", "lua", "fsharp", "csharp", "cs" },
-          }),
+          -- require("neotest-vim-test")({
+          --   ignore_file_types = { "python", "vim", "lua", "fsharp", "csharp", "cs" },
+          -- }),
         },
       })
     end,

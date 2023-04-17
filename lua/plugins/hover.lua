@@ -1,3 +1,10 @@
+-- local async = require('hover.async')
+
+-- local function enabled()
+--   local word = vim.fn.expand('<cword>')
+--   return #vim.spell.check(word) == 0
+-- end
+
 local diag = require("vim.diagnostic")
 local sampleDiagnostic = {
   bufnr = 11,
@@ -93,16 +100,16 @@ local source = {
   name = "LSPWithDiag",
   priority = 1000,
   enabled = function()
-    for _, client in pairs(vim.lsp.get_active_clients()) do
-      if client then
-        if
-          client.supports_method("textDocument/hover") or client.supports_method("textDocument/publishDiagnostics")
-        then
-          return true
-        end
-      end
-    end
-    return false
+    -- for _, client in pairs(vim.lsp.get_active_clients()) do
+    --   if client then
+    --     if
+    --       client.supports_method("textDocument/hover") or client.supports_method("textDocument/publishDiagnostics")
+    --     then
+    return true
+    --     end
+    --   end
+    -- end
+    -- return false
   end,
   execute = function(done)
     local util = require("vim.lsp.util")
@@ -181,7 +188,36 @@ local source = {
     end)
   end,
 }
+local helpSource = {
 
+  name = "help",
+  priority = 800,
+  enabled = function()
+    return true
+  end,
+
+  execute = function(done)
+    local word = vim.fn.expand("<cword>")
+    -- local stdout = vim.loop.new_pipe(false)
+    -- vim.api.nvim_buf_call()
+    -- require("hover.async.job").job({":help","popd"})
+    --
+    --
+    local job = require("hover.async.job").job
+
+    ---@type string[]
+    local output = job({
+      "help",
+      word,
+    })
+
+    -- local results = process(output)
+    -- if not results then
+    --   results = { "no definition for " .. word }
+    -- end
+    done(output and { lines = output, filetype = "markdown" })
+  end,
+}
 return {
   "lewis6991/hover.nvim",
   opts = {
@@ -192,6 +228,7 @@ return {
       -- makeGlowForRepos()
       -- require("hover.providers.lsp")
       require("hover").register(source)
+      -- require("hover").register(helpSource)
       require("hover.providers.gh")
 
       -- re('hover.providers.jira')
@@ -206,7 +243,9 @@ return {
     preview_window = false,
     title = true,
     -- Setup keymaps
-    -- vim.keymap.set("n", "K", require("hover").hover, { desc = "hover.nvim" })
+    -- vim.keymap.set("n", "K", function()
+    -- require("hover").hover()
+    -- end, { desc = "hover.nvim" }),
     -- vim.keymap.set("n", "gK", require("hover").hover_select, { desc = "hover.nvim (select)" })
   },
 }

@@ -181,6 +181,17 @@ local function GetVisualStartAndEndLineNumbers(keepSelectionIfNotInBlockMode, ad
       vim.api.nvim_feedkeys("gv", "n", true)
     end
   end
+  map("n", "<K>", function()
+    if vim.bo.filetype == "help" then
+      vim.api.nvim_feedkeys("K", "ni", true)
+      return
+    end -- if require("lazyvim.util").has("hover.nvim") then
+    require("hover").hover()
+    -- else
+
+    -- vim.lsp.buf.hover()
+    -- end
+  end, "Hover")
 
   -- if debugNotify == true then
   --   vim.notify(table.concat(lines, "\n"))
@@ -239,8 +250,8 @@ map("n", "<leader>.", function()
   vim.notify("CWD set to: " .. here)
 end, "Set CWD to here")
 map("n", "<leader><leader>x", function()
-  vim.cmd.w()
-  vim.cmd.source("%")
+  vim.cmd("w")
+  vim.cmd("source %")
 end, "save and source current file")
 map("n", "<leader><leader>i", function()
   if Util.has("nvim-toggler") then
@@ -250,7 +261,7 @@ map("n", "<leader><leader>i", function()
   end
 end, "invert under cursor")
 
-map("n", "<leader>ll", "<cmd>LspLog<cr>", "LspLog")
+map("n", "<leader>llog", "<cmd>LspLog<cr>", "LspLog")
 -- map("n", "<leader>lI", "<cmd>LspRestart<cr>", "Lsp Reinit")
 map("n", "<leader>lI", "<cmd>LspRestart<cr>", "Lsp Reinit")
 map("n", "<leader>li", function()
@@ -391,7 +402,11 @@ end
 
 if Util.has("nvim-dap") then
   map("n", "<F5>", function()
-    require("dap").continue()
+    if vim.cmd.PreDebugTask() then
+      -- require("dap").continue()
+    else
+      print("predebug task was false, so assuming there was a problem and not debugging")
+    end
   end, "Debugger: Start")
   map("n", "<F17>", function()
     require("dap").terminate()
@@ -421,7 +436,11 @@ if Util.has("nvim-dap") then
     require("dap").clear_breakpoints()
   end, "Clear Breakpoints")
   map("n", "<leader>dc", function()
-    require("dap").continue()
+    if vim.cmd.PreDebugTask() then
+      -- require("dap").continue()
+    else
+      print("predebug task was false, so assuming there was a problem and not debugging")
+    end
   end, "Start/Continue (F5)")
   map("n", "<leader>di", function()
     require("dap").step_into()

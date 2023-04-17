@@ -1,7 +1,7 @@
-vim.api.nvim_create_user_command("ModifyStringWithBlah", function()
-  local stringUtils = require("dev")
-  vim.notify(stringUtils.StringAppendWithBlah())
-end, {})
+-- vim.api.nvim_create_user_command("ModifyStringWithBlah", function()
+--   local stringUtils = require("dev")
+--   vim.notify(stringUtils.StringAppendWithBlah())
+-- end, {})
 return {
   {
     "folke/noice.nvim",
@@ -18,7 +18,9 @@ return {
       return true
     end,
   },
+  -- { "lukas-reineke/indent-blankline.nvim", enabled = false },
   -- scrollbar
+
   {
     "petertriho/nvim-scrollbar",
     event = "BufReadPost",
@@ -94,29 +96,29 @@ return {
     "kevinhwang91/nvim-ufo",
     init = function()
       -- ### vimsharp C Extensions
-
-      local ffi = require("ffi")
-
-      -- Custom C extension to get direct fold information from Neovim
-      ffi.cdef([[
-        typedef struct {} Error;
-        typedef struct {} win_T;
-        typedef struct {
-          int start;  // line number where deepest fold starts
-          int level;  // fold level, when zero other fields are N/A
-          int llevel; // lowest level that starts in v:lnum
-          int lines;  // number of lines from v:lnum to end of closed fold
-        } foldinfo_T;
-        foldinfo_T fold_info(win_T* wp, int lnum);
-        win_T *find_window_by_handle(int Window, Error *err);
-        int compute_foldcolumn(win_T *wp, int col);
-      ]])
-      vim.keymap.set("n", "zR", function()
-        require("ufo").openAllFolds()
-      end, { desc = "Open All Folds" })
-      vim.keymap.set("n", "zM", function()
-        require("ufo").closeAllFolds()
-      end, { desc = "Close All Folds" })
+      --
+      -- local ffi = require("ffi")
+      --
+      -- -- Custom C extension to get direct fold information from Neovim
+      -- ffi.cdef([[
+      --   typedef struct {} Error;
+      --   typedef struct {} win_T;
+      --   typedef struct {
+      --     int start;  // line number where deepest fold starts
+      --     int level;  // fold level, when zero other fields are N/A
+      --     int llevel; // lowest level that starts in v:lnum
+      --     int lines;  // number of lines from v:lnum to end of closed fold
+      --   } foldinfo_T;
+      --   foldinfo_T fold_info(win_T* wp, int lnum);
+      --   win_T *find_window_by_handle(int Window, Error *err);
+      --   int compute_foldcolumn(win_T *wp, int col);
+      -- ]])
+      -- vim.keymap.set("n", "zR", function()
+      --   require("ufo").openAllFolds()
+      -- end, { desc = "Open All Folds" })
+      -- vim.keymap.set("n", "zM", function()
+      --   require("ufo").closeAllFolds()
+      -- end, { desc = "Close All Folds" })
       -- return ffi
       -- table.insert(vimsharp.file_plugins, "nvim-ufo")
     end,
@@ -148,27 +150,27 @@ return {
           scrollD = "<C-d>",
         },
       },
-      provider_selector = function(_, filetype, buftype)
-        local function handleFallbackException(bufnr, err, providerName)
-          if type(err) == "string" and err:match("UfoFallbackException") then
-            return require("ufo").getFolds(bufnr, providerName)
-          else
-            return require("promise").reject(err)
-          end
-        end
-
-        return (filetype == "" or buftype == "nofile") and "indent" -- only use indent until a file is opened
-          or function(bufnr)
-            return require("ufo")
-              .getFolds(bufnr, "lsp")
-              :catch(function(err)
-                return handleFallbackException(bufnr, err, "treesitter")
-              end)
-              :catch(function(err)
-                return handleFallbackException(bufnr, err, "indent")
-              end)
-          end
-      end,
+      -- provider_selector = function(_, filetype, buftype)
+      --   local function handleFallbackException(bufnr, err, providerName)
+      --     if type(err) == "string" and err:match("UfoFallbackException") then
+      --       return require("ufo").getFolds(bufnr, providerName)
+      --     else
+      --       return require("promise").reject(err)
+      --     end
+      --   end
+      --
+      --   return (filetype == "" or buftype == "nofile") and "indent" -- only use indent until a file is opened
+      --     or function(bufnr)
+      --       return require("ufo")
+      --         .getFolds(bufnr, "lsp")
+      --         :catch(function(err)
+      --           return handleFallbackException(bufnr, err, "treesitter")
+      --         end)
+      --         :catch(function(err)
+      --           return handleFallbackException(bufnr, err, "indent")
+      --         end)
+      --     end
+      -- end,
     },
   },
 }

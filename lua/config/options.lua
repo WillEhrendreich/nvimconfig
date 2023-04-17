@@ -3,6 +3,8 @@
 -- Add any additional options here
 local opt = vim.opt
 local o = vim.o
+
+opt.runtimepath:append(os.getenv("repos") .. "/tree-sitter-odin/queries")
 vim.g.highlighturl_enabled = true -- highlight URLs by default
 -- vim.cmd([[colorscheme  kanagawa]])
 -- opt.font
@@ -13,7 +15,8 @@ o.foldlevel = 99 -- Using ufo provider need a large value, feel free to decrease
 o.foldlevelstart = 99
 o.foldenable = true
 o.foldcolumn = "auto"
-vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
+vim.o.fillchars = [[eob: ,fold:,foldopen:,foldsep:│,foldclose:]]
+opt.completeopt = { "menu", "menuone", "preview" }
 opt.kp = "help"
 opt.shell = "pwsh"
 opt.shellcmdflag =
@@ -22,3 +25,4 @@ opt.shellredir = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
 opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
 opt.shellquote = ""
 opt.shellxquote = ""
+o.lazyredraw = false

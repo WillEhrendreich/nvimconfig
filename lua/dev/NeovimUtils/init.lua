@@ -1,10 +1,103 @@
-local Util = require("lazyvim.util")
+-- local Util = require("lazyvim.util")
 local usercommand = vim.api.nvim_create_user_command
-local M = {}
+---@class LazyUtil: LazyUtilCore
+local M = setmetatable({}, { __index = require("lazy.core.util") })
+
+---@return string
+function M.norm(path)
+  if path:sub(1, 1) == "~" then
+    local home = vim.loop.os_homedir()
+    if home:sub(-1) == "\\" or home:sub(-1) == "/" then
+      home = home:sub(1, -2)
+    end
+    path = home .. path:sub(2)
+  end
+  path = path:gsub("\\", "/"):gsub("/+", "/")
+  return path:sub(-1) == "/" and path:sub(1, -2) or path
+end
+
+---@param opts? string|{msg:string, on_error:fun(msg)}
+function M.try(fn, opts)
+  opts = type(opts) == "string" and { msg = opts } or opts or {}
+  local msg = opts.msg
+  -- error handler
+  local error_handler = function(err)
+    local Config = require("lazy.core.config")
+    local trace = {}
+    local level = 1
+    while true do
+      local info = debug.getinfo(level, "Sln")
+      if not info then
+        break
+      end
+      if info.what ~= "C" and not info.source:find("lazy.nvim") then
+        local source = info.source:sub(2)
+        if source:find(Config.options.root, 1, true) == 1 then
+          source = source:sub(#Config.options.root + 1)
+        end
+        source = vim.fn.fnamemodify(source, ":p:~:.")
+        local line = "  - " .. source .. ":" .. info.currentline
+        if info.name then
+          line = line .. " _in_ **" .. info.name .. "**"
+        end
+        table.insert(trace, line)
+      end
+      level = level + 1
+    end
+    msg = (msg and (msg .. "\n\n") or "") .. err
+    if #trace > 0 then
+      msg = msg .. "\n\n# stacktrace:\n" .. table.concat(trace, "\n")
+    end
+    if opts.on_error then
+      opts.on_error(msg)
+    else
+      vim.schedule(function()
+        M.error(msg)
+      end)
+    end
+    return err
+  end
+
+  ---@type boolean, any
+  local ok, result = xpcall(fn, error_handler)
+  return ok and result or nil
+end
+
+function M.file_exists(file)
+  return vim.loop.fs_stat(file) ~= nil
+end
+
+---@param opts? LazyFloatOptions
+function M.float(opts)
+  return require("lazy.view.float")(opts)
+end
+
 function M.setup(opts)
   -- print("now Setup for NeovimUtils called with opts : \n" .. vim.inspect(opts))
 end
 
+---@param msg string|string[]
+---@param opts? table
+function M.markdown(msg, opts)
+  if type(msg) == "table" then
+    msg = table.concat(msg, "\n") or msg
+  end
+
+  vim.notify(
+    msg,
+    vim.log.levels.INFO,
+    vim.tbl_deep_extend("force", {
+      title = "lazy.nvim",
+      on_open = function(win)
+        vim.wo[win].conceallevel = 3
+        vim.wo[win].concealcursor = "n"
+        vim.wo[win].spell = false
+
+        vim.treesitter.start(vim.api.nvim_win_get_buf(win), "markdown")
+      end,
+    }, opts or {})
+  )
+end
 function M.scratch(input)
   -- vim.cmd.Bufferize(input())
   if type(input) == "function" then
@@ -181,8 +274,42 @@ function M.system_open(path)
   end
 end
 
+function M.open(uri)
+  if M.file_exists(uri) then
+    return M.float({ style = "", file = uri })
+  end
+  local Config = require("lazy.core.config")
+  local cmd
+  if Config.options.ui.browser then
+    cmd = { Config.options.ui.browser, uri }
+  elseif vim.fn.has("win32") == 1 then
+    cmd = { "explorer", uri }
+  elseif vim.fn.has("macunix") == 1 then
+    cmd = { "open", uri }
+  else
+    if vim.fn.executable("xdg-open") == 1 then
+      cmd = { "xdg-open", uri }
+    elseif vim.fn.executable("wslview") == 1 then
+      cmd = { "wslview", uri }
+    else
+      cmd = { "open", uri }
+    end
+  end
+
+  local ret = vim.fn.jobstart(cmd, { detach = true })
+  if ret <= 0 then
+    local msg = {
+      "Failed to open uri",
+      ret,
+      vim.inspect(cmd),
+    }
+    vim.notify(table.concat(msg, "\n"), vim.log.levels.ERROR)
+  end
+end
+
 usercommand("SystemOpen", function()
-  M.system_open(vim.fn.expand("<cfile>"))
+  M.open(vim.fn.expand("<cfile>"))
+  -- M.system_open(vim.fn.expand("<cfile>"))
 end, {})
 
 -- term_details can be either a string for just a command or
@@ -191,7 +318,7 @@ end, {})
 --- Toggle a user terminal if it exists, if not then create a new one and save it
 -- @param term_details a terminal command string or a table of options for Terminal:new() (Check toggleterm.nvim documentation for table format)
 function M.toggle_term_cmd(opts)
-  local terms = vimsharp.user_terminals
+  local terms = {}
   -- if a command string is provided, create a basic table for Terminal:new() options
   if type(opts) == "string" then
     opts = { cmd = opts, hidden = true }
@@ -229,6 +356,162 @@ function M.delete_url_match()
   end
 end
 
+function M.read_file(file)
+  local fd = assert(io.open(file, "r"))
+  ---@type string
+  local data = fd:read("*a")
+  fd:close()
+  return data
+end
+
+function M.write_file(file, contents)
+  local fd = assert(io.open(file, "w+"))
+  fd:write(contents)
+  fd:close()
+end
+
+---@generic F: fun()
+---@param ms number
+---@param fn F
+---@return F
+function M.throttle(ms, fn)
+  local timer = vim.loop.new_timer()
+  local running = false
+  local first = true
+
+  return function(...)
+    local args = { ... }
+    local wrapped = function()
+      fn(unpack(args))
+    end
+    if not running then
+      if first then
+        wrapped()
+        first = false
+      end
+
+      timer:start(ms, 0, function()
+        running = false
+        vim.schedule(wrapped)
+      end)
+
+      running = true
+    end
+  end
+end
+
+---@class LazyCmdOptions: LazyFloatOptions
+---@field cwd? string
+---@field env? table<string,string>
+---@field float? LazyFloatOptions
+
+-- Opens a floating terminal (interactive by default)
+---@param cmd? string[]|string
+---@param opts? LazyCmdOptions|{interactive?:boolean}
+function M.float_term(cmd, opts)
+  cmd = cmd or {}
+  if type(cmd) == "string" then
+    cmd = { cmd }
+  end
+  if #cmd == 0 then
+    cmd = { vim.env.SHELL or vim.o.shell }
+  end
+  opts = opts or {}
+  local float = M.float(opts)
+  vim.fn.termopen(cmd, vim.tbl_isempty(opts) and vim.empty_dict() or opts)
+  if opts.interactive ~= false then
+    vim.cmd.startinsert()
+    vim.api.nvim_create_autocmd("TermClose", {
+      once = true,
+      buffer = float.buf,
+      callback = function()
+        float:close()
+        vim.cmd.checktime()
+      end,
+    })
+  end
+  return float
+end
+
+--- Runs the command and shows it in a floating window
+---@param cmd string[]
+---@param opts? LazyCmdOptions|{filetype?:string}
+function M.float_cmd(cmd, opts)
+  opts = opts or {}
+  local float = M.float(opts)
+  if opts.filetype then
+    vim.bo[float.buf].filetype = opts.filetype
+  end
+  local Process = require("lazy.manage.process")
+  local lines = Process.exec(cmd, { cwd = opts.cwd })
+  vim.api.nvim_buf_set_lines(float.buf, 0, -1, false, lines)
+  vim.bo[float.buf].modifiable = false
+  return float
+end
+
+---@alias FileType "file"|"directory"|"link"
+---@param path string
+---@param fn fun(path: string, name:string, type:FileType):boolean?
+function M.ls(path, fn)
+  local handle = vim.loop.fs_scandir(path)
+  while handle do
+    local name, t = vim.loop.fs_scandir_next(handle)
+    if not name then
+      break
+    end
+
+    local fname = path .. "/" .. name
+
+    -- HACK: type is not always returned due to a bug in luv,
+    -- so fecth it with fs_stat instead when needed.
+    -- see https://github.com/folke/lazy.nvim/issues/306
+    if fn(fname, name, t or vim.loop.fs_stat(fname).type) == false then
+      break
+    end
+  end
+end
+
+---@param path string
+---@param fn fun(path: string, name:string, type:FileType)
+function M.walk(path, fn)
+  M.ls(path, function(child, name, type)
+    if type == "directory" then
+      M.walk(child, fn)
+    end
+    fn(child, name, type)
+  end)
+end
+
+---@param root string
+---@param fn fun(modname:string, modpath:string)
+---@param modname? string
+function M.walkmods(root, fn, modname)
+  modname = modname and (modname:gsub("%.$", "") .. ".") or ""
+  M.ls(root, function(path, name, type)
+    if name == "init.lua" then
+      fn(modname:gsub("%.$", ""), path)
+    elseif (type == "file" or type == "link") and name:sub(-4) == ".lua" then
+      fn(modname .. name:sub(1, -5), path)
+    elseif type == "directory" then
+      M.walkmods(path, fn, modname .. name .. ".")
+    end
+  end)
+end
+
+---@generic V
+---@param t table<string, V>
+---@param fn fun(key:string, value:V)
+function M.foreach(t, fn)
+  ---@type string[]
+  local keys = vim.tbl_keys(t)
+  pcall(table.sort, keys, function(a, b)
+    return a:lower() < b:lower()
+  end)
+  for _, key in ipairs(keys) do
+    fn(key, t[key])
+  end
+end
+
 --- Add syntax matching rules for highlighting URLs/URIs
 function M.set_url_match()
   M.delete_url_match()
@@ -251,6 +534,75 @@ function M.cmd(cmd, show_error)
     vim.api.nvim_err_writeln("Error running command: " .. cmd .. "\nError message:\n" .. result)
   end
   return success and result:gsub("[\27\155][][()#;?%d]*[A-PRZcf-ntqry=><~]", "") or nil
+end
+
+---@generic F: fun()
+---@param ms number
+---@param fn F
+---@return F
+function M.throttle(ms, fn)
+  local timer = vim.loop.new_timer()
+  local running = false
+  local first = true
+
+  return function(...)
+    local args = { ... }
+    local wrapped = function()
+      fn(unpack(args))
+    end
+    if not running then
+      if first then
+        wrapped()
+        first = false
+      end
+
+      timer:start(ms, 0, function()
+        running = false
+        vim.schedule(wrapped)
+      end)
+
+      running = true
+    end
+  end
+end
+
+function M._dump(value, result)
+  local t = type(value)
+  if t == "number" or t == "boolean" then
+    table.insert(result, tostring(value))
+  elseif t == "string" then
+    table.insert(result, ("%q"):format(value))
+  elseif t == "table" then
+    table.insert(result, "{")
+    local i = 1
+    ---@diagnostic disable-next-line: no-unknown
+    for k, v in pairs(value) do
+      if k == i then
+      elseif type(k) == "string" then
+        table.insert(result, ("[%q]="):format(k))
+      else
+        table.insert(result, k .. "=")
+      end
+      M._dump(v, result)
+      table.insert(result, ",")
+      i = i + 1
+    end
+    table.insert(result, "}")
+  else
+    error("Unsupported type " .. t)
+  end
+end
+-- For pretty printing lua objects (`:lua dump(vim.fn)`)
+M.dump = function(...)
+  -- local objects = vim.tbl_map(vim.inspect, { ... })
+  local result = {}
+  M.foreach(..., function(val)
+    M._dump(val, result)
+    -- table.concat(result, "")
+    -- print(unpack(objects))
+  end)
+  print(unpack(result))
+  return ...
 end
 
 return M

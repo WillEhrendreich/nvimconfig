@@ -41,12 +41,12 @@ local scrubExtraFsautocompleteStuff = function()
   -- end
 end
 
-vim.api.nvim_create_autocmd("BufReadPost", {
-
-  group = vim.api.nvim_create_augroup("scrubExtraFsautocompleteStuff", { clear = true }),
-  pattern = "lsp.log",
-  callback = scrubExtraFsautocompleteStuff,
-})
+-- vim.api.nvim_create_autocmd("BufReadPost", {
+--
+--   group = vim.api.nvim_create_augroup("scrubExtraFsautocompleteStuff", { clear = true }),
+--   pattern = "lsp.log",
+--   callback = scrubExtraFsautocompleteStuff,
+-- })
 
 return {
 

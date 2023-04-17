@@ -12,9 +12,12 @@ return {
       },
     },
     ensure_installed = {
+      "fsautocomplete",
+      "sqlls",
       "stylua",
       "shfmt",
       "flake8",
+      "ols",
     },
   },
 }

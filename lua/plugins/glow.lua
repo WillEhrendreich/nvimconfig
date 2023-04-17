@@ -1,3 +1,3 @@
 return {
-  "charmbracelet/glow",
+  -- "charmbracelet/glow",
 }

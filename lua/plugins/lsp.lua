@@ -1,344 +1,57 @@
 local fn = vim.fn
 local tc = vim.tbl_contains
-if not vim.g["LastDotnetProjectRootPath"] then
-  vim.g["LastDotnetProjectRootPath"] = ""
-end
-if not vim.g["LastDotnetDllPath"] then
-  vim.g["LastDotnetDllPath"] = ""
-end
-if not vim.g["DotnetStartupProjectPath"] then
-  vim.g["DotnetStartupProjectPath"] = ""
-end
-if not vim.g["LastDotnetProjectFileName"] then
-  vim.g["LastDotnetProjectFileName"] = ""
-end
-if not vim.g["LastDotnetProjectFileExtension"] then
-  vim.g["LastDotnetProjectFileExtension"] = ""
-end
-
-LastDotnetProjectRootPath = vim.g["LastDotnetProjectRootPath"]
-LastDotnetDllPath = vim.g["LastDotnetDllPath"]
-DotnetStartupProjectPath = vim.g["DotnetStartupProjectPath"]
-LastDotnetProjectFileName = vim.g["LastDotnetProjectFileName"]
-LastDotnetProjectFileExtension = vim.g["LastDotnetProjectFileExtension"]
-
 local function first_to_upper(str)
   return str:gsub("^%l", string.upper)
 end
-function FindRoot(ignored_lsp_servers, bufnr)
+
+---this should grab the correct lsp root of whatever buf is passed in.
+---@param ignored_lsp_servers table<string>
+---@param client lsp.Client
+---@param bufnr number
+---@return unknown
+function FindRoot(ignored_lsp_servers, client, bufnr)
   local b = bufnr or 0
-  -- Get lsp client for current buffer
-  -- local bufDir = Lsppath.GetDirForBufnr(bufnr)
   local ignore = ignored_lsp_servers or {}
-  -- vim.notify(vim.inspect(ignore) .. "are being ignored when finding root")
-  -- u
-  -- vim.notify(vim.inspect(b) .. " is the bufnumber with filename " .. Lsppath.GetBaseFilenameForBufnr(b))
   local buf_ft = vim.api.nvim_buf_get_option(b, "filetype")
   local result
-  local clients = vim.lsp.get_active_clients({
-    bufnr = b,
-  })
   local i = ignore or {}
-  for _, c in pairs(clients) do
-    local cname = c.name
-    -- LspNotify("client name is " .. (cname or "not found"))
-    -- local bufname = vim.api.nvim_buf_get_name(bufnr)
-    -- LspNotify("buf name is " .. (bufname or "not found"))
-    -- local lspConfigForClient = re 'lspconfig.configs'[cname]
-    -- LspNotify("config for " .. (cname or "not found") .. " is " .. vim.inspect(lspConfigForClient or " not found.."))
-    local filetypes = c.config.filetypes
-    if filetypes and vim.tbl_contains(filetypes, buf_ft) then
-      if not vim.tbl_contains(i, cname) then
-        -- local rootDirFunction = lspConfigForClient.get_root_dir
-        -- LspNotify("lsp root dir function is " .. vim.inspect(rootDirFunction or "not found"))
-        local activeConfigRootDir = c.config.root_dir
-        -- local rootresult
-        -- LspNotify("active root dir is " .. (activeConfigRootDir or "not found"))
-        -- if rootDirFunction then
-        -- rootresult = rootDirFunction(bufname)
-        -- if rootresult and not rootresult == nil and not rootresult == "" then LspNotify("result of rootDirFunction is: "
-        --     ..
-        --     upperDriveLetter((v.path.AppendSlash(rootresult))))
-        -- end
-        -- end
-        if activeConfigRootDir then
-          result = first_to_upper(StringReplace(activeConfigRootDir, "\\", "/"))
-          -- LspNotify("active root dir is " .. (result or "not found"))
-          -- else
-          -- result = upperDriveLetter((v.path.AppendSlash(rootresult) )))
-        end
+  local cname = client.name
+  local filetypes = client.config.filetypes
+  if filetypes and vim.tbl_contains(filetypes, buf_ft) then
+    if not vim.tbl_contains(i, cname) then
+      local rootDirFunction = client.config.get_root_dir
+      local activeConfigRootDir = client.config.root_dir
+      if activeConfigRootDir then
+        result = first_to_upper(StringReplace(activeConfigRootDir, "\\", "/"))
       end
     end
   end
-  -- return upperDriveLetter((v.path.AppendSlash(result or bufDir)))
   return result
 end
 
---- Run a shell command and capture the output and if the command succeeded or failed
--- @param cmd the terminal command to execute
--- @param show_error boolean of whether or not to show an unsuccessful command as an error to the user
--- @return the result of a successfully executed command or nil
-function RunShellCmd(cmd, show_error)
-  if vim.fn.has("win32") == 1 then
-    cmd = { "cmd.exe", "/C", cmd }
+vim.api.nvim_create_user_command("IonideStart", function()
+  local clients = vim.lsp.get_active_clients({ name = "ionide" })
+  for _, client in ipairs(clients) do
+    client.stop()
   end
-  local result = vim.fn.system(cmd)
-  local success = vim.api.nvim_get_vvar("shell_error") == 0
-  if not success and (show_error == nil or show_error) then
-    vim.api.nvim_err_writeln("Error running command: " .. cmd .. "\nError message:\n" .. result)
+  vim.cmd("LspStart ionide")
+end, {})
+vim.api.nvim_create_user_command("LspShutdown", function()
+  local clients = vim.lsp.get_active_clients()
+  for _, client in ipairs(clients) do
+    client.stop()
   end
-  return success and result:gsub("[\27\155][][()#;?%d]*[A-PRZcf-ntqry=><~]", "") or nil
-end
-
---
--- Does package.json file contain speficied configuration or dependency?
--- (e.g. "prettier")
--- ILspORTANT! package.json file is found only if lsp root
--- where package.json is or vim-rooter (or something similar) is activated
---
-function IsInPackageJson(field)
-  local root = FindRoot()
-  if vim.fn.filereadable(root .. "/package.json") ~= 0 then
-    local package_json = vim.fn.json_decode(vim.fn.readfile("package.json"))
-    if package_json == nil then
-      return false
-    end
-    if package_json[field] ~= nil then
-      return true
-    end
-    local dev_dependencies = package_json["devDependencies"]
-    if dev_dependencies ~= nil and dev_dependencies[field] ~= nil then
-      return true
-    end
-    local dependencies = package_json["dependencies"]
-    if dependencies ~= nil and dependencies[field] ~= nil then
-      return true
-    end
-  end
-  return false
-end
-
-function IsWebProject()
-  return (vim.fn.glob("package.json") ~= "" or vim.fn.glob("yarn.lock") ~= "" or vim.fn.glob("node_modules") ~= "")
-end
-
-function IsArduinoProject()
-  return (vim.fn.glob("*.ino") ~= "")
-end
-
-function DecodeJsonFile(filename)
-  if vim.fn.filereadable(filename) == 0 then
-    return nil
-  end
-  return vim.fn.json_decode(vim.fn.readfile(filename))
-end
-
-function StringEndsWith(str, ending)
-  return ending == "" or string.sub(str, -string.len(ending)) == ending
-end
-
-function StringReplace(x, to_replace, replace_with)
-  if type(x) == "string" or type(x) == "number" then
-    return string.gsub(x, to_replace, replace_with)
-  end
-  if type(x) == "table" then
-    for key, value in pairs(x) do
-      x[key] = StringReplace(value, to_replace, replace_with)
-    end
-  end
-  return x
-end
-
-function GetCurrentBufDirname()
-  local p = vim.fs.dirname(string.sub(vim.uri_from_bufnr(vim.api.nvim_get_current_buf()), 9))
-  return p
-end
-
-function GetDotnetProjectPath()
-  local dirname = GetCurrentBufDirname()
-  local projectName = LastDotnetProjectFileName
-  local ext = LastDotnetProjectFileExtension
-  local path
-  local nearestProj
-  local files = vim.fn.readdir(dirname)
-  for _, file in ipairs(files) do
-    if not nearestProj then
-      if StringEndsWith(file, "proj") then
-        -- local full_path = dirname .. '/' .. file
-        nearestProj = string.sub(file, 0, string.len(file) - 7)
-        ext = string.sub(file, string.len(file) - 6)
-        -- nearestProj = string.sub(n, string.len(dirname), string.len(n) - 8)
-      end
-    end
-  end
-  if not nearestProj then
-    nearestProj = ""
-  end
-  if not projectName or projectName == "" then
-    projectName = nearestProj
-  end
-  if not LastDotnetProjectFileName or LastDotnetProjectFileName == "" then
-    vim.g["LastDotnetProjectFileName"] = projectName
-  end
-  if not LastDotnetProjectFileExtension or LastDotnetProjectFileExtension == "" then
-    vim.g["LastDotnetProjectFileExtension"] = ext
-  end
-  path = dirname .. "/" .. projectName .. ext
-  if not DotnetStartupProjectPath or DotnetStartupProjectPath == "" then
-    vim.g["DotnetStartupProjectPath"] = path
-  end
-
-  path = DotnetStartupProjectPath or ""
-  if path == "" then
-    -- vim.notify("StartupProjectPath was either blank or nil")
-    path = GetCurrentBufDirname()
-  end
-
-  local function request(initialPath)
-    local response = vim.fn.input({ prompt = "Path to project: ", default = initialPath, completion = "file" })
-    if not StringEndsWith(response, "proj") then
-      response = vim.fn.input({
-        "Given path didn't end with 'proj'.. " .. "\nPlease provide an actual path to the startup project: \n",
-        initialPath,
-        "file",
-      })
-    end
-    if not StringEndsWith(response, "proj") then
-      vim.notify(
-        "Fine.. BE that way.. You don't want to give an actual path? I'm setting the path to ERROR.BADproj, and you will get errors.. but it's out of my hands now. *tsk tsk.* you try to help someone.. geeez.. "
-      )
-      response = "ERROR.BADproj"
-    end
-    return response
-  end
-  if vim.fn.confirm("Do you want to change the path to project?\n" .. vim.inspect(path), "&yes\n&no", 2) == 1 then
-    path = request(GetCurrentBufDirname())
-  end
-  print("Path to startup project is set to: " .. path)
-  -- Lspdebug.GetConfig()
-  -- local path =  vim.fn.input({ "Path to your startup *proj file ", LspStartupProjectPath, "file" })
-  vim.g["DotnetStartupProjectPath"] = path
-  return path
-end
-
-function OpenFileInNewBuffer(f)
-  local file_exists = os.rename(f, f)
-  if not file_exists then
-    local file = io.open(f, "w")
-    if file then
-      file:close()
-    end
-  end
-  local choice = vim.fn.confirm("Do you want to open the file\n" .. f .. "\nin a new buffer? \n", "&yes\n&no", "y")
-  if choice == "y" then
-    local cmd = "vnew " .. f
-    vim.cmd.vnew(cmd)
-  end
-  -- if  vim.fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim. vim.fn.bufload(f) end
-end
-
-function DotnetBuildRelease(p)
-  -- local logfile = "c:/temp/dotnet-release-Log.log"
-  --   local cmd = "dotnet build " .. p .. " -c release *> " .. logfile
-  local cmd = "dotnet build " .. p .. " -c Release"
-  print("Building ... ")
-  -- print("Cmd to execute: " .. cmd)
-  local f = os.execute(cmd)
-  if f == 0 then
-    print("\nBuild Release: ✔️ ")
-  else
-    print("\nBuild Release failed: ❌ (code: " .. f .. ")")
-    --    LspOpenFileInNewBuffer(logfile)
-  end
-  return f
-end
-
-function DotnetBuildDebug(p)
-  -- local logfile = "c:/temp/dap-debug-nvim-log"
-  --   local cmd = "dotnet build " .. p .. " -c Debug *> " .. logfile
-  local cmd = "dotnet build " .. p .. " -c Debug"
-  print("Building ... ")
-  -- print("Cmd to execute: " .. cmd)
-  local f = os.execute(cmd)
-  if f == 0 then
-    print("\nBuild debug: ✔️ ")
-  else
-    print("\nBuild debug failed: ❌ (code: " .. f .. ")")
-    --    LspOpenFileInNewBuffer(logfile)
-  end
-  return f
-end
-
-function GetDotnetDllPath()
-  local dirname = vim.fs.dirname(DotnetStartupProjectPath)
-  local projectName = LastDotnetProjectFileName
-    or string.sub(DotnetStartupProjectPath, string.len(dirname), string.len(DotnetStartupProjectPath or "") - 8)
-    or ""
-  local path = dirname .. "/bin/debug/" .. projectName .. ".dll"
-  if not LastDotnetDllPath or LastDotnetDllPath == "" then
-    vim.g["LastDotnetDllPath"] = path
-  end
-  local request = function(givenPath)
-    local p = vim.fn.input({ prompt = "Path to dll ", default = givenPath, completion = "file", cancelreturn = "" })
-    if not StringEndsWith(p, ".dll") then
-      local pathWithExt = p .. ".dll"
-      if not os.rename(pathWithExt, pathWithExt) then
-        p = vim.fn.input({
-          prompt = "Could not find " .. p .. ".dll, please try entering another path? ",
-          default = p,
-          completion = "file",
-        })
-      end
-    end
-    if not os.rename(p, p) then
-      p = vim.fn.input({
-        prompt = "Could not find " .. p .. ", please try entering another path? ",
-        default = p,
-        completion = "file",
-      })
-    end
-    return p
-  end
-  if vim.fn.confirm("Do you want to change the path to dll?\n" .. LastDotnetDllPath, "&yes\n&no", 2) == 1 then
-    path = request(vim.fs.dirname(DotnetStartupProjectPath) .. "/bin/debug/")
-  end
-  vim.g["LastDotnetDllPath"] = path
-  --  print("path to dll is set to: " .. Dotnetdotnet["LastDllPath"])
-  return path
-end
-
-function DotnetBuild(path, buildType)
-  local t = buildType or "debug"
-  if t == "r" or t == "release" or t == "Release" or t == "R" then
-    print("building project: " .. path .. "with build type " .. t)
-    return DotnetBuildRelease(path)
-  else
-    print("building project: " .. path .. "with build type " .. t)
-    return DotnetBuildDebug(path)
-  end
-end
-
-if vim.g.lsp_handlers_enabled then
-  vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
-  vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
-end
--- --- Check if a buffer is valid
--- -- @param bufnr the buffer to check
--- -- @return true if the buffer is valid or false
--- function Lspis_valid_buffer(bufnr)
---   if not bufnr or bufnr < 1 then return false end
---   return vim.bo[bufnr].buflisted and vim.api.nvim_buf_is_valid(bufnr)
--- end
---
---
+end, {})
+vim.api.nvim_create_user_command("LspStatus", function()
+  require("NeovimUtils").dump(vim.lsp.get_active_clients({ bufnr = 0 }))
+end, {})
 
 return {
+  -- {
+  --   "https://git.sr.ht/~whynothugo/lsp_lines.nvim",
+  --   config = true,
+  -- },
   {
-    "https://git.sr.ht/~whynothugo/lsp_lines.nvim",
-    config = true,
-  },
-  {
-
     "p00f/clangd_extensions.nvim",
     config = true,
     ---@type lspconfig.options.clangd
@@ -480,7 +193,6 @@ return {
     },
     -- },
   },
-  "b0o/SchemaStore.nvim",
   {
 
     "kkharji/sqlite.lua",
@@ -503,6 +215,34 @@ return {
   --     { "nvim-treesitter/nvim-treesitter" },
   --   },
   -- },
+  { "Tetralux/odin.vim" },
+
+  -- LSP inlay hint support
+  {
+    "lvimuser/lsp-inlayhints.nvim",
+    config = function()
+      -- local bind_all = require("conf.bindings").bind_all
+      -- local key_opts = { noremap = true, silent = true }
+
+      require("lsp-inlayhints").setup({ enabled_at_startup = false })
+
+      vim.api.nvim_create_augroup("LspAttach_inlayhints", {})
+      vim.api.nvim_create_autocmd("LspAttach", {
+        group = "LspAttach_inlayhints",
+        callback = function(args)
+          if not (args.data and args.data.client_id) then
+            return
+          end
+
+          local bufnr = args.buf
+          local client = vim.lsp.get_client_by_id(args.data.client_id)
+          require("lsp-inlayhints").on_attach(client, bufnr)
+        end,
+      })
+
+      -- bind_all("lsp.toggle_inlayhints", require("lsp-inlayhints").toggle, {}, key_opts)
+    end,
+  },
   {
     -- {
     --   "WillEhrendreich/ionide-vim",
@@ -530,28 +270,28 @@ return {
       local keys = require("lazyvim.plugins.lsp.keymaps").get()
       -- change a keymap
       -- keys[#keys + 1] = { "K", "<cmd>echo 'hello'<cr>" }
-      keys[#keys + 1] = {
-        "K",
-        function()
-          local client = vim.lsp.get_active_clients({ buffer = 0 })[1]
-          local capabilities = client.server_capabilities
-          -- print("client " .. client.name .. " has capability " .. vim.inspect(capabilities))
-          if capabilities.hoverProvider then
-            if require("lazyvim.util").has("hover.nvim") then
-              require("hover").hover()
-            --     function()
-            --       vim.lsp.buf.hover()
-            --     end,
-            --     desc = "Hover symbol details",
-            --   }
-            --
-            else
-              vim.lsp.buf.hover()
-            end
-          end
-        end,
-        "Hover",
-      }
+      -- keys[#keys + 1] = {
+      --   "K",
+      --   function()
+      --     local client = vim.lsp.get_active_clients({ buffer = 0 })[1]
+      --     local capabilities = client.server_capabilities
+      --     -- print("client " .. client.name .. " has capability " .. vim.inspect(capabilities))
+      --     if capabilities.hoverProvider then
+      --       if require("lazyvim.util").has("hover.nvim") then
+      --         require("hover").hover()
+      --       --     function()
+      --       --       vim.lsp.buf.hover()
+      --       --     end,
+      --       --     desc = "Hover symbol details",
+      --       --   }
+      --       --
+      --       else
+      --         vim.lsp.buf.hover()
+      --       end
+      --     end
+      --   end,
+      --   "Hover",
+      -- }
       keys[#keys + 1] =
         { "<leader>la", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" }, has = "codeAction" }
       keys[#keys + 1] = {
@@ -641,12 +381,68 @@ return {
       -- but can be also overridden when specified
       format = {
         -- formatting_options = nil,
-        -- timeout_ms = nil,
+
+        timeout_ms = 4000,
       },
+
       -- LSP Server Settings
       ---@type lspconfig.options
       servers = {
-        jsonls = {},
+        ---@type _.lspconfig.settings.ols
+        ols = {
+          cmd = { "C:/.local/share/nvim-data/mason/bin/ols.cmd" },
+          -- root_dir = FindRoot({}, 0),
+          root_dir = function(path)
+            local util = require("lspconfig.util")
+            local root
+            root = util.root_pattern("ols.json", ".git")(path)
+            root = root
+              or (function(p)
+                return (vim.fs.dirname(p or vim.fn.expand("%:p"))) .. "/"
+              end)(path)
+            return root
+          end,
+          settings = {
+            odin = {
+              completion_support_md = true,
+              hover_support_md = true,
+              signature_offset_support = true,
+              collections = {},
+              -- running=true,
+              verbose = true,
+              enable_format = true,
+              enable_hover = true,
+              enable_symantic_tokens = true,
+              enable_document_symbols = true,
+              enable_inlay_hints = true,
+              enable_procedure_context = true,
+              enable_snippets = true,
+              enable_references = true,
+              enable_rename = true,
+              enable_label_details = true,
+              enable_std_references = true,
+              enable_import_fixer = true,
+              disable_parser_errors = true,
+              thread_count = 0,
+              file_log = true,
+              -- odin_command = "",
+              checker_args = "",
+            },
+          },
+          filetypes = { "odin" },
+          single_file_support = false,
+          autostart = true,
+        },
+
+        -- (function()
+        --   local c = require("lspconfig.configs")
+        --   if not c["odin"] then
+        --     local lspConfig = require("lspconfig")
+        --     c["odin"] = lspConfig.util.defaultConfig
+        --   end
+        --
+        --   return
+        -- end)(),
 
         ---@type  lspconfig.options.fsautocomplete
         -- fsautocomplete = {
@@ -671,126 +467,170 @@ return {
         -- on_attach = on_attach,
         -- settings = {},
         -- },
-
+        -- jsonls = {
+        --   settings = {
+        --     json = {
+        --       format = {
+        --         enable = true,
+        --       },
+        --       -- schemas = require("schemastore").json.schemas(),
+        --       validate = { enable = true },
+        --     },
+        --   },
+        --   filetypes = { "jsonc", "json" },
+        -- },
         ---@type  lspconfig.options.fsautocomplete
         ionide = {
           autostart = true,
 
-          -- cmd_Environment = "latestMinor",
-          settings = {
-            FSharp = {
-              abstractClassStubGeneration = true,
-              -- abstractClassStubGenerationMethodBody = "",
-              -- abstractClassStubGenerationObjectIdentifier = "",
-              addFsiWatcher = true,
-              analyzersPath = {
-                "./packages/analyzers",
-              },
-              autoRevealInExplorer = "enabled",
-              -- autoRevealInExplorer= "disabled"|"enabled"|"sameAsFileExplorer",
-              codeLenses = {
-                ---@type _.lspconfig.settings.fsautocomplete.Signature
-                signature = {
-                  enabled = true,
-                },
-                references = {
-                  enabled = true,
-                },
-              },
-              disableFailedProjectNotifications = false,
-              dotnetRoot = "",
-              -- dotNetRoot = "",
-              enableAnalyzers = true,
-              enableAdaptiveLspServer = true,
-              enableMSBuildProjectGraph = true,
-              enableReferenceCodeLens = true,
-              -- enableTouchBar = true,
-              -- enableTreeView = true,
-              excludeProjectDirectories = { ".git", "paket-files", ".fable", "packages", "node_modules" },
-              -- externalAutocomplete = true,
-              -- fsac = _.lspconfig.settings.fsautocomplete.Fsac,
-              fsac = {
-                silencedLogs = {
-                  -- "",
-                },
-                parallelReferenceResolution = true,
-              },
-              fsiExtraParameters = {},
-              -- fsiSdkFilePath = "",
-              -- generateBinlog = true,
-              indentationSize = 2,
-              infoPanelReplaceHover = true,
-              infoPanelShowOnStartup = true,
-              infoPanelStartLocked = true,
-              infoPanelUpdate = "both",
-              ---@type _.lspconfig.settings.fsautocomplete.InlayHints
-              inlayHints = {
-                -- enabled = false,
-                enabled = true,
-                parameterNames = true,
-                typeAnnotations = true,
-                disableLongTooltip = false,
-              },
-              ---@type  _.lspconfig.settings.fsautocomplete.InlineValues
-              inlineValues = {
-                enabled = false,
-                -- enabled = true,
-                prefix = "  //ilv: ",
-              },
-              interfaceStubGeneration = true,
-              -- interfaceStubGenerationMethodBody = "",
-              -- interfaceStubGenerationObjectIdentifier = "",
-              keywordsAutocomplete = true,
-              -- lineLens = _.lspconfig.settings.fsautocomplete.LineLens,
-              lineLens = { enabled = "always", prefix = "  //lnlens:" },
-              linter = true,
-              msbuildAutoshow = true,
-              ---@type _.lspconfig.settings.fsautocomplete.Notifications
-              notifications = { trace = true },
-
-              -- openTelemetry = _.lspconfig.settings.fsautocomplete.OpenTelemetry,
-              ---@type _.lspconfig.settings.fsautocomplete.PipelineHints
-              pipelineHints = {
-                enabled = true,
-                prefix = "  // plh:",
-              },
-              recordStubGeneration = true,
-              -- recordStubGenerationBody = "",
-              resolveNamespaces = true,
-              saveOnSendLastSelection = true,
-              showExplorerOnStartup = true,
-              showProjectExplorerIn = "fsharp",
-              simplifyNameAnalyzer = true,
-              smartIndent = true,
-              suggestGitignore = true,
-              suggestSdkScripts = true,
-              -- trace = _.lspconfig.settings.fsautocomplete.Trace,
-              trace = { server = "messages" },
-              unionCaseStubGeneration = true,
-              unusedOpensAnalyzer = true,
-            },
-          },
+          cmd_Environment = "latestMinor",
+          -- settings = {
+          --   FSharp = {
+          --     abstractClassStubGeneration = true,
+          --     -- abstractClassStubGenerationMethodBody = "",
+          --     -- abstractClassStubGenerationObjectIdentifier = "",
+          --     addFsiWatcher = true,
+          --     analyzersPath = {
+          --       "./packages/analyzers",
+          --     },
+          --     autoRevealInExplorer = "enabled",
+          --     -- autoRevealInExplorer= "disabled"|"enabled"|"sameAsFileExplorer",
+          --     codeLenses = {
+          --       ---@type _.lspconfig.settings.fsautocomplete.Signature
+          --       signature = {
+          --         enabled = true,
+          --       },
+          --       references = {
+          --         enabled = true,
+          --       },
+          --     },
+          --     disableFailedProjectNotifications = false,
+          --     dotnetRoot = "",
+          --     -- dotNetRoot = "",
+          --     enableAnalyzers = true,
+          --     enableAdaptiveLspServer = true,
+          --     enableMSBuildProjectGraph = true,
+          --     enableReferenceCodeLens = true,
+          --     -- enableTouchBar = true,
+          --     -- enableTreeView = true,
+          --     excludeProjectDirectories = { ".git", "paket-files", ".fable", "packages", "node_modules" },
+          --     -- externalAutocomplete = true,
+          --     -- fsac = _.lspconfig.settings.fsautocomplete.Fsac,
+          --     fsac = {
+          --       silencedLogs = {
+          --         -- "",
+          --       },
+          --       parallelReferenceResolution = true,
+          --       -- id,
+          --     },
+          --     fsiExtraParameters = {},
+          --     -- fsiSdkFilePath = "",
+          --     -- generateBinlog = true,
+          --     indentationSize = 2,
+          --     infoPanelReplaceHover = true,
+          --     infoPanelShowOnStartup = true,
+          --     infoPanelStartLocked = true,
+          --     infoPanelUpdate = "both",
+          --     ---@type _.lspconfig.settings.fsautocomplete.InlayHints
+          --     inlayHints = {
+          --       -- enabled = false,
+          --       enabled = true,
+          --       parameterNames = true,
+          --       typeAnnotations = true,
+          --       disableLongTooltip = false,
+          --     },
+          --     ---@type  _.lspconfig.settings.fsautocomplete.InlineValues
+          --     inlineValues = {
+          --       enabled = false,
+          --       -- enabled = true,
+          --       prefix = "  //ilv: ",
+          --     },
+          --     interfaceStubGeneration = true,
+          --     -- interfaceStubGenerationMethodBody = "",
+          --     -- interfaceStubGenerationObjectIdentifier = "",
+          --     keywordsAutocomplete = true,
+          --     -- lineLens = _.lspconfig.settings.fsautocomplete.LineLens,
+          --     lineLens = { enabled = "always", prefix = "  //lnlens:" },
+          --     linter = true,
+          --     msbuildAutoshow = true,
+          --     ---@type _.lspconfig.settings.fsautocomplete.Notifications
+          --     notifications = { trace = true },
+          --
+          --     -- openTelemetry = _.lspconfig.settings.fsautocomplete.OpenTelemetry,
+          --     ---@type _.lspconfig.settings.fsautocomplete.PipelineHints
+          --     pipelineHints = {
+          --       enabled = true,
+          --       prefix = "  // plh:",
+          --     },
+          --     recordStubGeneration = true,
+          --     -- recordStubGenerationBody = "",
+          --     resolveNamespaces = true,
+          --     saveOnSendLastSelection = true,
+          --     showExplorerOnStartup = true,
+          --     showProjectExplorerIn = "fsharp",
+          --     simplifyNameAnalyzer = true,
+          --     smartIndent = true,
+          --     suggestGitignore = true,
+          --     suggestSdkScripts = true,
+          --     -- trace = _.lspconfig.settings.fsautocomplete.Trace,
+          --     trace = { server = "messages" },
+          --     unionCaseStubGeneration = true,
+          --     unusedOpensAnalyzer = true,
+          --   },
+          -- },
           filetypes = { "fsharp", "fsharp_project" },
           name = "ionide",
           -- single_file_support = false,
           -- cmd = { 'fsautocomplete', '--adaptive-lsp-server-enabled', '-v' },
-          cmd = (function()
-            return {
-              -- "C:/Users/Will.ehrendreich/source/repos/FsAutoComplete/src/FsAutoComplete/bin/Debug/net6.0/publish/fsautocomplete.exe",
-              "fsautocomplete",
-              "--adaptive-lsp-server-enabled",
-              -- "-l",
-              -- ".fsautocomplete.log",
-              "-v",
-              -- '--wait-for-debugger',
-              -- '--attach-debugger',
-              "--project-graph-enabled",
-            }
-          end)(),
+          -- (function()
+          -- return
+          cmd = {
+            -- "C:/Users/Will.ehrendreich/source/repos/FsAutoComplete/src/FsAutoComplete/bin/Debug/net6.0/publish/fsautocomplete.exe",
+            -- "fsautocomplete",
+            "C:/.local/share/nvim-data/mason/bin/fsautocomplete.cmd",
+            "--adaptive-lsp-server-enabled",
+            -- "-l",
+            -- ".fsautocomplete.log",
+            -- "-v",
+            -- '--wait-for-debugger',
+            -- '--attach-debugger',
+            -- "--project-graph-enabled",
+          },
+          -- end)(),
           -- on_attach = on_attach,
-          -- settings = {},
+          settings = {
+            FSharp = {
+              enableMSBuildProjectGraph = true,
+              enableTreeView = true,
+              fsiExtraParameters = {
+                "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.4/depman-fsproj/0.2.4/tools/net6.0/any",
+              },
+            },
+          },
         },
         lua_ls = {
+
+          root_dir = function(path)
+            local util = require("lspconfig.util")
+            local root
+            root = util.root_pattern(
+              ".luarc.json",
+              ".luarc.jsonc",
+              ".luacheckrc",
+              ".stylua.toml",
+              "stylua.toml",
+              "selene.toml",
+              "selene.yml",
+              ".git"
+            )(path)
+            root = root
+              or (function(p)
+                return (vim.fs.dirname(p or vim.fn.expand("%:p"))) .. "/"
+              end)(path)
+            return root
+          end,
+
+          -- flags
           settings = {
             Lua = {
               runtime = {
@@ -802,8 +642,8 @@ return {
               },
               workspace = {
                 library = {
-                  -- vim.api.nvim_get_runtime_file("", true),
-                  "C:\\Neovim\\share\\nvim\\runtime\\lua\\",
+                  vim.api.nvim_get_runtime_file("", true),
+                  -- "C:\\Neovim\\share\\nvim\\runtime\\lua\\",
                 },
                 checkThirdParty = false,
               },
@@ -820,7 +660,7 @@ return {
       ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
       setup = {
         ionide = function(_, opts)
-          --   -- local inp = vim.fn.input("please attach debugger")
+          -- local inp = vim.fn.input("please attach debugger")
 
           require("ionide").setup(opts)
           -- return true
@@ -857,14 +697,14 @@ return {
           if not tc(ignored, client.name) then
             -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
             -- local root = FindRoot(ignored, bufnr)
-            local root = FindRoot(ignored, buffer)
+            local root = FindRoot(ignored, client, buffer)
             -- v.Notify("lsp root should have found root of : " .. root)
-            local cwd = first_to_upper(StringReplace(fn.getcwd(), "\\", "/"))
+            local cwd = first_to_upper(vim.fs.normalize(fn.getcwd()))
             if not root then
               vim.notify(
                 "lsp says it didn't find a root??? I'd go check that one out.. setting temporary root to current buffer's parent dir, but don't think that means that lsp is healthy right now.. you've been warned! "
               )
-              root = vim.fn.expand("%:h")
+              root = first_to_upper(vim.fs.normalize(vim.fn.expand("%:p:h")))
             end
             -- v.Notify("i have the root and cwd now.. but ill check the number of buffers.. ")
             local shouldAsk = vim.tbl_count(fn.getbufinfo({ buflisted = true })) > 1
@@ -889,9 +729,11 @@ return {
                 vim.cmd("cd " .. root)
                 vim.notify("CWD : " .. root)
               end
-              LastDotnetProjectRootPath = root
-              -- vim.g.dotnet_startup_proj_path = client.root
-              LastDotnetDllPath = root .. "bin/debug/"
+              local ft = vim.api.nvim_buf_get_option(0, "filetype")
+              local isDotnet = ft == "cs" or ft == "fsharp" or ft == "fsharp_project"
+              if isDotnet then
+                DotnetSlnRootPath = root
+              end
             end
           end
           --     vim.notify(" on attach for " .. client.name .. " just got called")

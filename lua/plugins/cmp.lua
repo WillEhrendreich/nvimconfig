@@ -1,5 +1,31 @@
--- return {}
---
+local cmp = require("cmp")
+local function doWhenCmpVisible(fn, timeout, poll_interval)
+  if cmp.visible() then
+    fn()
+    return
+  end
+
+  if timeout <= 0 then
+    return
+  end
+
+  vim.defer_fn(function()
+    doWhenCmpVisible(fn, timeout - poll_interval, poll_interval)
+  end, poll_interval)
+end
+
+local function completeAndInsertFirstMatch()
+  cmp.complete()
+  doWhenCmpVisible(function()
+    cmp.select_next_item()
+  end, 1100, 50)
+end
+local has_words_before = function()
+  unpack = unpack or table.unpack
+  local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+  return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+end
+
 return {
 
   {
@@ -226,19 +252,35 @@ return {
     dependencies = {
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
-    "Willehrendreich/codeium.nvim",
+      "jcdickinson/codeium.nvim",
       {
+        --
         "hrsh7th/cmp-cmdline",
         config = function()
-          local cmp = require("cmp")
           cmp.setup.cmdline("/", {
             mapping = cmp.mapping.preset.cmdline(),
             sources = {
               { name = "buffer" },
             },
           })
+
           cmp.setup.cmdline(":", {
-            mapping = cmp.mapping.preset.cmdline(),
+            mapping = cmp.mapping.preset.cmdline({
+              ["<Tab>"] = function()
+                if cmp.visible() then
+                  cmp.select_next_item()
+                else
+                  completeAndInsertFirstMatch()
+                end
+              end,
+              ["<S-Tab>"] = function(fallback)
+                if cmp.visible() then
+                  cmp.select_prev_item()
+                else
+                  fallback()
+                end
+              end,
+            }),
             sources = cmp.config.sources({
               { name = "path" },
             }, {
@@ -252,32 +294,42 @@ return {
           })
         end,
       },
+
       "hrsh7th/cmp-calc",
       "hrsh7th/cmp-nvim-lsp-signature-help",
       "hrsh7th/cmp-emoji",
-      "rcarriga/cmp-dap",
+      {
+        -- show completion in dap
+        "rcarriga/cmp-dap",
+
+        require("cmp").setup.filetype({ "dap-repl", "dapui_watches", "dapui_hover" }, {
+          sources = {
+            { name = "dap" },
+          },
+        }),
+      },
       "L3MON4D3/LuaSnip",
       {
         "PasiBergman/cmp-nuget",
-        config = function()
-          return {
-            filetypes = { "fsharp_project" }, -- on which filetypes cmp-nuget is active
-            file_extensions = { "csproj", "fsproj" }, -- on which file extensions cmp-nuget is active
-            nuget = {
-              packages = {
-                -- configuration for searching packages
-                limit = 100, -- limit package serach to first 100 packages
-                prerelease = true, -- include prerelase (preview, rc, etc.) packages
-                sem_ver_level = "2.0.0", -- semantic version level (*
-                package_type = "", -- package type to use to filter packages (*
-              },
-              versions = {
-                prerelease = true, -- include prerelase (preview, rc, etc.) versions
-                sem_ver_level = "2.0.0", -- semantic version level (*
-              },
+        -- config = function()
+        opts = {
+          filetypes = { "fsharp_project" }, -- on which filetypes cmp-nuget is active
+          file_extensions = { "csproj", "fsproj" }, -- on which file extensions cmp-nuget is active
+          nuget = {
+            packages = {
+              -- configuration for searching packages
+              limit = 20, -- limit package serach to first 100 packages
+              prerelease = true, -- include prerelase (preview, rc, etc.) packages
+              sem_ver_level = "2.0.0", -- semantic version level (*
+              package_type = "", -- package type to use to filter packages (*
             },
-          }
-        end,
+            versions = {
+              prerelease = true, -- include prerelase (preview, rc, etc.) versions
+              sem_ver_level = "2.0.0", -- semantic version level (*
+            },
+          },
+        },
+        -- end,
       },
       "onsails/lspkind.nvim",
       {
@@ -288,31 +340,37 @@ return {
       },
     },
     opts = function(_, opts)
-      local has_words_before = function()
-        unpack = unpack or table.unpack
-        local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-        return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
-      end
-
-      local luasnip = require("luasnip")
       local cmp = require("cmp")
-      -- cmp.setup.cmdline
-      return {
+      local luasnip = require("luasnip")
+      ---@type cmp.ConfigSchema
+      return vim.tbl_deep_extend("force", opts, {
+        performance = {
+          trigger_debounce_time = 500,
+          throttle = 550,
+          fetching_timeout = 80,
+        },
         completion = {
-          completeopt = "menu,menuone,noinsert,preview",
+          completeopt = "menu,menuone",
+          -- completeopt = "menu,menuone,noinsert",
         },
         snippet = {
           expand = function(args)
             require("luasnip").lsp_expand(args.body)
           end,
         },
-
-        mapping = cmp.mapping.preset.insert({
+        preselect = cmp.PreselectMode.Item,
+        mapping = cmp.mapping({
           ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
           ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
           ["<C-b>"] = cmp.mapping.scroll_docs(-4),
           ["<C-f>"] = cmp.mapping.scroll_docs(4),
-          ["<C-Space>"] = cmp.mapping.complete(),
+          ["<C-space>"] = cmp.mapping.complete({
+            config = {
+              view = {
+                entries = { name = "custom" },
+              },
+            },
+          }),
           ["<C-e>"] = cmp.mapping.abort(),
           -- ["<Esc>"] = function()
           --   if cmp.visible() then
@@ -320,57 +378,127 @@ return {
           --   end
           -- end,
           ["<CR>"] = cmp.mapping.confirm({
-            behavior = cmp.ConfirmBehavior.Replace,
+            behavior = cmp.ConfirmBehavior.Insert,
             select = true,
           }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
           ["<S-CR>"] = cmp.mapping.confirm({
             behavior = cmp.ConfirmBehavior.Replace,
             select = true,
           }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-          ["<Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_next_item()
-            -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
-            -- they way you will only jump inside the snippet region
-            elseif luasnip.expand_or_jumpable() then
-              luasnip.expand_or_jump()
-            elseif has_words_before() then
-              cmp.complete()
-            else
-              fallback()
-            end
-          end, { "i", "s" }),
-          ["<S-Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_prev_item()
-            elseif luasnip.jumpable(-1) then
-              luasnip.jump(-1)
-            else
-              fallback()
-            end
-          end, { "i", "s" }),
+          ["<Tab>"] = cmp.mapping({
+            c = function()
+              if cmp.visible() then
+                cmp.select_next_item()
+              else
+                completeAndInsertFirstMatch()
+              end
+            end,
+            i = function(fallback)
+              -- if cmp.visible() and #cmp.get_entries() > 0 then
+              -- cmp.select_next_item()
+              -- cmp.select_prev_item()
+              -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
+              -- they way you will only jump inside the snippet region
+              -- elseif require('luasnip').expand_or_jumpable() then
+              --   require('luasnip').expand_or_jump()
+              -- elseif cmp.visible() then
+              if cmp.visible() then
+                cmp.select_next_item()
+              -- elseif has_words_before() then
+              --   completeAndInsertFirstMatch()
+              else
+                fallback()
+              end
+            end,
+            s = function(fallback)
+              if cmp.visible() then
+                cmp.select_next_item()
+              -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
+              -- they way you will only jump inside the snippet region
+              elseif require("luasnip").expand_or_jumpable() then
+                require("luasnip").expand_or_jump()
+              elseif has_words_before() then
+                completeAndInsertFirstMatch()
+              else
+                fallback()
+              end
+            end,
+          }),
+
+          -- ["<Tab>"] = cmp.mapping(function(fallback)
+          --   if cmp.visible() then
+          --     cmp.select_next_item()
+          --   -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
+          --   -- they way you will only jump inside the snippet region
+          --   elseif luasnip.expand_or_jumpable() then
+          --     luasnip.expand_or_jump()
+          --   elseif has_words_before() then
+          --     cmp.complete()
+          --     cmp.select_next_item()
+          --     cmp.select_prev_item()
+          --   else
+          --     fallback()
+          --   end
+          -- end, { "i", "s" }),
+          ["<S-Tab>"] = cmp.mapping({
+            c = function(fallback)
+              if cmp.visible() then
+                cmp.select_prev_item()
+              else
+                fallback()
+              end
+            end,
+            i = function(fallback)
+              if cmp.visible() then
+                cmp.select_prev_item()
+              -- elseif require('luasnip').jumpable( -1) then
+              --   require('luasnip').jump( -1)
+              else
+                fallback()
+              end
+            end,
+            s = function(fallback)
+              if cmp.visible() then
+                cmp.select_prev_item()
+              -- elseif require('luasnip').jumpable( -1) then
+              --   require('luasnip').jump( -1)
+              else
+                fallback()
+              end
+            end,
+          }),
+          -- ["<S-Tab>"] = cmp.mapping(function(fallback)
+          --   if cmp.visible() then
+          --     cmp.select_prev_item()
+          --   elseif luasnip.jumpable(-1) then
+          --     luasnip.jump(-1)
+          --   else
+          --     fallback()
+          --   end
+          -- end, { "i", "s" }),
         }),
         sources = cmp.config.sources({
-          { name = "codeium" },
-          { name = "nvim_lsp" },
+          { name = "nvim_lsp", group_index = 1, max_item_count = 150 },
+          { name = "codeium", keyword_length = 3 },
           { name = "nvim_lsp_signature_help" },
           { name = "luasnip" },
-          { name = "nvim_lua" },
+          { name = "nvim_lua", max_item_count = 10 },
+          -- { name = "cmdline" },
           {
             name = "nuget",
             keyword_length = 1,
           },
           { name = "path" },
-          { name = "buffer", keyword_length = 5 },
+          { name = "buffer", keyword_length = 5, max_item_count = 10 },
           { name = "emoji" },
         }),
         sorting = {
           comparators = {
-            cmp.config.compare.offset,
             cmp.config.compare.exact,
             cmp.config.compare.score,
             cmp.config.compare.recently_used,
             require("clangd_extensions.cmp_scores"),
+            cmp.config.compare.offset,
             cmp.config.compare.kind,
             cmp.config.compare.sort_text,
             cmp.config.compare.length,
@@ -387,9 +515,10 @@ return {
           -- end,
 
           format = require("lspkind").cmp_format({
-            mode = "symbol",
+            -- mode = "symbol",
+            with_text = true,
             maxwidth = 80,
-            ellipsis_char = "...",
+            ellipsis_char = "",
             menu = {
               Codeium = "[Codeium]",
               buffer = "[Buffer]",
@@ -407,7 +536,7 @@ return {
             hl_group = "LspCodeLens",
           },
         },
-      }
+      })
     end,
   },
   --     -- (

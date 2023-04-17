@@ -7,8 +7,16 @@ parser_config.fsharp = {
   },
   filetype = "fsharp",
 }
-
+parser_config.odin = {
+  install_info = {
+    branch = "main",
+    url = os.getenv("repos") .. "/tree-sitter-odin",
+    files = { "src/parser.c" },
+  },
+  filetype = "odin",
+}
 return {
+
   "nvim-treesitter/nvim-treesitter",
   version = false, -- last release is way too old and doesn't work on Windows
   build = ":TSUpdate",
@@ -35,25 +43,33 @@ return {
       end,
     },
   },
+  { "nvim-treesitter/playground" },
   keys = {
     { "<space>vi", desc = "Increment selection", mode = "x" },
     { "<bs>", desc = "Decrement selection", mode = "x" },
   },
   opts = {
+    -- highlight = { enable = true, disable = { "fsharp" } },
     highlight = { enable = true },
-    indent = { enable = true, disable = { "python" } },
+    indent = { enable = true, disable = { "python", "odin" } },
+    -- indent = { enable = true, disable = { "fsharp", "python", "odin" } },
     context_commentstring = { enable = true, enable_autocmd = false },
+    -- context_commentstring = { enable = true, disable = { "fsharp", "odin" }, enable_autocmd = false },
+    -- context_commentstring = { enable = true, disable = { "odin" }, enable_autocmd = false },
     ensure_installed = {
       "bash",
       "c",
-      -- "fsharp",
+      "fsharp",
       "help",
       "html",
       "javascript",
       "json",
+      "jsonc",
       "lua",
       "luap",
       "markdown",
+      "ocaml",
+      "odin",
       "markdown_inline",
       "python",
       "query",
@@ -63,7 +79,30 @@ return {
       "vim",
       "yaml",
     },
-    compilers = { "gcc","llvm" , "clang","cc"},
+    -- playground = {
+    --   enable = true,
+    --   disable = {},
+    --   updatetime = 25, -- Debounced time for highlighting nodes in the playground from source code
+    --   persist_queries = false, -- Whether the query persists across vim sessions
+    --   keybindings = {
+    --     toggle_query_editor = "o",
+    --     toggle_hl_groups = "i",
+    --     toggle_injected_languages = "t",
+    --     toggle_anonymous_nodes = "a",
+    --     toggle_language_display = "I",
+    --     focus_language = "f",
+    --     unfocus_language = "F",
+    --     update = "R",
+    --     goto_node = "<cr>",
+    --     show_help = "?",
+    --   },
+    -- },
+    query_linter = {
+      enable = true,
+      use_virtual_text = true,
+      lint_events = { "BufWrite", "CursorHold" },
+    },
+    compilers = { "gcc", "llvm", "clang", "cc" },
     incremental_selection = {
       enable = true,
       keymaps = {

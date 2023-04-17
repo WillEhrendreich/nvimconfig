@@ -1,3 +1,3 @@
 return {
-  "m00qek/baleia.nvim",
+  -- "m00qek/baleia.nvim",
 }

@@ -12,13 +12,19 @@ return {
 
   -- correctly setup lspconfig
   {
+    -- "ionide/ionide-vim",
+    -- dependencies = {
+    --   "neovim/nvim-lspconfig",
+    -- },
+    -- config = true,
     "WillEhrendreich/ionide-vim",
     dir = vim.fn.getenv("repos") .. "/ionide-vim/",
     dev = true,
-    -- dependencies = {
-    --   "neovim/nvim-lspconfig",
-    --   version = false, -- last release is way too old
-    -- },
+
+    dependencies = {
+      "neovim/nvim-lspconfig",
+      version = false, -- last release is way too old
+    },
     -- config=    local inp = vim.fn.input("please attach debugger")
     -- opts = {
     --   -- make sure mason installs the server
