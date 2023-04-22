@@ -1,5 +1,12 @@
 local fn = vim.fn
+local rootSwitchSecondsInterval = 5
+vim.g["LspRootSwitchLastAskedTime"] = 0
+local lastAskedTime = vim.g["LspRootSwitchLastAskedTime"]
 local tc = vim.tbl_contains
+
+---returns a copy of the string where the first letter found is set to upper case
+---@param str any
+---@return string
 local function first_to_upper(str)
   return str:gsub("^%l", string.upper)
 end
@@ -8,7 +15,7 @@ end
 ---@param ignored_lsp_servers table<string>
 ---@param client lsp.Client
 ---@param bufnr number
----@return unknown
+---@return string
 function FindRoot(ignored_lsp_servers, client, bufnr)
   local b = bufnr or 0
   local ignore = ignored_lsp_servers or {}
@@ -22,7 +29,7 @@ function FindRoot(ignored_lsp_servers, client, bufnr)
       local rootDirFunction = client.config.get_root_dir
       local activeConfigRootDir = client.config.root_dir
       if activeConfigRootDir then
-        result = first_to_upper(StringReplace(activeConfigRootDir, "\\", "/"))
+        result = first_to_upper(vim.fs.normalize(activeConfigRootDir))
       end
     end
   end
@@ -270,28 +277,28 @@ return {
       local keys = require("lazyvim.plugins.lsp.keymaps").get()
       -- change a keymap
       -- keys[#keys + 1] = { "K", "<cmd>echo 'hello'<cr>" }
-      -- keys[#keys + 1] = {
-      --   "K",
-      --   function()
-      --     local client = vim.lsp.get_active_clients({ buffer = 0 })[1]
-      --     local capabilities = client.server_capabilities
-      --     -- print("client " .. client.name .. " has capability " .. vim.inspect(capabilities))
-      --     if capabilities.hoverProvider then
-      --       if require("lazyvim.util").has("hover.nvim") then
-      --         require("hover").hover()
-      --       --     function()
-      --       --       vim.lsp.buf.hover()
-      --       --     end,
-      --       --     desc = "Hover symbol details",
-      --       --   }
-      --       --
-      --       else
-      --         vim.lsp.buf.hover()
-      --       end
-      --     end
-      --   end,
-      --   "Hover",
-      -- }
+      keys[#keys + 1] = {
+        "K",
+        function()
+          local client = vim.lsp.get_active_clients({ buffer = 0 })[1]
+          local capabilities = client.server_capabilities
+          -- print("client " .. client.name .. " has capability " .. vim.inspect(capabilities))
+          if capabilities.hoverProvider then
+            if require("lazyvim.util").has("hover.nvim") then
+              require("hover").hover()
+            --     function()
+            --       vim.lsp.buf.hover()
+            --     end,
+            --     desc = "Hover symbol details",
+            --   }
+            --
+            else
+              vim.lsp.buf.hover()
+            end
+          end
+        end,
+        "Hover",
+      }
       keys[#keys + 1] =
         { "<leader>la", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" }, has = "codeAction" }
       keys[#keys + 1] = {
@@ -432,6 +439,13 @@ return {
           filetypes = { "odin" },
           single_file_support = false,
           autostart = true,
+        },
+
+        ---@type lspconfig.options.sqlls
+        sqlls = {
+          root_dir = function(fname)
+            return vim.fs.dirname(fname)
+          end,
         },
 
         -- (function()
@@ -608,52 +622,56 @@ return {
             },
           },
         },
-        lua_ls = {
 
-          root_dir = function(path)
-            local util = require("lspconfig.util")
-            local root
-            root = util.root_pattern(
-              ".luarc.json",
-              ".luarc.jsonc",
-              ".luacheckrc",
-              ".stylua.toml",
-              "stylua.toml",
-              "selene.toml",
-              "selene.yml",
-              ".git"
-            )(path)
-            root = root
-              or (function(p)
-                return (vim.fs.dirname(p or vim.fn.expand("%:p"))) .. "/"
-              end)(path)
-            return root
-          end,
-
-          -- flags
-          settings = {
-            Lua = {
-              runtime = {
-                -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
-                version = "LuaJIT",
-              },
-              diagnostics = {
-                globals = { "vim" },
-              },
-              workspace = {
-                library = {
-                  vim.api.nvim_get_runtime_file("", true),
-                  -- "C:\\Neovim\\share\\nvim\\runtime\\lua\\",
-                },
-                checkThirdParty = false,
-              },
-
-              completion = {
-                callSnippet = "Replace",
-              },
-            },
-          },
-        },
+        -- lua_ls = {
+        --   root_dir = function(path)
+        --     local util = require("lspconfig.util")
+        --     local root
+        --     root = util.root_pattern(
+        --       ".luarc.json",
+        --       ".luarc.jsonc",
+        --       ".luacheckrc",
+        --       ".stylua.toml",
+        --       "stylua.toml",
+        --       "selene.toml",
+        --       "selene.yml",
+        --       ".git"
+        --     )(path)
+        --     root = root
+        --       or (function(p)
+        --         return (vim.fs.dirname(p or vim.fn.expand("%:p"))) .. "/"
+        --       end)(path)
+        --     return root
+        --   end,
+        --
+        --   -- flags
+        --   settings = {
+        --     Lua = {
+        --       runtime = {
+        --         -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
+        --         version = "LuaJIT",
+        --         -- path = vim.split(package.path, ";"),
+        --       },
+        --       diagnostics = {
+        --         globals = { "vim" },
+        --       },
+        --       workspace = {
+        --         library = {
+        --           -- [vim.fn.expand("$VIMRUNTIME/lua")] = true,
+        --           -- [vim.fn.expand("$VIMRUNTIME/lua/vim/lsp")] = true,
+        --           -- vim.api.nvim_get_runtime_file("", true),
+        --           "C:/Neovim/share/nvim/runtime/lua/",
+        --           -- "C:/Neovim/share/nvim/runtime/lua/vim/lsp",
+        --           -- "C:/.local/share/nvim-data/",
+        --         },
+        --         checkThirdParty = false,
+        --       },
+        --       completion = {
+        --         callSnippet = "Replace",
+        --       },
+        --     },
+        --   },
+        -- },
       },
       -- you can do any additional lsp server setup here
       -- return true if you don't want this server to be setup with lspconfig
@@ -706,9 +724,14 @@ return {
               )
               root = first_to_upper(vim.fs.normalize(vim.fn.expand("%:p:h")))
             end
+            local path = require("plenary.path")
+            local rootpath = path:new(root)
+            local cwdpath = path:new(cwd)
+            local notEqual = rootpath.filename ~= cwdpath.filename
             -- v.Notify("i have the root and cwd now.. but ill check the number of buffers.. ")
-            local shouldAsk = vim.tbl_count(fn.getbufinfo({ buflisted = true })) > 1
-            if root and cwd ~= root then
+            local recentlyAsked = lastAskedTime and os.difftime(os.time(), lastAskedTime) < rootSwitchSecondsInterval
+            local shouldAsk = vim.tbl_count(fn.getbufinfo({ buflisted = true })) > 1 and recentlyAsked == false
+            if notEqual then
               if shouldAsk == true then
                 -- v.Notify("at this point the buffers say i should ask about setting root.. " .. vim.inspect(shouldAsk))
                 if

@@ -43,7 +43,7 @@ return {
       end,
     },
   },
-  { "nvim-treesitter/playground" },
+  -- { "nvim-treesitter/playground" },
   keys = {
     { "<space>vi", desc = "Increment selection", mode = "x" },
     { "<bs>", desc = "Decrement selection", mode = "x" },
@@ -53,8 +53,8 @@ return {
     highlight = { enable = true },
     indent = { enable = true, disable = { "python", "odin" } },
     -- indent = { enable = true, disable = { "fsharp", "python", "odin" } },
-    context_commentstring = { enable = true, enable_autocmd = false },
-    -- context_commentstring = { enable = true, disable = { "fsharp", "odin" }, enable_autocmd = false },
+    -- context_commentstring = { enable = true, enable_autocmd = true },
+    context_commentstring = { enable = true, disable = { "fsharp", "odin" }, enable_autocmd = true },
     -- context_commentstring = { enable = true, disable = { "odin" }, enable_autocmd = false },
     ensure_installed = {
       "bash",

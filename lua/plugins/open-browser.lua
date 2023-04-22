@@ -1,5 +1,5 @@
 return {
-  {
-    "tyru/open-browser.vim",
-  },
+  -- {
+  --   "tyru/open-browser.vim",
+  -- },
 }

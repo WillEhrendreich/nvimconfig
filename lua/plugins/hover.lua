@@ -57,7 +57,7 @@ end
 local function makeGlowForRepos()
   local hover = require("hover")
   local Job = require("plenary.job")
-  local baleia = require("baleia").setup({})
+  -- local baleia = require("baleia").setup({})
 
   local repo_pattern = "[^%s]+/[^%s]+"
 
@@ -66,7 +66,7 @@ local function makeGlowForRepos()
     callback = function(ctx)
       vim.schedule(function()
         vim.api.nvim_buf_set_option(ctx.buf, "modifiable", true)
-        baleia.once(ctx.buf)
+        -- baleia.once(ctx.buf)
         vim.api.nvim_buf_set_option(ctx.buf, "modifiable", false)
       end)
     end,
@@ -113,7 +113,7 @@ local source = {
   end,
   execute = function(done)
     local util = require("vim.lsp.util")
-    local baleia = require("baleia").setup({})
+    -- local baleia = require("baleia").setup({})
 
     -- vim.api.nvim_create_autocmd("Syntax", {
     --   pattern = "LSPWithDiag",

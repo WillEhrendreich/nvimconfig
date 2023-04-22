@@ -12,9 +12,13 @@ require("lazy").setup({
     -- add LazyVim and import its plugins
     { "LazyVim/LazyVim", import = "lazyvim.plugins" },
     -- import any extras modules here
-    { import = "lazyvim.plugins.extras.lang.typescript" },
+
     { import = "lazyvim.plugins.extras.lang.json" },
-    { import = "lazyvim.plugins.extras.ui.mini-animate" },
+    { import = "lazyvim.plugins.extras.util.project" },
+
+    -- { import = "lazyvim.plugins.extras.lang.typescript" },
+    -- { import = "lazyvim.plugins.extras.ui.mini-animate" },
+    --
     -- import/override with your plugins
 
     -- { import = "plugins" },
@@ -61,14 +65,18 @@ require("lazy").setup({
     },
     -- leave nil, to automatically select a browser depending on your OS.
     -- If you want to use a specific browser, you can define it here
-    browser = "firefox", ---@type string?
-    -- browser = nil, ---@type string?
+    -- browser = "firefox", ---@type string?
+    browser = nil, ---@type string?
   },
-  -- dev = {
-
-  -- },
+  dev = {
+    -- directory where you store your local plugin projects
+    path = "~/source/repos/",
+    ---@type string[] plugins that match these patterns will use your local versions instead of being fetched from GitHub
+    patterns = {}, -- For example {"folke"}
+    fallback = false, -- Fallback to git when local plugin doesn't exist
+  },
   -- concurrency = 10,
-  concurrency = 20,
+  concurrency = 30,
   defaults = {
     -- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
     -- If you know what you're doing, you can set this to `true` to have all your custom plugins lazy-loaded by default.

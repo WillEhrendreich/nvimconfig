@@ -23,33 +23,32 @@ end
 
 local function get_extension(filepath)
   if filepath then
-    return ("." .. vim.fs.normalize(filepath):match("%.([^%.]+)$")) or ""
+    return ("." .. (vim.fs.normalize(filepath or ""):match("%.([^%.]+)$") or "")) or ""
   else
     return ""
   end
 end
 local function get_directory(filepath)
   if filepath then
-    return (vim.fs.normalize(filepath):match("(.*/)")) or ""
+    return (vim.fs.normalize(filepath or ""):match("(.*/)")) or ""
   else
     return ""
   end
 end
 local function get_filename_without_extension(path)
   -- extract the filename with extension from the path
-  local filename_with_extension = string.match(path, "[^/]+$")
+  local filename_with_extension = string.match(path or "", "[^/]+$")
   -- extract the filename without extension from the filename with extension
   local filename_without_extension = string.match(filename_with_extension, "^(.+)%..+$")
   return filename_without_extension
 end
 -- vim.lsp.set_log_level("DEBUG")
-DotnetSlnRootPath = vim.g["DotnetSlnRootPath"]
-DotnetStartupProjectRootPath = vim.g["DotnetStartupProjectRootPath"]
-DotnetDllPath = vim.g["DotnetDllPath"]
-DotnetExePath = vim.g["DotnetExePath"]
-DotnetStartupProjectPath = vim.g["DotnetStartupProjectPath"]
-DotnetProjectFileName = vim.g["DotnetProjectFileName"]
-DotnetProjectFileExtension = vim.g["DotnetProjectFileExtension"]
+-- DotnetSlnRootPath = vim.g["DotnetSlnRootPath"]
+-- DotnetStartupProjectRootPath = vim.g["DotnetStartupProjectRootPath"]
+-- DotnetDllPath = vim.g["DotnetDllPath"]
+-- DotnetExePath = vim.g["DotnetExePath"]
+-- DotnetProjectFileName = vim.g["DotnetProjectFileName"]
+-- DotnetProjectFileExtension = vim.g["DotnetProjectFileExtension"]
 
 local function pick_one_sync(items, prompt, label_fn)
   local choices = { prompt }
@@ -107,13 +106,39 @@ local function pick_if_many_sync(items, prompt, label_fn)
     return pick_one_sync(items, prompt, label_fn)
   end
 end
-local function get_nearest_proj()
-  ---@type table<string>
-  -- return coroutine.create(function(dap_run_co)
-  -- local items = vim.fn.globpath(vim.fn.getcwd(), "*/*proj", 0, 1)
-  -- local pick = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "*/*proj", 0, 1)[1]
-  local pick = vim.fn.globpath(GetCurrentBufDirname(), "*/*proj", 0, 1)[1]
 
+local function get_nearest_proj()
+  local currentFileDir = vim.fs.normalize(vim.fn.expand("%:p:h") or "")
+  vim.notify("currentFileDir " .. vim.inspect(currentFileDir))
+  local currentWorkingDir = vim.fs.normalize(vim.fn.getcwd() or "")
+  vim.notify("currentWorkingDir " .. vim.inspect(currentWorkingDir))
+  local superlocal = "*/*proj"
+  local semilocal = "**/*proj"
+  ---@type table<string>
+  local items
+  local fsup = vim.fn.globpath(currentFileDir, superlocal, 0, 1) or {}
+  vim.notify("nearest proj glob with currentFileDir and superlocal filter  " .. vim.inspect(fsup))
+  local fsem = vim.fn.globpath(currentFileDir, semilocal, 0, 1) or {}
+  vim.notify("nearest proj glob with currentFileDir semilocal filter  " .. vim.inspect(fsem))
+  local wdsup = vim.fn.globpath(currentWorkingDir, superlocal, 0, 1) or {}
+  vim.notify("nearest proj glob with currentWorkingDir and superlocal filter  " .. vim.inspect(wdsup))
+  local wdsem = vim.fn.globpath(currentWorkingDir, semilocal, 0, 1) or {}
+  vim.notify("nearest proj glob with currentWorkingDir and semilocal filter  " .. vim.inspect(wdsem))
+  if fsup[1] then
+    items = fsup
+  elseif fsem[1] then
+    items = fsem
+  elseif wdsup[1] then
+    items = wdsup
+  elseif wdsem[1] then
+    items = wdsem
+  else
+    vim.notify(
+      "none of that worked to find a proj file, setting to the current file directory and hoping for the best in manual selection"
+    )
+    items = { currentFileDir }
+  end
+  local pick = vim.fs.normalize(items[1] or "")
   -- vim.tbl_map(function(path) return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")  ):shorten(3) end, vim.fn.globpath("c:/users/will.ehrendreich/source/repos/Fabload/", "**/bin/Debug/**/*.dll", 0, 1))
 
   -- local opts = {
@@ -126,16 +151,21 @@ local function get_nearest_proj()
   -- local pick = pick_if_many_sync(items, "Which Project is the startup project?", function(p)
   --   return p
   -- end)
-  print("picked " .. (pick or "None"))
-  -- print("building " .. vim.inspect(pick))
-  return vim.fs.normalize(pick)
+  vim.notify("picked " .. pick)
+  -- vim.notify(building " .. vim.inspect(pick))
+  -- return vim.fs.normalize(pick)
+  return pick
 
   -- end)
 end
+
 local function get_proj(projectName)
   ---@type table<string>
-  -- return coroutine.create(function(dap_run_co)
-  local items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "*/*proj", 0, 1)
+  local items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "*/*proj", 0, 1) or {}
+
+  if #items < 1 then
+    items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "**/*proj", 0, 1) or {}
+  end
 
   -- vim.tbl_map(function(path) return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")  ):shorten(3) end, vim.fn.globpath("c:/users/will.ehrendreich/source/repos/Fabload/", "**/bin/Debug/**/*.dll", 0, 1))
 
@@ -147,20 +177,20 @@ local function get_proj(projectName)
   }
 
   local pick = pick_if_many_sync(items, "Which Project is the startup project?", function(p)
-    return vim.fs.normalize(p)
+    return vim.fs.normalize(p or "")
   end)
-  print("picked " .. pick)
-  -- print("building " .. vim.inspect(pick))
+  vim.notify("picked " .. (pick or ""))
+  -- vim.notify("building " .. vim.inspect(pick))
   return pick
 
   -- end)
 end
 
-local function dump(...)
-  local objects = vim.tbl_map(vim.inspect, { ... })
-  print(unpack(objects))
-  return ...
-end
+-- local function dump(...)
+--   local objects = vim.tbl_map(vim.inspect, { ... })
+--   print(unpack(objects))
+--   return ...
+-- end
 local function first_to_upper(str)
   return str:gsub("^%l", string.upper)
 end
@@ -324,21 +354,21 @@ function GetCurrentBufDirname()
   local p = vim.fs.normalize(vim.fs.dirname(string.sub(vim.uri_from_bufnr(vim.api.nvim_get_current_buf()), 9)))
   return p
 end
-function GetDotnetProjectPath()
+function GetDotnetProjectPath(askForChanges)
   ---@type string
   local dirname = GetCurrentBufDirname()
   ---@type string
-  local projectName = DotnetProjectFileName
+  local projectName = vim.g["DotnetProjectFileName"]
   ---@type string
-  local ext = DotnetProjectFileExtension
+  local ext = vim.g["DotnetProjectFileExtension"]
   ---@type string
   local path
   ---@type string
   local nearestProj
-  if DotnetStartupProjectPath == "" then
+  if vim.g["DotnetStartupProjectPath"] == "" then
     nearestProj = get_nearest_proj() or ""
   else
-    nearestProj = DotnetStartupProjectPath
+    nearestProj = vim.g["DotnetStartupProjectPath"]
   end
 
   if not nearestProj then
@@ -415,15 +445,15 @@ function GetDotnetProjectPath()
   if not projectName or projectName == "" then
     projectName = StringReplace(fileShortNameAndExtension, ext, "")
   end
-  print("project name is " .. projectName)
-  if not DotnetProjectFileName or DotnetProjectFileName == "" then
+  vim.notify("project name is " .. projectName)
+  if not vim.g["DotnetProjectFileName"] or vim.g["DotnetProjectFileName"] == "" then
     vim.g["DotnetProjectFileName"] = projectName
   end
-  if not DotnetProjectFileExtension or DotnetProjectFileExtension == "" then
+  if not vim.g["DotnetProjectFileExtension"] or vim.g["DotnetProjectFileExtension"] == "" then
     vim.g["DotnetProjectFileExtension"] = ext
   end
   -- path = dirname .. "/" .. projectName .. ext
-  if not DotnetStartupProjectPath or DotnetStartupProjectPath == "" then
+  if not vim.g["DotnetStartupProjectPath"] or vim.g["DotnetStartupProjectPath"] == "" then
     vim.g["DotnetStartupProjectPath"] = nearestProj
   end
 
@@ -439,7 +469,7 @@ function GetDotnetProjectPath()
     -- local response = vim.fn.input({ prompt = "Path to project: ", default = initialPath, completion = "file" })
     local response = (vim.fs.normalize(get_proj()))
 
-    print(vim.inspect(response))
+    vim.notify(vim.inspect(response))
     if not StringEndsWith(response, "proj") then
       response = vim.fn.input({
         "Given path didn't end with 'proj'.. " .. "\nPlease provide an actual path to the startup project: \n",
@@ -453,19 +483,21 @@ function GetDotnetProjectPath()
       )
       response = "ERROR.BADproj"
     end
-    print(vim.inspect(response))
+    vim.notify(vim.inspect(response))
     return response
   end
   if
-    vim.fn.confirm(
-      "Do you want to change the path to project? \n" .. vim.inspect(vim.fs.normalize(path)),
-      "&yes\n&no",
-      2
-    ) == 1
+    askForChanges
+    and vim.fn.confirm(
+        "Do you want to change the path to project? \n" .. vim.inspect(vim.fs.normalize(path)),
+        "&yes\n&no",
+        2
+      )
+      == 1
   then
     path = (vim.fs.normalize(request(path)))
   end
-  print("Path to startup project is set to: " .. vim.inspect(path))
+  vim.notify("Path to startup project is set to: " .. vim.inspect(path))
   -- Lspdebug.GetConfig()
   -- local path =  vim.fn.input({ "Path to your startup *proj file ", LspStartupProjectPath, "file" })
   vim.g["DotnetStartupProjectPath"] = path
@@ -488,23 +520,23 @@ function OpenFileInNewBuffer(f)
   -- if  vim.fn.confirm("Do you want to open the file " .. f .. " ?\n", "&yes\n&no", 2) == 1 then vim. vim.fn.bufload(f) end
 end
 
-function DotnetBuildRelease(p, launch)
+function DotnetBuildRelease(p, launch, askForChanges)
   local cmd = "dotnet build " .. p .. " --release"
   vim.notify("Building ... command " .. cmd)
   local buildData = "Build Report: "
-  local outputInteger = 1
-  local jobid = -444
+  -- local outputInteger = 1
+  -- local jobid = -444
   local f = vim.fn.jobstart(cmd, {
     cwd = vim.fn.getcwd(),
     on_stdout = function(id, data, event)
-      jobid = id
+      -- jobid = id
       vim.notify(vim.fn.inspect(StringReplace(data[1], "\\r", "\n")))
       -- vim.notify(vim.inspect(StringReplace(data[1], "\\r", "\n")))
       -- buildData = buildData .. (vim.inspect(StringReplace(data[1], "\\r", "\n")))
     end,
     on_exit = function(id, exitCode)
       -- vim.notify(vim.inspect(buildData))
-      local f = outputInteger
+      local f = exitCode
       -- local f = os.execute(cmd)
       if f == 0 then
         vim.notify("\nBuild release: ✔️ ")
@@ -514,12 +546,12 @@ function DotnetBuildRelease(p, launch)
         --    LspOpenFileInNewBuffer(logfile)
         return false
       end
-      outputInteger = exitCode
+      -- outputInteger = exitCode
     end,
   })
 end
 
-function DotnetBuildDebugPopup(p, launch, launchWithDebugger)
+function DotnetBuildDebugPopup(p, launch, launchWithDebugger, askForChanges)
   local cmd = { "dotnet", "build", p, "--debug" }
   local utils = require("dev.NeovimUtils")
 
@@ -531,7 +563,7 @@ function DotnetBuildDebugPopup(p, launch, launchWithDebugger)
   local f = utils.float_term(cmd, {
     cwd = vim.fn.getcwd(),
     on_stdout = function(id, data, event)
-      jobid = id
+      -- jobid = id
       -- local k, v = unpack(data)
       buildData = buildData .. "\n" .. (StringReplace(vim.inspect(vim.fs.normalize(data[1])), "\\r", ""))
       -- vim.notify(vim.inspect(StringReplace(k, "\r", "")))
@@ -539,20 +571,18 @@ function DotnetBuildDebugPopup(p, launch, launchWithDebugger)
     end,
     on_exit = function(id, exitCode)
       vim.notify(utils.markdown(buildData, { title = "DotnetBuildReport" }))
-
-      outputInteger = exitCode
-      local f = outputInteger
+      local f = exitCode
       if f == 0 then
         vim.notify("\nBuild debug: ✔️ ")
         if launch then
           if launchWithDebugger then
             require("dap").continue()
           else
-            local dllpath = GetDotnetDllPath()
+            local dllpath = GetDotnetDllPath(askForChanges)
             local exe = StringReplace(dllpath, "dll", "exe")
             local exists = utils.file_exists(exe)
             if exists then
-              DotnetExePath = exe
+              vim.g["DotnetExePath"] = exe
               utils.open(exe)
             end
           end
@@ -575,7 +605,7 @@ function DotnetBuildDebugPopup(p, launch, launchWithDebugger)
   -- vim.notify(vim.inspect(f))
   return f
 end
-function DotnetBuildDebug(p, launch, launchWithDebugger)
+function DotnetBuildDebug(p, launch, launchWithDebugger, askForChanges)
   local cmd = "dotnet build " .. p .. " --debug"
   vim.notify("Building command " .. cmd)
   local buildData = "Build Report: "
@@ -583,7 +613,7 @@ function DotnetBuildDebug(p, launch, launchWithDebugger)
   local f = vim.fn.jobstart(cmd, {
     cwd = vim.fn.getcwd(),
     on_stdout = function(id, data, event)
-      jobid = id
+      -- jobid = id
       -- local k, v = unpack(data)
       vim.notify(StringReplace(vim.inspect(vim.fs.normalize(data[1])), "\\r", ""))
       -- vim.notify(vim.inspect(StringReplace(k, "\r", "")))
@@ -600,11 +630,11 @@ function DotnetBuildDebug(p, launch, launchWithDebugger)
             require("dap").continue()
           else
             local utils = require("dev.NeovimUtils")
-            local dllpath = GetDotnetDllPath()
+            local dllpath = GetDotnetDllPath(askForChanges)
             local exe = StringReplace(dllpath, "dll", "exe")
             local exists = utils.file_exists(exe)
             if exists then
-              DotnetExePath = exe
+              vim.g["DotnetExePath"] = exe
               utils.open(exe)
             end
           end
@@ -639,20 +669,20 @@ local function get_dll_Sync(startProjectPath, projectName)
     return vim.fs.normalize(p)
   end)
 
-  print("dll picked is: " .. pick)
+  vim.notify("dll picked is: " .. pick)
   return pick or ""
   -- vim.ui.select(items, opts, cont)
 
   -- vim.fn.browse(false, "Select Debug Target Dll.. ", vim.fn.getcwd(), default)
 end
 
-function GetDotnetDllPath()
+function GetDotnetDllPath(askForChanges)
   ---@type string
   local nearestProj
-  if DotnetStartupProjectPath == "" then
+  if vim.g["DotnetStartupProjectPath"] == "" then
     nearestProj = get_nearest_proj() or ""
   else
-    nearestProj = DotnetStartupProjectPath
+    nearestProj = vim.g["DotnetStartupProjectPath"]
   end
 
   if not nearestProj then
@@ -660,20 +690,20 @@ function GetDotnetDllPath()
   end
 
   local parentDir = get_directory(nearestProj)
-  print("parent dir is " .. parentDir)
+  vim.notify("parent dir is " .. parentDir)
   local projectName = get_filename_without_extension(nearestProj)
-  print("project name is " .. projectName)
+  vim.notify("project name is " .. projectName)
   local ext = get_extension(nearestProj)
-  print("extension is " .. ext)
+  vim.notify("extension is " .. ext)
   -- dump(ext)
-  if not DotnetProjectFileName or DotnetProjectFileName == "" then
+  if not vim.g["DotnetProjectFileName"] or vim.g["DotnetProjectFileName"] == "" then
     vim.g["DotnetProjectFileName"] = projectName
   end
   -- local path = dirname .. "/bin/debug/" .. projectName .. ".dll"
   local path = vim.fs.normalize(parentDir .. "bin/debug/" .. projectName .. ".dll")
   -- print("path construction is " .. path)
-  if not DotnetDllPath or DotnetDllPath == "" then
-    print("DotnetDllPath was {" .. vim.inspect(DotnetDllPath) .. "} Setting it to " .. path)
+  if not vim.g["DotnetDllPath"] or vim.g["DotnetDllPath"] == "" then
+    vim.notify("DotnetDllPath was {" .. vim.inspect(vim.g["DotnetDllPath"]) .. "} Setting it to " .. path)
     vim.g["DotnetDllPath"] = path
   end
   local request = function()
@@ -698,22 +728,25 @@ function GetDotnetDllPath()
     end
     return p
   end
-  if vim.fn.confirm("Do you want to change the path to dll? \n" .. vim.g["DotnetDllPath"], "&yes\n&no", 2) == 1 then
+  if
+    askForChanges
+    and vim.fn.confirm("Do you want to change the path to dll? \n" .. vim.g["DotnetDllPath"], "&yes\n&no", 2) == 1
+  then
     path = request()
-    DotnetDllPath = path
-    print("path to dll is set to: " .. path)
+    vim.g["DotnetDllPath"] = path
+    vim.notify("path to dll is set to: " .. path)
   end
   return path
 end
 
-function DotnetBuild(path, buildType, launch, launchWithDebugger)
+function DotnetBuild(path, buildType, launch, launchWithDebugger, askForChanges)
   local t = buildType or "debug"
   if t == "r" or t == "release" or t == "Release" or t == "R" then
-    print("building project: " .. path .. " with build type " .. t)
-    return DotnetBuildRelease(path, launch)
+    vim.notify("building project: " .. path .. " with build type " .. t)
+    return DotnetBuildRelease(path, launch, askForChanges)
   else
-    print("building project: " .. path .. " with build type " .. t)
-    return DotnetBuildDebugPopup(path, launch, launchWithDebugger)
+    vim.notify("building project: " .. path .. " with build type " .. t)
+    return DotnetBuildDebugPopup(path, launch, launchWithDebugger, askForChanges)
   end
 end
 
@@ -759,17 +792,27 @@ local function get_dll()
   end)
 end
 
-local function beforeDebug()
+local function beforeDebug(opts)
   --Check if the current filetype is one of the ones that are listed for the coreclr adapter, and if it is, then build
+  local askForChanges
+  vim.notify(vim.inspect(opts))
+  if opts.args and opts.args[1] and opts.args[1] == true then
+    askForChanges =true 
+  else
+    askForChanges = false
+  end
+
   local ft = vim.api.nvim_buf_get_option(0, "filetype")
   local isDotnet = ft == "cs" or ft == "fsharp" or ft == "fsharp_project"
+  local session = require("dap").session()
+  local isInDebugSession = session and session.closed == false
   local buildSuccessful
-  if isDotnet then
+  if isDotnet and not isInDebugSession then
     -- local path = get_proj()
-    local path = GetDotnetProjectPath()
+    local path = GetDotnetProjectPath(askForChanges)
 
-    local bin = DotnetStartupProjectRootPath .. "bin/"
-    local obj = DotnetStartupProjectRootPath .. "obj/"
+    local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
+    local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
     os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
     os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
 
@@ -779,7 +822,11 @@ local function beforeDebug()
   end
   return buildSuccessful or true
 end
-vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, { desc = "Dotnet Build Before Debug" })
+vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
+
+  nargs = "?",
+  desc = "Dotnet Build Before Debug",
+})
 -- M.coreclr = {
 -- 	{                  /
 -- 		type = 'coreclr',
@@ -929,6 +976,7 @@ return {
   dependencies = {
     {
       "jay-babu/mason-nvim-dap.nvim",
+      commit = "2b5f8a2",
       dependencies = { "nvim-dap" },
       cmd = { "DapInstall", "DapUninstall" },
 
@@ -936,7 +984,7 @@ return {
 
         automatic_setup = true,
         automatic_installation = true,
-        ensure_installed = { "coreclr" },
+        ensure_installed = { "coreclr", "mock" },
       },
 
       config = dapconfig,

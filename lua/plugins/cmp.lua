@@ -1,25 +1,25 @@
 local cmp = require("cmp")
-local function doWhenCmpVisible(fn, timeout, poll_interval)
-  if cmp.visible() then
-    fn()
-    return
-  end
-
-  if timeout <= 0 then
-    return
-  end
-
-  vim.defer_fn(function()
-    doWhenCmpVisible(fn, timeout - poll_interval, poll_interval)
-  end, poll_interval)
-end
-
-local function completeAndInsertFirstMatch()
-  cmp.complete()
-  doWhenCmpVisible(function()
-    cmp.select_next_item()
-  end, 1100, 50)
-end
+-- local function doWhenCmpVisible(fn, timeout, poll_interval)
+--   if cmp.visible() then
+--     fn()
+--     return
+--   end
+--
+--   if timeout <= 0 then
+--     return
+--   end
+--
+--   vim.defer_fn(function()
+--     doWhenCmpVisible(fn, timeout - poll_interval, poll_interval)
+--   end, poll_interval)
+-- end
+--
+-- local function completeAndInsertFirstMatch()
+--   cmp.complete()
+--   doWhenCmpVisible(function()
+--     cmp.select_next_item()
+--   end, 1100, 50)
+-- end
 local has_words_before = function()
   unpack = unpack or table.unpack
   local line, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -248,6 +248,7 @@ return {
   },
   -- then: setup supertab in cmp
   {
+    -- "yioneko/nvim-cmp",
     "hrsh7th/nvim-cmp",
     dependencies = {
       "hrsh7th/cmp-buffer",
@@ -256,21 +257,29 @@ return {
       {
         --
         "hrsh7th/cmp-cmdline",
+        dependencies = {
+          "hrsh7th/cmp-nvim-lsp-document-symbol",
+        },
         config = function()
           cmp.setup.cmdline("/", {
-            mapping = cmp.mapping.preset.cmdline(),
+            -- mapping = cmp.mapping.preset.cmdline(),
             sources = {
+              { name = "nvim_lsp_document_symbol" },
+            },
+            {
               { name = "buffer" },
             },
           })
 
           cmp.setup.cmdline(":", {
             mapping = cmp.mapping.preset.cmdline({
-              ["<Tab>"] = function()
+              ["<Tab>"] = function(fallback)
                 if cmp.visible() then
                   cmp.select_next_item()
                 else
-                  completeAndInsertFirstMatch()
+                  cmp.complete()
+                  fallback()
+                  -- completeAndInsertFirstMatch()
                 end
               end,
               ["<S-Tab>"] = function(fallback)
@@ -282,22 +291,22 @@ return {
               end,
             }),
             sources = cmp.config.sources({
-              { name = "path" },
-            }, {
               {
                 name = "cmdline",
                 option = {
                   ignore_cmds = { "Man", "!" },
                 },
               },
+            }, {
+              { name = "path" },
             }),
           })
         end,
       },
 
-      "hrsh7th/cmp-calc",
+      -- "hrsh7th/cmp-calc",
       "hrsh7th/cmp-nvim-lsp-signature-help",
-      "hrsh7th/cmp-emoji",
+      -- "hrsh7th/cmp-emoji",
       {
         -- show completion in dap
         "rcarriga/cmp-dap",
@@ -350,7 +359,7 @@ return {
           fetching_timeout = 80,
         },
         completion = {
-          completeopt = "menu,menuone",
+          completeopt = "menu,menuone,noinsert,noselect",
           -- completeopt = "menu,menuone,noinsert",
         },
         snippet = {
@@ -386,11 +395,12 @@ return {
             select = true,
           }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
           ["<Tab>"] = cmp.mapping({
-            c = function()
+            c = function(fallback)
               if cmp.visible() then
                 cmp.select_next_item()
               else
-                completeAndInsertFirstMatch()
+                fallback()
+                -- completeAndInsertFirstMatch()
               end
             end,
             i = function(fallback)
@@ -406,6 +416,9 @@ return {
                 cmp.select_next_item()
               -- elseif has_words_before() then
               --   completeAndInsertFirstMatch()
+              elseif has_words_before() then
+                cmp.complete()
+                cmp.select_next_item()
               else
                 fallback()
               end
@@ -418,7 +431,10 @@ return {
               elseif require("luasnip").expand_or_jumpable() then
                 require("luasnip").expand_or_jump()
               elseif has_words_before() then
-                completeAndInsertFirstMatch()
+                cmp.complete()
+                cmp.select_next_item()
+                --     cmp.select_prev_item()
+                -- completeAndInsertFirstMatch()
               else
                 fallback()
               end
@@ -477,32 +493,33 @@ return {
           --   end
           -- end, { "i", "s" }),
         }),
+
         sources = cmp.config.sources({
-          { name = "nvim_lsp", group_index = 1, max_item_count = 150 },
           { name = "codeium", keyword_length = 3 },
+          { name = "nvim_lsp", max_item_count = 100 },
           { name = "nvim_lsp_signature_help" },
           { name = "luasnip" },
           { name = "nvim_lua", max_item_count = 10 },
-          -- { name = "cmdline" },
           {
             name = "nuget",
             keyword_length = 1,
+            max_item_count = 10,
           },
           { name = "path" },
           { name = "buffer", keyword_length = 5, max_item_count = 10 },
-          { name = "emoji" },
+          -- { name = "emoji" },
         }),
         sorting = {
           comparators = {
-            cmp.config.compare.exact,
-            cmp.config.compare.score,
             cmp.config.compare.recently_used,
-            require("clangd_extensions.cmp_scores"),
-            cmp.config.compare.offset,
+            cmp.config.compare.exact,
             cmp.config.compare.kind,
-            cmp.config.compare.sort_text,
-            cmp.config.compare.length,
-            cmp.config.compare.order,
+            cmp.config.compare.score,
+            -- require("clangd_extensions.cmp_scores"),
+            -- cmp.config.compare.offset,
+            -- cmp.config.compare.sort_text,
+            -- cmp.config.compare.length,
+            -- cmp.config.compare.order,
           },
         },
         formatting = {
@@ -515,24 +532,25 @@ return {
           -- end,
 
           format = require("lspkind").cmp_format({
-            -- mode = "symbol",
+            mode = "symbol",
             with_text = true,
             maxwidth = 80,
             ellipsis_char = "",
             menu = {
-              Codeium = "[Codeium]",
-              buffer = "[Buffer]",
-              nuget = "[Nuget]",
+              Codeium = "[Cdim]",
+              buffer = "[Buf]",
+              nuget = "[Ngt]",
               nvim_lsp = "[LSP]",
-              luasnip = "[LuaSnip]",
+              luasnip = "[Snip]",
               nvim_lua = "[Lua]",
-              latex_symbols = "[Latex]",
+              latex_symbols = "[Ltx]",
             },
           }),
         },
         experimental = {
           native_menu = false,
           ghost_text = {
+            enabled = true,
             hl_group = "LspCodeLens",
           },
         },
