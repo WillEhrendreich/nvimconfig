@@ -323,6 +323,7 @@ return {
         -- config = function()
         opts = {
           filetypes = { "fsharp_project" }, -- on which filetypes cmp-nuget is active
+          filetypes = { "csproj" }, -- on which filetypes cmp-nuget is active
           file_extensions = { "csproj", "fsproj" }, -- on which file extensions cmp-nuget is active
           nuget = {
             packages = {
@@ -349,9 +350,8 @@ return {
       },
     },
     opts = function(_, opts)
-      local cmp = require("cmp")
-      local luasnip = require("luasnip")
-      ---@type cmp.ConfigSchema
+      -- local cmp = require("cmp")
+      -- local luasnip = require("luasnip")
       return vim.tbl_deep_extend("force", opts, {
         performance = {
           trigger_debounce_time = 500,
@@ -388,7 +388,7 @@ return {
           -- end,
           ["<CR>"] = cmp.mapping.confirm({
             behavior = cmp.ConfirmBehavior.Insert,
-            select = true,
+            select = false,
           }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
           ["<S-CR>"] = cmp.mapping.confirm({
             behavior = cmp.ConfirmBehavior.Replace,
@@ -495,15 +495,16 @@ return {
         }),
 
         sources = cmp.config.sources({
-          { name = "codeium", keyword_length = 3 },
+          { name = "codeium"},
+          { name = "jupyter"},
+          { name = "jupynium"},
+          { name = "luasnip" },
           { name = "nvim_lsp", max_item_count = 100 },
           { name = "nvim_lsp_signature_help" },
-          { name = "luasnip" },
           { name = "nvim_lua", max_item_count = 10 },
           {
             name = "nuget",
-            keyword_length = 1,
-            max_item_count = 10,
+            max_item_count = 20,
           },
           { name = "path" },
           { name = "buffer", keyword_length = 5, max_item_count = 10 },
@@ -511,15 +512,15 @@ return {
         }),
         sorting = {
           comparators = {
-            cmp.config.compare.recently_used,
+            cmp.config.compare.score,
             cmp.config.compare.exact,
             cmp.config.compare.kind,
-            cmp.config.compare.score,
+            cmp.config.compare.recently_used,
+            cmp.config.compare.sort_text,
+            cmp.config.compare.offset,
             -- require("clangd_extensions.cmp_scores"),
-            -- cmp.config.compare.offset,
-            -- cmp.config.compare.sort_text,
-            -- cmp.config.compare.length,
-            -- cmp.config.compare.order,
+            cmp.config.compare.length,
+            cmp.config.compare.order,
           },
         },
         formatting = {
@@ -537,7 +538,8 @@ return {
             maxwidth = 80,
             ellipsis_char = "",
             menu = {
-              Codeium = "[Cdim]",
+              codeium = "[Cdim]",
+              jupyter = "[Jup]",
               buffer = "[Buf]",
               nuget = "[Ngt]",
               nvim_lsp = "[LSP]",

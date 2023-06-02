@@ -231,7 +231,7 @@ return {
       -- local bind_all = require("conf.bindings").bind_all
       -- local key_opts = { noremap = true, silent = true }
 
-      require("lsp-inlayhints").setup({ enabled_at_startup = false })
+      require("lsp-inlayhints").setup({ enabled_at_startup = true })
 
       vim.api.nvim_create_augroup("LspAttach_inlayhints", {})
       vim.api.nvim_create_autocmd("LspAttach", {
@@ -389,7 +389,7 @@ return {
       format = {
         -- formatting_options = nil,
 
-        timeout_ms = 4000,
+        timeout_ms = 500,
       },
 
       -- LSP Server Settings
@@ -614,11 +614,9 @@ return {
           -- on_attach = on_attach,
           settings = {
             FSharp = {
-              enableMSBuildProjectGraph = true,
-              enableTreeView = true,
-              fsiExtraParameters = {
-                "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.4/depman-fsproj/0.2.4/tools/net6.0/any",
-              },
+              -- enableMSBuildProjectGraph = true,
+              -- enableTreeView = true,
+              -- fsiExtraParameters = { "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.4/depman-fsproj/0.2.4/tools/net6.0/any", },
             },
           },
         },
@@ -704,6 +702,9 @@ return {
       on_attach = require("lazyvim.util").on_attach(
         ---@type fun(client:any, buffer:any)
         function(client, buffer)
+          local ft = vim.api.nvim_buf_get_option(0, "filetype")
+          local isDotnet = ft == "cs" or ft == "fsharp" or ft == "fsharp_project"
+          -- local isDotnetProj = vim.api.nvim_buf_get_option(0, "")
           local ignored = { "jsonls", "null-ls", "stylua", "lemminx", "editorconfig_checker" }
           -- local ignored = v.lsp.ignoredLspServersForFindingRoot
           -- v.Notify(client.name .. " is running on_attach")
@@ -752,13 +753,12 @@ return {
                 vim.cmd("cd " .. root)
                 vim.notify("CWD : " .. root)
               end
-              local ft = vim.api.nvim_buf_get_option(0, "filetype")
-              local isDotnet = ft == "cs" or ft == "fsharp" or ft == "fsharp_project"
               if isDotnet then
-                DotnetSlnRootPath = root
+                vim.g["DotnetSlnRootPath"] = root
               end
             end
           end
+
           --     vim.notify(" on attach for " .. client.name .. " just got called")
           --     if client.name == "ionide" then
           --       local inp = vim.fn.input("please attach debugger")

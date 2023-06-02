@@ -1,4 +1,5 @@
 return {}
+-- vim.g["sqlite_clib_path"] = "C:/ProgramData/chocolatey/lib/SQLite/tools/sqlite3.dll"
 -- return {
 --   "ecthelionvi/NeoComposer.nvim",
 --   dependencies = {

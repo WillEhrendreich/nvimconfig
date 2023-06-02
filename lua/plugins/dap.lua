@@ -1,4 +1,5 @@
 local fn = vim.fn
+local dap = require("dap")
 -- local utils = require("NeovimUtils")
 local tc = vim.tbl_contains
 local strs = require("plenary.strings")
@@ -42,7 +43,7 @@ local function get_filename_without_extension(path)
   local filename_without_extension = string.match(filename_with_extension, "^(.+)%..+$")
   return filename_without_extension
 end
--- vim.lsp.set_log_level("DEBUG")
+
 -- DotnetSlnRootPath = vim.g["DotnetSlnRootPath"]
 -- DotnetStartupProjectRootPath = vim.g["DotnetStartupProjectRootPath"]
 -- DotnetDllPath = vim.g["DotnetDllPath"]
@@ -811,10 +812,10 @@ local function beforeDebug(opts)
     -- local path = get_proj()
     local path = GetDotnetProjectPath(askForChanges)
 
-    local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
-    local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
-    os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
-    os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
+    -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
+    -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
+    -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
+    -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
 
     buildSuccessful = DotnetBuild(path, "debug", true, true)
   else
@@ -822,6 +823,7 @@ local function beforeDebug(opts)
   end
   return buildSuccessful or true
 end
+
 vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
 
   nargs = "?",
@@ -838,17 +840,27 @@ vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
 -- }
 
 local dotnetDapConfig = {
-
   type = "coreclr",
   name = "NetCoreDbg",
+  preLaunchTask="build",
   request = "launch",
+  console= "internalConsole",
   cwd = "${fileDirname}",
   program = get_dll,
+  }
+  -- {
+  --         type = "netcoredbg",
+  --         name = "attach - netcoredbg",
+  --         request = "attach",
+  --         processId = function()
+  --           local pgrep = vim.fn.system("pgrep -f 'dotnet run'")
+  --           vim.fn.setenv('NETCOREDBG_ATTACH_PID',"${command:pickProcess}")
+  --           return tonumber(pgrep)
+  --         end,
+  --       },
   -- end
 
   -- end
-  -- return GetDotnetDllPath()
-}
 
 -- local function getDapConfig()
 --   local root = FindRoot() or vim.fn.getcwd()
@@ -902,8 +914,10 @@ local function get_first_string_value(t)
 end
 
 local function dapconfig(_, opts)
+
   local mason_nvim_dap = require("mason-nvim-dap")
-  local dap = require("dap")
+
+  dap.set_loglevel = "TRACE"
   local o = vim.tbl_deep_extend("force", opts, {
 
     handlers = {
@@ -912,42 +926,25 @@ local function dapconfig(_, opts)
         -- Keep original functionality of `automatic_init = true`
         require("mason-nvim-dap").default_setup(config)
       end,
+
       ---comment
       ---@param config
       coreclr = function(config)
-        local dap = require("dap")
-        -- if not dap.adapters.coreclr then
+        -- local dap = require("dap")
+
+        dap.configurations.cs = { dotnetDapConfig }
+        dap.configurations.fsharp = { dotnetDapConfig}
+        
+
+
         dap.adapters["coreclr"] = {
           type = "executable",
-          command = (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1],
+          -- command = (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1],
+          command = vim.fs.normalize( (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1]),
           -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
-          -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
-          args = { "--interpreter=vscode" },
-        }
-        -- end
-        -- vim.notify("just set dap.adapters.coreclr to " .. vim.inspect(dap.adapters.coreclr or "NOTHING:?:???!+?@!?"))
-        -- if vim.fn.confirm("Should I recompile first?", "&yes\n&no", 2) == 1 then
-        -- if buildSuccessful == true then
-        -- config.Dap
-        -- dap.configurations.cs = { dotnetDapConfig }
-        -- dap.configurations.fsharp = { dotnetDapConfig
-        -- config.configurations = {
-        --   cs = dotnetDapConfig,
-        --   fsharp = dotnetDapConfig,
-        -- }
-        -- config.configurations.cs = { dotnetDapConfig }
-        -- config.configurations.fsharp = { dotnetDapConfig }
-        -- dap.configurations.cs = { dotnetDapConfig }
-        config.configurations = { dotnetDapConfig }
-        -- args = { "--interpreter=vscode" },
-        -- command = "C:\\.local\\share\\nvim-data\\mason\\bin\\netcoredbg.CMD",
-        -- type = "executable"
-        -- },
-        require("mason-nvim-dap").default_setup(config)
-        dap.adapters["coreclr"] = {
-          type = "executable",
-          command = (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1],
-          -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
+          options = {
+            initialize_timeout_sec = 10,
+          },
           -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
           args = { "--interpreter=vscode" },
         }
@@ -975,14 +972,24 @@ return {
 
   dependencies = {
     {
+      "rcarriga/nvim-dap-ui",
+      -- opts = { floating = { border = "rounded" } },
+      -- config = dapuiconfigFunc,
+      -- config = require "plugins.configs.nvim-dap-ui",
+    },
+
+    {
       "jay-babu/mason-nvim-dap.nvim",
-      commit = "2b5f8a2",
+      -- commit = "2b5f8a2",
       dependencies = { "nvim-dap" },
       cmd = { "DapInstall", "DapUninstall" },
 
       opts = {
 
-        automatic_setup = true,
+        -- automatic_setup = true,
+        handlers ={
+
+        },
         automatic_installation = true,
         ensure_installed = { "coreclr", "mock" },
       },
@@ -990,11 +997,37 @@ return {
       config = dapconfig,
       -- config = require "plugins.configs.mason-nvim-dap",
     },
+
     {
-      "rcarriga/nvim-dap-ui",
-      opts = { floating = { border = "rounded" } },
-      config = dapuiconfigFunc,
-      -- config = require "plugins.configs.nvim-dap-ui",
+      -- virtual text for the debugger
+      "theHamsta/nvim-dap-virtual-text",
+      opts = {},
     },
+
+    {
+      "LiadOz/nvim-dap-repl-highlights",
+      config = true,
+    },
+
+    {'Weissle/persistent-breakpoints.nvim',
+    opts ={
+        load_breakpoints_event={"BufReadPost"},
+      },},
   },
+
+    config = function()
+    local Config = require("lazyvim.config")
+    vim.api.nvim_set_hl(0, "DapStoppedLine", { default = true, link = "Visual" })
+
+    for name, sign in pairs(Config.icons.dap) do
+      sign = type(sign) == "table" and sign or { sign }
+      vim.fn.sign_define(
+        "Dap" .. name,
+        { text = sign[1], texthl = sign[2] or "DiagnosticInfo", linehl = sign[3], numhl = sign[3] }
+      )
+    end
+  end,
+
+
+  
 }

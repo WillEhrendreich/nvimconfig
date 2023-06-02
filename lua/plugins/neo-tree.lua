@@ -37,7 +37,8 @@ local fsharpFileSystemSource = {
       ["<C-p>"] = "move_cursor_up",
     },
   },
-  async_directory_scan = "auto", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
+  -- async_directory_scan = "auto", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
+  async_directory_scan = "always", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
   -- "always" means directory scans are always async.
   -- "never"  means directory scans are never async.
   scan_mode = "shallow", -- "shallow": Don't scan into directories to detect possible empty directory a priori
@@ -122,7 +123,7 @@ local fsharpFileSystemSource = {
   -- "open_current",-- netrw disabled, opening a directory opens within the
   -- window like netrw would, regardless of window.position
   -- "disabled",    -- netrw left alone, neo-tree does not handle opening dirs
-  use_libuv_file_watcher = false, -- This will use the OS level file watchers to detect changes
+  use_libuv_file_watcher = true, -- This will use the OS level file watchers to detect changes
   -- instead of relying on nvim autocmd events.
 }
 
@@ -204,7 +205,7 @@ return {
       enable_diagnostics = true,
       sources = {
         "filesystem",
-        "neo-tree-fsharp",
+        -- "neo-tree-fsharp",
         -- "buffers",
         -- "git_status",
         -- "document_symbols",
@@ -219,7 +220,7 @@ return {
         content_layout = "center",
         sources = {
           { source = "filesystem" },
-          { source = "neo-tree-fsharp" },
+          -- { source = "neo-tree-fsharp" },
         },
         -- tab_labels = {
         -- filesystem = v.get_icon("FolderClosed") .. " File",

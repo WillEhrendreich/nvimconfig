@@ -19,19 +19,30 @@ return {
       "nvim-neotest/neotest-plenary",
       -- "nvim-neotest/neotest-vim-test",
     },
-    config = function()
-      require("neotest").setup({
-        adapters = {
-          require("neotest-dotnet")({}),
-          -- re "neotest-python" {
-          --   dap = { justMyCode = false },
-          -- },
-          require("neotest-plenary"),
-          -- require("neotest-vim-test")({
-          --   ignore_file_types = { "python", "vim", "lua", "fsharp", "csharp", "cs" },
-          -- }),
+    config = function(_, opts)
+      -- get neotest namespace (api call creates or returns namespace)
+      local neotest_ns = vim.api.nvim_create_namespace("neotest")
+      vim.diagnostic.config({
+        virtual_text = {
+          format = function(diagnostic)
+            local message = diagnostic.message:gsub("\n", " "):gsub("\t", " "):gsub("%s+", " "):gsub("^%s+", "")
+            return message
+          end,
         },
+      }, neotest_ns)
+      local group = vim.api.nvim_create_augroup("lazyvim_neotest_close_with_q", { clear = true })
+      vim.api.nvim_create_autocmd("FileType", {
+        group = group,
+        pattern = {
+          "neotest-output",
+        },
+        callback = function(event)
+          vim.bo[event.buf].buflisted = false
+          vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = event.buf, silent = true })
+        end,
       })
+
+      require("neotest").setup(opts)
     end,
   },
 }

@@ -1,9 +1,11 @@
 -- local fn = vim.fn
 vim.api.nvim_create_user_command("CodeiumLog", function()
-  local logpath = vim.fn.stdpath("cache") .. "/codeium.log"
+  local logpath = vim.fn.stdpath("cache") .. "/codeium/codeium.log"
   vim.cmd.e(logpath)
 end, { desc = "View CodeiumLog" })
 -- vim.fn.getenv("DEBUG_CODEIUM")
+--
+
 return {
   -- {
   --   "jcdickinson/http.nvim",

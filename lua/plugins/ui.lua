@@ -35,6 +35,7 @@ return {
       messages = {
         -- NOTE: If you enable messages, then the cmdline is enabled automatically.
         -- This is a current Neovim limitation.
+
         enabled = false, -- enables the Noice messages UI
         -- view = "notify", -- default view for messages
         view = "mini", -- default view for messages
@@ -67,15 +68,15 @@ return {
           -- options for the message history that you get with `:Noice`
           view = "split",
           opts = { enter = true, format = "details" },
-          filter = {
-            any = {
-              { event = "notify" },
-              { error = true },
-              { warning = true },
-              { event = "msg_show", kind = { "" } },
-              { event = "lsp", kind = "message" },
-            },
-          },
+          -- filter = {
+          --   any = {
+          --     { event = "notify" },
+          --     { error = true },
+          --     { warning = true },
+          --     { event = "msg_show", kind = { "" } },
+          --     { event = "lsp", kind = "message" },
+          --   },
+          -- },
         },
         -- :Noice last
         last = {
@@ -121,12 +122,12 @@ return {
           --- 50@type NoiceFormat|string
           format_done = "lsp_progress_done",
           -- throttle = 1000 / 30, -- frequency to update lsp progress message
-          throttle = 3000, -- frequency to update lsp progress message
+          throttle = 1000, -- frequency to update lsp progress message
           view = "mini",
         },
         override = {
           -- override the default lsp markdown formatter with Noice
-          ["vim.lsp.util.convert_input_to_markdown_lines"] = false,
+          ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
           -- override the lsp markdown formatter with Noice
           ["vim.lsp.util.stylize_markdown"] = true,
           -- override cmp documentation with Noice (needs the other options to work)
@@ -165,7 +166,6 @@ return {
           opts = {
             lang = "markdown",
             replace = true,
-            render = "plain",
             format = { "{message}" },
             win_options = { concealcursor = "n", conceallevel = 3 },
           },
@@ -205,8 +205,8 @@ return {
         inc_rename = false, -- enables an input dialog for inc-rename.nvim
         lsp_doc_border = false, -- add a border to hover docs and signature help
       },
-      -- throttle = 1000 / 30, -- how frequently does Noice need to check for ui updates? This has no effect when in blocking mode.
-      throttle = 3000, -- how frequently does Noice need to check for ui updates? This has no effect when in blocking mode.
+      throttle = 1000 / 30, -- how frequently does Noice need to check for ui updates? This has no effect when in blocking mode.
+      -- throttle = 3000, -- how frequently does Noice need to check for ui updates? This has no effect when in blocking mode.
       ---@type NoiceConfigViews
       views = {}, ---@see section on views
       ---@type NoiceRouteConfig[]

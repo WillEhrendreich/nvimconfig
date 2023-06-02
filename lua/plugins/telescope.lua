@@ -1,3 +1,4 @@
+-- require("telescope").load_extension("macros")
 return {
   "nvim-telescope/telescope.nvim",
 
@@ -40,6 +41,9 @@ return {
     },
   },
 
+  -- extensions = {
+  --   macros,
+  -- },
   dependencies = {
     {
       "nvim-telescope/telescope-fzf-native.nvim",
@@ -74,6 +78,5 @@ return {
 
   -- config = function(opts)
   --   require("telescope").setup(opts)
-  -- require("telescope").load_extension("macros")
   -- end,
 }

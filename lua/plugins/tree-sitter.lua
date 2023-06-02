@@ -4,6 +4,8 @@ parser_config.fsharp = {
     url = "https://github.com/Nsidorenco/tree-sitter-fsharp",
     branch = "develop",
     files = { "src/scanner.cc", "src/parser.c" },
+    generate_requires_npm = true,
+    requires_generate_from_grammar = true,
   },
   filetype = "fsharp",
 }
@@ -22,6 +24,8 @@ return {
   build = ":TSUpdate",
   event = { "BufReadPost", "BufNewFile" },
   dependencies = {
+    "LiadOz/nvim-dap-repl-highlights",
+
     {
       "nvim-treesitter/nvim-treesitter-textobjects",
       init = function()
@@ -62,6 +66,7 @@ return {
       "fsharp",
       "help",
       "html",
+      "dap_repl",
       "javascript",
       "json",
       "jsonc",
