@@ -285,7 +285,11 @@ if Util.has("telescope.nvim") then -- setup telescope mappings if available
     require("telescope.builtin").lsp_workspace_symbols()
   end, "Telescope lsp workspace symbols")
 end
-
+if Util.has("definition-or-references.nvim") then
+  map("n", "gd", function ()
+    require("definition-or-references").definition_or_references()
+  end, "Go to definition or references")
+end
 if Util.has("toggleterm.nvim") then
   --if fn.executable "lazygit" == 1 then
 
@@ -390,6 +394,7 @@ if Util.has("toggleterm.nvim") then
   map("n", "<F7>", "<cmd>ToggleTerm<cr>", "Toggle terminal")
   --end
 end
+
 -- if Util.has("mini.align") then
 --   map({ "v" }, "ga", function()
 --     require("mini.align").align()
@@ -401,80 +406,103 @@ end
 -- end, "Cmp Complete")
 
 if Util.has("nvim-dap") then
-  map("n", "<F5>", function()
-    if vim.cmd.PreDebugTask() then
-      -- require("dap").continue()
-    else
-      print("predebug task was false, so assuming there was a problem and not debugging")
-    end
-  end, "Debugger: Start")
-  map("n", "<F17>", function()
-    require("dap").terminate()
-  end, "Debugger: Stop") -- Shift+F5,
-  map("n", "<F29>", function()
-    require("dap").restart_frame()
-  end, "Debugger: Restart") -- Control+F5,
-  map("n", "<F6>", function()
-    require("dap").pause()
-  end, "Debugger: Pause")
-  map("n", "<F9>", function()
-    require("dap").toggle_breakpoint()
-  end, "Debugger: Toggle Breakpoint")
-  map("n", "<F10>", function()
-    require("dap").step_over()
-  end, "Debugger: Step Over")
-  map("n", "<F11>", function()
-    require("dap").step_into()
-  end, "Debugger: Step Into")
-  map("n", "<F23>", function()
-    require("dap").step_out()
-  end, "Debugger: Step Out") -- Shift+F11,
-  map("n", "<leader>db", function()
-    require("dap").toggle_breakpoint()
-  end, "Toggle Breakpoint (F9)")
-  map("n", "<leader>dB", function()
-    require("dap").clear_breakpoints()
-  end, "Clear Breakpoints")
-  map("n", "<leader>dc", function()
-    if vim.cmd.PreDebugTask() then
-      -- require("dap").continue()
-    else
-      print("predebug task was false, so assuming there was a problem and not debugging")
-    end
-  end, "Start/Continue (F5)")
-  map("n", "<leader>di", function()
-    require("dap").step_into()
-  end, "Step Into (F11)")
-  map("n", "<leader>do", function()
-    require("dap").step_over()
-  end, "Step Over (F10)")
-  map("n", "<leader>dO", function()
-    require("dap").step_out()
-  end, "Step Out (S-F11)")
-  map("n", "<leader>dq", function()
-    require("dap").close()
-  end, "Close Session")
-  map("n", "<leader>dQ", function()
-    require("dap").terminate()
-  end, "Terminate Session (S-F5)")
-  map("n", "<leader>dp", function()
-    require("dap").pause()
-  end, "Pause (F6)")
-  map("n", "<leader>dr", function()
-    require("dap").restart_frame()
-  end, "Restart (C-F5)")
-  map("n", "<leader>dR", function()
-    require("dap").repl.toggle()
-  end, "Toggle REPL")
-
-  if "nvim-dap-ui" then
-    map("n", "<leader>du", function()
-      require("dapui").toggle()
-    end, "Toggle Debugger UI")
+  if Util.has("hydra.nvim") then
     map("n", "<leader>dh", function()
-      require("dap.ui.widgets").hover()
-    end, "Debugger Hover")
+      -- if vim.cmd.PreDebugTask() then
+       local hydra = require'hydra'
+        hydra.spawn('dap-hydra')
+        -- if vim.cmd.PreDebugTask() then
+        --   -- require("dap").continue()
+        -- else
+        --   print("predebug task was false, so assuming there was a problem and not debugging")
+        -- end
+        -- require("dap").continue()
+      -- else
+        -- print("predebug task was false, so assuming there was a problem and not debugging")
+      -- end
+    end, "Debugger: DapHydra")
   end
+  -- ['<leader>da']  = {
+  -- function()
+  else
+  -- 	-- require'dap'.set_breakpoint()
+  -- 	-- require'dap'.run({type='python', request='attach', host='127.0.0.1', port=5678})
+  -- end,    'Attach (localhost, 5678)'} ,
+    map("n", "<F5>", function()
+      if vim.cmd.PreDebugTask() then
+        -- require("dap").continue()
+      else
+        print("predebug task was false, so assuming there was a problem and not debugging")
+      end
+    end, "Debugger: Start")
+    map("n", "<F17>", function()
+      require("dap").terminate()
+    end, "Debugger: Stop") -- Shift+F5,
+    map("n", "<F29>", function()
+      require("dap").restart_frame()
+    end, "Debugger: Restart") -- Control+F5,
+    map("n", "<F6>", function()
+      require("dap").pause()
+    end, "Debugger: Pause")
+    map("n", "<F9>", function()
+      require("dap").toggle_breakpoint()
+    end, "Debugger: Toggle Breakpoint")
+    map("n", "<F10>", function()
+      require("dap").step_over()
+    end, "Debugger: Step Over")
+    map("n", "<F11>", function()
+      require("dap").step_into()
+    end, "Debugger: Step Into")
+    map("n", "<F23>", function()
+      require("dap").step_out()
+    end, "Debugger: Step Out") -- Shift+F11,
+    map("n", "<leader>db", function()
+      require("dap").toggle_breakpoint()
+    end, "Toggle Breakpoint (F9)")
+    map("n", "<leader>dB", function()
+      require("dap").clear_breakpoints()
+    end, "Clear Breakpoints")
+    map("n", "<leader>dc", function()
+      if vim.cmd.PreDebugTask() then
+        -- require("dap").continue()
+      else
+        print("predebug task was false, so assuming there was a problem and not debugging")
+      end
+    end, "Start/Continue (F5)")
+    map("n", "<leader>di", function()
+      require("dap").step_into()
+    end, "Step Into (F11)")
+    map("n", "<leader>do", function()
+      require("dap").step_over()
+    end, "Step Over (F10)")
+    map("n", "<leader>dO", function()
+      require("dap").step_out()
+    end, "Step Out (S-F11)")
+    map("n", "<leader>dq", function()
+      require("dap").close()
+    end, "Close Session")
+    map("n", "<leader>dQ", function()
+      require("dap").terminate()
+    end, "Terminate Session (S-F5)")
+    map("n", "<leader>dp", function()
+      require("dap").pause()
+    end, "Pause (F6)")
+    map("n", "<leader>dr", function()
+      require("dap").restart_frame()
+    end, "Restart (C-F5)")
+    map("n", "<leader>dR", function()
+      require("dap").repl.toggle()
+    end, "Toggle REPL")
+
+    -- end
+    if "nvim-dap-ui" then
+      map("n", "<leader>du", function()
+        require("dapui").toggle()
+      end, "Toggle Debugger UI")
+      map("n", "<leader>dh", function()
+        require("dap.ui.widgets").hover()
+      end, "Debugger Hover")
+    end
 end
 
 --   n = {

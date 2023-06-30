@@ -13,6 +13,7 @@ return {
       -- table.insert(opts.sections.lualine_c, 2, {
       --   require("NeoComposer.ui").status_recording,
       -- })
+      table.insert(opts.sections.lualine_x, 2, { "overseer" , })
     end,
   },
 }

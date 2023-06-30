@@ -13,6 +13,7 @@ return {
     },
     ensure_installed = {
       "fsautocomplete",
+      "lemminx",
       "sqlls",
       "stylua",
       "shfmt",

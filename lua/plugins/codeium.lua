@@ -1,15 +1,33 @@
 -- local fn = vim.fn
+
+vim.api.nvim_create_user_command("CodeiumLogClear", function()
+  vim.fn.writefile({}, vim.fn.stdpath("cache") .. "/codeium.log")
+end, { desc = "View CodeiumLog" })
+
 vim.api.nvim_create_user_command("CodeiumLog", function()
-  local logpath = vim.fn.stdpath("cache") .. "/codeium/codeium.log"
+  local logpath = vim.fn.stdpath("cache") .. "/codeium.log"
   vim.cmd.e(logpath)
 end, { desc = "View CodeiumLog" })
--- vim.fn.getenv("DEBUG_CODEIUM")
---
+
+vim.api.nvim_create_user_command("CodeiumCmpSourceHealthy", function()
+local sources = require("cmp").core.sources
+local cdm =vim.tbl_filter(function(t) return t.name == "codeium" end,  require("cmp").core.sources)[1]
+if cdm then
+    if  cdm.source.server.is_healthy() then 
+    vim.notify("Codeium cmp source server is healthy" )
+    else 
+    vim.notify("Codeium cmp source server is not healthy" )
+    end 
+  else
+    vim.notify("Codeium cmp source server is not healthy" )
+  end
+  -- vim.cmd.e(logpath)
+end, { desc = "check for current Codeium cmp source server health" })
+
 
 return {
   -- {
-  --   "jcdickinson/http.nvim",
-  --   build = "cargo build --workspace --release",
+  --   "jcdickinson/http.nvim",  --   build = "cargo build --workspace --release",
   -- },
   {
     "jcdickinson/codeium.nvim",
@@ -18,9 +36,11 @@ return {
       "nvim-lua/plenary.nvim",
       "hrsh7th/nvim-cmp",
     },
-    config = function()
-      require("codeium").setup({})
-    end,
+    -- config = function()
+    --   require("codeium").setup({})
+    -- end,
+
+     config= true,
   },
   -- {
   --   -- "jcdickinson/codeium.nvim",
@@ -30,7 +50,7 @@ return {
   --   opts = {
   --     manager_path = nil,
   --     bin_path = vim.fn.stdpath("cache") .. "/codeium/bin",
-  --     config_path = vim.fn.stdpath("cache") .. "/codeium/config.json",
+  --     config_path = uim.fn.stdpath("cache") .. "/codeium/config.json",
   --     api = {
   --       host = "server.codeium.com",
   --       port = "443",

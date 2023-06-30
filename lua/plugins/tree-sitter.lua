@@ -53,6 +53,7 @@ return {
     { "<bs>", desc = "Decrement selection", mode = "x" },
   },
   opts = {
+ auto_install = true,
     -- highlight = { enable = true, disable = { "fsharp" } },
     highlight = { enable = true },
     indent = { enable = true, disable = { "python", "odin" } },

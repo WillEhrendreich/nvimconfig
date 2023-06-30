@@ -1,4 +1,6 @@
 return {
   "stevearc/overseer.nvim",
-  opts = {},
+  opts = {
+    strategy = "toggleterm",
+  },
 }

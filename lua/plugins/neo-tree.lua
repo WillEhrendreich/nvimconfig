@@ -168,6 +168,37 @@ return {
       system_open = function(state)
         system_open(state.tree:get_node():get_id())
       end,
+      addFileAbove = function (state)
+        local hasIonide, ionide = pcall(require,"ionide")
+        local hasWillEhrendreichIonide = false
+        if ionide.Projects then
+          hasWillEhrendreichIonide = true
+        end 
+        if hasWillEhrendreichIonide == true  then
+
+
+          ---@type NeoTreeItem
+          local currentNode = state.tree:get_node()
+          ---@type ProjectInfo|nil
+          local currentNodeProjectFile = vim.tbl_filter (function (x)
+
+            local projItems = vim.tbl_map(function(p) return p.path end , x.items )
+            return vim.tbl_contains(projItems, currentNode.path) end,
+            ionide.Projects)[1] or nil
+          if not currentNodeProjectFile then
+            vim.notify("Could not get a project file for curent selected neo-tree node, cannot add file above it")
+            return
+          else
+            local newFileName = vim.fn.input("add new file above current file " .. vim.fs.normalize(vim.fn.fnnamemodify(currentNode.path,":p:.")))
+            vim.notify("wants to add a new file called " .. (newFileName or "None") )
+            if newFileName then
+
+              ionide.CallFSharpAddFileAbove(currentNodeProjectFile.Project, currentNode.path, newFileName)
+
+                    end
+            end
+        end
+      end,
       -- delete = function(state)
       --   local path = state.tree:get_node().path
       --   local b = "C:\\$Recycle.Bin"
@@ -205,7 +236,7 @@ return {
       enable_diagnostics = true,
       sources = {
         "filesystem",
-        -- "neo-tree-fsharp",
+        "neo-tree-fsharp",
         -- "buffers",
         -- "git_status",
         -- "document_symbols",
@@ -220,7 +251,7 @@ return {
         content_layout = "center",
         sources = {
           { source = "filesystem" },
-          -- { source = "neo-tree-fsharp" },
+          { source = "neo-tree-fsharp" },
         },
         -- tab_labels = {
         -- filesystem = v.get_icon("FolderClosed") .. " File",

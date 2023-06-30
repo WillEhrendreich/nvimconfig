@@ -95,6 +95,50 @@ local function makeGlowForRepos()
     execute = execute,
   })
 end
+
+local function parse_string(input_string)
+  local link_pattern = "<a href='command:(.-)%?(.-)'>"
+  local function_capture, json_capture = input_string:match(link_pattern)
+  if function_capture and json_capture then
+    local function_name = function_capture:match("^(.-)%s"):gsub(".", "/")
+    local unHtmlify = json_capture:gsub("%%%x%x", function(entity)
+      return string.char(tonumber(entity:sub(2), 16))
+    end)
+    -- print("unHtmlify :", unHtmlify)
+    unHtmlify = unHtmlify
+    -- print("unHtmlify :", unHtmlify)
+    ---@table
+    local decoded_json = vim.json.decode(unHtmlify)
+    local label_text = input_string:match(">(.-)<")
+    return function_name, unHtmlify, decoded_json, label_text
+  else
+    return input_string, "", "", ""
+  end
+end
+local function split_lines(value)
+  value = string.gsub(value, "\r\n?", "\n")
+  -- <a href='command:fsharp.showDocumentation?%5B%7B%20%22XmlDocSig%22%3A%20%22%22%2C%20%22AssemblyName%22%3A%20%22excel%22%20%7D%5D'>Open the documentation</a>
+  local lines = vim.split(value, "\n", { trimempty = true })
+  value = string.gsub(value, "<a href='command:", "\n")
+  for i, line in ipairs(lines) do
+    local parsedOrFunctionName, escapedHtml, decodedJsonTable, labelText = parse_string(line)
+    if parsedOrFunctionName then
+      if not line == parsedOrFunctionName then
+        vim.lsp.buf_request(0, parsedOrFunctionName, (decodedJsonTable or {}), function(e, r, c, con)
+          if r then
+            if r.result then
+              if r.result.contents then
+                line = "['" .. labelText .. "'](" .. vim.inspect(r.result.contents) .. ")"
+              end
+            end
+          end
+        end)
+      end
+    end
+  end
+
+  return lines
+end
 -- string.format('%%#%s# %s ', hl, p.name)
 local source = {
   name = "LSPWithDiag",
@@ -130,92 +174,183 @@ local source = {
     --   end,
     -- })
 
+    ---@class HoverResponse
+    ---@field result lsp.Hover
+
     local params = util.make_position_params()
     ---@type table<string>
     local lines = {}
-    vim.lsp.buf_request_all(0, "textDocument/hover", params, function(responses)
-      -- vim.notify("responses for hover request " .. vim.inspect(responses))
-      local lang = "markdown"
-      for _, response in pairs(responses) do
-        if response.result and response.result.contents then
-          lang = response.result.contents.language or "markdown"
-          -- vim.notify("LspResponse Before Conversion to md: \n" .. vim.inspect(response.result.contents))
-          lines = util.convert_input_to_markdown_lines(response.result.contents or { kind = "markdown", value = "" })
-          lines = util.trim_empty_lines(lines or {})
-          -- vim.notify("LspResponse After Conversion to md: \n" .. vim.inspect(lines))
-        end
-      end
 
-      -- vim.notify("lines before diag")
-      -- vim.notify(vim.inspect(lines))
-      -- local row, col = unpack(vim.api.nvim_win_get_cursor(0) or {-1,-1})
+    vim.lsp.buf_request(
+      0,
+      "textDocument/hover",
+      params,
 
-      local unused
-      local _, row = unpack(vim.fn.getpos("."))
-      row = row - 1
-      -- vim.notify("row " .. row)
-      ---@type Diagnostic[]
-      local lineDiag = vim.diagnostic.get(0, { lnum = row })
-      -- vim.notify("curently " .. #lineDiag .. " diagnostics")
-      if #lineDiag > 0 then
-        -- table.insert(lines, "<style></style>")
-        -- lines = util.convert_input_to_markdown_lines("Diag: ", lines or {})
-        -- print("curently " .. #lineDiag .. " diag lines")
-        for _, d in pairs(lineDiag) do
-          local map = make_highlight_map("")
-          if d.message then
-            lines = util.trim_empty_lines(util.convert_input_to_markdown_lines({
-              language = lang,
-              value = string.format("[%s] - %s:%s", d.source, diagnostic_severities[d.severity], d.message),
-              -- value = string.format("%s%s - %s", ansi_diagnostic_severities[d.severity], d.source, d.message),
-            }, lines or {}))
-            -- diaglines = util.convert_input_to_markdown_lines({ d.message })
+      ---@param responses HoverResponse[]
+      function(responses)
+        -- vim.notify("responses for hover request " .. vim.inspect(responses))
+        local lang = "markdown"
+
+        for _, response in pairs(responses) do
+          if response.result and response.result.contents then
+            -- lang = response.result.contents.language or "markdown"
+            -- vim.notify("LspResponse Before Conversion to md: \n" .. vim.inspect(response.result.contents))
+            lines = util.convert_input_to_markdown_lines(response.result.contents or { kind = "markdown", value = "" })
+            -- lines = vim.split(vim.inspect(response.result.contents or "{}") or "", "\n")
+            lines = util.trim_empty_lines(lines or {})
+            -- vim.notify("LspResponse After Conversion to md: \n" .. vim.inspect(lines))
           end
         end
-      end
-      for _, l in pairs(lines) do
-        l = StringReplace(l, "\r", "")
-      end
-      -- vim.notify("lines after diag")
-      -- vim.notify(vim.inspect(lines))
 
-      if not vim.tbl_isempty(lines) then
-        done({ lines = lines, filetype = "markdown" })
-        return
+        -- vim.notify("lines before diag")
+        -- vim.notify(vim.inspect(lines))
+        -- local row, col = unpack(vim.api.nvim_win_get_cursor(0) or {-1,-1})
+
+        local unused
+        local _, row = unpack(vim.fn.getpos("."))
+        row = row - 1
+        -- vim.notify("row " .. row)
+        ---@type Diagnostic[]
+        local lineDiag = vim.diagnostic.get(0, { lnum = row })
+        -- vim.notify("curently " .. #lineDiag .. " diagnostics")
+        if #lineDiag > 0 then
+          -- print("curently " .. #lineDiag .. " diag lines")
+          for _, d in pairs(lineDiag) do
+            local map = make_highlight_map("")
+            if d.message then
+              lines = util.trim_empty_lines(util.convert_input_to_markdown_lines({
+                language = lang,
+                value = string.format(
+                  "[%s] - %s:%s",
+                  d.source,
+                  diagnostic_severities[d.severity],
+                  StringReplace(d.message, "\r", "")
+                ),
+                -- value = string.format("%s%s - %s", ansi_diagnostic_severities[d.severity], d.source, d.message),
+              }, lines or {}))
+              -- diaglines = util.convert_input_to_markdown_lines({ d.message })
+            end
+          end
+        end
+        -- vim.notify("lines after diag")
+        -- vim.notify(vim.inspect(lines))
+
+        if not vim.tbl_isempty(lines) then
+          done({ lines = lines, filetype = "markdown" })
+          return
+        end
+        -- no results
+        done()
       end
-      -- no results
-      done()
-    end)
+    )
   end,
 }
+
+-- command -bar -nargs=? -complete=help HelpCurwin execute s:HelpCurwin(<q-args>)
+-- let s:did_open_help = v:false
+--
+-- function s:HelpCurwin(subject) abort
+--   let mods = 'silent noautocmd keepalt'
+--   if !s:did_open_help
+--     execute mods .. ' help'
+--     execute mods .. ' helpclose'
+--     let s:did_open_help = v:true
+--   endif
+--   if !empty(getcompletion(a:subject, 'help'))
+--     execute mods .. ' edit ' .. &helpfile
+--     set buftype=help
+--   endif
+--   return 'help ' .. a:subject
+-- endfunction
+
+---Inspired from the help-curwin help suggestion, runs help, then takes the output and returns it as a string
+---@param word any
+---@returns string
+local function runHelp(word)
+  local result
+
+  -- Parameters: ~
+  --   • {cmd}   Command to execute. Must be a Dictionary that can contain the
+  --             same values as the return value of |nvim_parse_cmd()| except
+  --             "addr", "nargs" and "nextcmd" which are ignored if provided.
+  --             All values except for "cmd" are optional.
+  --   • {opts}  Optional parameters.
+  --             • output: (boolean, default false) Whether to return command
+  --               output.
+
+  vim.api.nvim_exec2(
+    [[
+
+   command! -bar -nargs=? -complete=help HelpCurwin execute s:HelpCurwin(<q-args>)
+   let s:did_open_help = v:false
+  
+   function! s:HelpCurwin(subject) abort
+     let mods = 'silent noautocmd keepalt'
+     if !s:did_open_help
+       execute mods .. ' help'
+       execute mods .. ' helpclose'
+       let s:did_open_help = v:true
+     endif
+     if !empty(getcompletion(a:subject, 'help'))
+       " execute mods .. ' edit ' .. &helpfile
+    return &helpfile  
+    " set buftype=help
+     endif
+     return 'help ' .. a:subject
+   endfunction
+
+  ]],
+    {
+      output = true,
+    }
+  )
+
+  return result or {}
+end
+
+--- Run a shell command and capture the output and if the command succeeded or failed
+---@param cmd string|table<string> --the terminal command to execute
+---@param show_error boolean --of whether or not to show an unsuccessful command as an error to the user
+---@return string -- the result of a successfully executed command or nil
+local function RunShellCmd(cmd, show_error)
+  if vim.fn.has("win32") == 1 then
+    cmd = { "cmd.exe", "/C", cmd }
+  end
+  local result = vim.fn.system(cmd)
+  local success = vim.api.nvim_get_vvar("shell_error") == 0
+  if not success and (show_error == nil or show_error) then
+    vim.api.nvim_err_writeln("Error running command: " .. cmd .. "\nError message:\n" .. result)
+  end
+  return success and result:gsub("[\27\155][][()#;?%d]*[A-PRZcf-ntqry=><~]", "") or ""
+end
 local helpSource = {
 
   name = "help",
-  priority = 800,
+  priority = 200,
   enabled = function()
     return true
   end,
 
   execute = function(done)
     local word = vim.fn.expand("<cword>")
-    -- local stdout = vim.loop.new_pipe(false)
-    -- vim.api.nvim_buf_call()
-    -- require("hover.async.job").job({":help","popd"})
-    --
-    --
-    local job = require("hover.async.job").job
-
-    ---@type string[]
-    local output = job({
-      "help",
-      word,
-    })
-
-    -- local results = process(output)
-    -- if not results then
-    --   results = { "no definition for " .. word }
-    -- end
-    done(output and { lines = output, filetype = "markdown" })
+    local util = require("vim.lsp.util")
+    ---@type table<string>
+    local lines = {}
+    local function process(response)
+      if response then
+        lines = util.convert_input_to_markdown_lines(response or { kind = "markdown", value = "" })
+        lines = util.trim_empty_lines(lines or {})
+      end
+    end
+    local result = RunShellCmd("help " .. word, false)
+    process(runHelp(word))
+    process(result)
+    if not vim.tbl_isempty(lines) then
+      done({ lines = lines, filetype = "markdown" })
+      return
+    end
+    -- no results
+    done()
   end,
 }
 return {

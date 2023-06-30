@@ -20,7 +20,7 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
 
 grp("CppCommands", { clear = true })
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
-  desc = "changes comment style, folding for xaml",
+  desc = "changes comment string for cpp and similar files ",
   pattern = { "c", "cpp", "proto", "h", "objc", "cuda" },
   group = "CppCommands",
   callback = function()
