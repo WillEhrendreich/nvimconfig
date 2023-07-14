@@ -10,7 +10,7 @@ local function system_open(path)
     cmd = "open"
   end
   if not cmd then
-    vim.notify("Available system opening tool not found!", "error")
+    vim.notify("Available system opening tool not found!", vim.log.levels.ERROR)
   end
   vim.fn.jobstart({ cmd, path or vim.fn.expand("<cfile>") }, { detach = true })
 end
@@ -38,7 +38,7 @@ local fsharpFileSystemSource = {
     },
   },
   -- async_directory_scan = "auto", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
-  async_directory_scan = "always", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
+  async_directory_scan = "never", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
   -- "always" means directory scans are always async.
   -- "never"  means directory scans are never async.
   scan_mode = "shallow", -- "shallow": Don't scan into directories to detect possible empty directory a priori
@@ -129,6 +129,7 @@ local fsharpFileSystemSource = {
 
 return {
   "nvim-neo-tree/neo-tree.nvim",
+  branch = "main",
   dependencies = {
     "MunifTanjim/nui.nvim",
     {
@@ -137,6 +138,10 @@ return {
       dir = os.getenv("repos") .. "/neo-tree-fsharp/",
     },
   },
+  opts = function(_, opts)
+    local util = require("lazyvim.util")
+    -- edgy is configured in edgy.lua
+  end,
   cmd = "Neotree",
   init = function()
     vim.g.neo_tree_remove_legacy_commands = true
@@ -168,37 +173,36 @@ return {
       system_open = function(state)
         system_open(state.tree:get_node():get_id())
       end,
-      addFileAbove = function (state)
-        local hasIonide, ionide = pcall(require,"ionide")
-        local hasWillEhrendreichIonide = false
-        if ionide.Projects then
-          hasWillEhrendreichIonide = true
-        end 
-        if hasWillEhrendreichIonide == true  then
-
-
-          ---@type NeoTreeItem
-          local currentNode = state.tree:get_node()
-          ---@type ProjectInfo|nil
-          local currentNodeProjectFile = vim.tbl_filter (function (x)
-
-            local projItems = vim.tbl_map(function(p) return p.path end , x.items )
-            return vim.tbl_contains(projItems, currentNode.path) end,
-            ionide.Projects)[1] or nil
-          if not currentNodeProjectFile then
-            vim.notify("Could not get a project file for curent selected neo-tree node, cannot add file above it")
-            return
-          else
-            local newFileName = vim.fn.input("add new file above current file " .. vim.fs.normalize(vim.fn.fnnamemodify(currentNode.path,":p:.")))
-            vim.notify("wants to add a new file called " .. (newFileName or "None") )
-            if newFileName then
-
-              ionide.CallFSharpAddFileAbove(currentNodeProjectFile.Project, currentNode.path, newFileName)
-
-                    end
-            end
-        end
-      end,
+      -- addFileAbove = function(state)
+      --   local hasIonide, ionide = pcall(require, "ionide")
+      --   local hasWillEhrendreichIonide = false
+      --   if ionide.Projects then
+      --     hasWillEhrendreichIonide = true
+      --   end
+      --   if hasWillEhrendreichIonide == true then
+      --     ---@type NeoTreeItem
+      --     local currentNode = state.tree:get_node()
+      --     ---@type ProjectInfo|nil
+      --     local currentNodeProjectFile = vim.tbl_filter(function(x)
+      --       local projItems = vim.tbl_map(function(p)
+      --         return p.path
+      --       end, x.items)
+      --       return vim.tbl_contains(projItems, currentNode.path)
+      --     end, ionide.Projects)[1] or nil
+      --     if not currentNodeProjectFile then
+      --       vim.notify("Could not get a project file for curent selected neo-tree node, cannot add file above it")
+      --       return
+      --     else
+      --       local newFileName = vim.fn.input(
+      --         "add new file above current file " .. vim.fs.normalize(vim.fn.fnnamemodify(currentNode.path, ":p:."))
+      --       )
+      --       vim.notify("wants to add a new file called " .. (newFileName or "None"))
+      --       if newFileName then
+      --         ionide.CallFSharpAddFileAbove(currentNodeProjectFile.Project, currentNode.path, newFileName)
+      --       end
+      --     end
+      --   end
+      -- end,
       -- delete = function(state)
       --   local path = state.tree:get_node().path
       --   local b = "C:\\$Recycle.Bin"
@@ -236,9 +240,9 @@ return {
       enable_diagnostics = true,
       sources = {
         "filesystem",
-        "neo-tree-fsharp",
-        -- "buffers",
-        -- "git_status",
+        -- "neo-tree-fsharp",
+        "buffers",
+        "git_status",
         -- "document_symbols",
       },
       -- sort_function = function(f)
@@ -251,7 +255,9 @@ return {
         content_layout = "center",
         sources = {
           { source = "filesystem" },
-          { source = "neo-tree-fsharp" },
+          { source = "buffers" },
+          { source = "git_status" },
+          -- { source = "neo-tree-fsharp" },
         },
         -- tab_labels = {
         -- filesystem = v.get_icon("FolderClosed") .. " File",
@@ -328,7 +334,11 @@ return {
         commands = global_commands,
       },
       filesystem = {
-        follow_current_file = true,
+        follow_current_file = {
+          enabled = true, -- This will find and focus the file in the active buffer every time
+          --              -- the current file is changed while the tree is open.
+          leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
+        },
         group_empty_dirs = true, -- when true, empty folders will be grouped together
         hijack_netrw_behavior = "open_current",
         use_libuv_file_watcher = true,
@@ -337,7 +347,7 @@ return {
         -- "never"  means directory scans are never async.
         scan_mode = "shallow", -- "shallow": Don't scan into directories to detect possible empty directory a priori
         -- "deep": Scan into directories to detect empty or grouped empty directories a priori.
-        bind_to_cwd = true, -- true creates a 2-way binding between vim's cwd and neo-tree's root
+        bind_to_cwd = false, -- true creates a 2-way binding between vim's cwd and neo-tree's root
         cwd_target = {
           sidebar = "tab", -- sidebar is when position = left or right
           current = "window", -- current is when position = current
@@ -388,8 +398,10 @@ return {
           end,
         },
       },
-      -- buffers = { commands = global_commands },
-      -- git_status = { commands = global_commands },
+      buffers = {
+        commands = global_commands,
+      },
+      git_status = { commands = global_commands },
     })
   end,
 }

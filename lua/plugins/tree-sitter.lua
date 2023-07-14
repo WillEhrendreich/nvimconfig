@@ -17,6 +17,7 @@ parser_config.odin = {
   },
   filetype = "odin",
 }
+
 return {
 
   "nvim-treesitter/nvim-treesitter",
@@ -28,43 +29,58 @@ return {
 
     {
       "nvim-treesitter/nvim-treesitter-textobjects",
-      init = function()
-        -- PERF: no need to load the plugin, if we only need its queries for mini.ai
-        local plugin = require("lazy.core.config").spec.plugins["nvim-treesitter"]
-        local opts = require("lazy.core.plugin").values(plugin, "opts", false)
-        local enabled = false
-        if opts.textobjects then
-          for _, mod in ipairs({ "move", "select", "swap", "lsp_interop" }) do
-            if opts.textobjects[mod] and opts.textobjects[mod].enable then
-              enabled = true
-              break
-            end
-          end
-        end
-        if not enabled then
-          require("lazy.core.loader").disable_rtp_plugin("nvim-treesitter-textobjects")
-        end
-      end,
+      -- init = function()
+      --   -- PERF: no need to load the plugin, if we only need its queries for mini.ai
+      --   local plugin = require("lazy.core.config").spec.plugins["nvim-treesitter"]
+      --   local opts = require("lazy.core.plugin").values(plugin, "opts", false)
+      --   local enabled = false
+      --   if opts.textobjects then
+      --     for _, mod in ipairs({ "move", "select", "swap", "lsp_interop" }) do
+      --       if opts.textobjects[mod] and opts.textobjects[mod].enable then
+      --         enabled = true
+      --         break
+      --       end
+      --     end
+      --   end
+      --   if not enabled then
+      --     require("lazy.core.loader").disable_rtp_plugin("nvim-treesitter-textobjects")
+      --   end
+      -- end,
     },
   },
-  -- { "nvim-treesitter/playground" },
   keys = {
     { "<space>vi", desc = "Increment selection", mode = "x" },
     { "<bs>", desc = "Decrement selection", mode = "x" },
   },
   opts = {
- auto_install = true,
+    auto_install = true,
     -- highlight = { enable = true, disable = { "fsharp" } },
-    highlight = { enable = true },
+    highlight = {
+      enable = true, -- Disable slow treesitter highlight for large files
+      disable = function(lang, buf)
+        local max_filesize = 100 * 1024 -- 100 KB
+        local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
+        if ok and stats and stats.size > max_filesize then
+          return true
+        end
+      end,
+
+      -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
+      -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
+      -- Using this option may slow down your editor, and you may see some duplicate highlights.
+      -- Instead of true it can also be a list of languages
+      additional_vim_regex_highlighting = false,
+    },
+
     indent = { enable = true, disable = { "python", "odin" } },
-    -- indent = { enable = true, disable = { "fsharp", "python", "odin" } },
-    -- context_commentstring = { enable = true, enable_autocmd = true },
     context_commentstring = { enable = true, disable = { "fsharp", "odin" }, enable_autocmd = true },
     -- context_commentstring = { enable = true, disable = { "odin" }, enable_autocmd = false },
     ensure_installed = {
       "bash",
       "c",
+      "cpp",
       "fsharp",
+      "c_sharp",
       "help",
       "html",
       "dap_repl",
@@ -85,29 +101,11 @@ return {
       "vim",
       "yaml",
     },
-    -- playground = {
-    --   enable = true,
-    --   disable = {},
-    --   updatetime = 25, -- Debounced time for highlighting nodes in the playground from source code
-    --   persist_queries = false, -- Whether the query persists across vim sessions
-    --   keybindings = {
-    --     toggle_query_editor = "o",
-    --     toggle_hl_groups = "i",
-    --     toggle_injected_languages = "t",
-    --     toggle_anonymous_nodes = "a",
-    --     toggle_language_display = "I",
-    --     focus_language = "f",
-    --     unfocus_language = "F",
-    --     update = "R",
-    --     goto_node = "<cr>",
-    --     show_help = "?",
-    --   },
-    -- },
-    query_linter = {
-      enable = true,
-      use_virtual_text = true,
-      lint_events = { "BufWrite", "CursorHold" },
-    },
+    -- query_linter = {
+    --    enable = true,
+    --    use_virtual_text = true,
+    --    lint_events = { "BufWrite", "CursorHold" },
+    --  },
     compilers = { "gcc", "llvm", "clang", "cc" },
     incremental_selection = {
       enable = true,

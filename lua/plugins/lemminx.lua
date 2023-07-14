@@ -2,8 +2,6 @@
 ---@param client lsp.Client
 ---@param bufnr integer
 local customOnAttach = function(client, bufnr)
-  -- vim.notify("Lemminx onAttach entered")
-
   if client.name == "lemminx" then
     -- if not client.server_capabilities.semanticTokensProvider then
     --   local semantic = client.config.capabilities.textDocument.semanticTokens
@@ -16,21 +14,22 @@ local customOnAttach = function(client, bufnr)
     --     range = true,
     --   }
     -- end
+
     --
-    -- if not client.server_capabilities.hoverProvider then
-    --   vim.notify("Lemminx doesn't have hover, we're trying anyway to force it")
-    --   local hover = client.config.capabilities.textDocument.hover
-    --   client.server_capabilities.hoverProvider = true
-    --   -- {
-    --   --   full = true,
-    --   --   legend = {
-    --   --     tokenTypes = hover.tokenTypes,
-    --   --     tokenModifiers = hover.tokenModifiers,
-    --   --   },
-    --   --   range = true,
-    --   -- }
-    -- end
-    --
+    if not client.server_capabilities.hoverProvider then
+      vim.notify("Lemminx doesn't have hover, we're trying anyway to force it")
+      local hover = client.config.capabilities.textDocument.hover
+      client.server_capabilities.hoverProvider = true
+      -- {
+      --   full = true,
+      --   legend = {
+      --     tokenTypes = hover.tokenTypes,
+      --     tokenModifiers = hover.tokenModifiers,
+      --   },
+      --   range = true,
+      -- }
+    end
+
     -- if not client.server_capabilities.codeActionProvider then
     --   vim.notify("Lemminx doesn't have codeAction, we're trying anyway to force it")
     --   local codeAction = client.config.capabilities.textDocument.codeAction
@@ -39,16 +38,16 @@ local customOnAttach = function(client, bufnr)
     --     resolveProvider = false,
     --   }
     -- end
-    --
-    -- if not client.server_capabilities.codeLensProvider then
-    --   vim.notify("Lemminx doesn't have codeLens, we're trying anyway to force it")
-    --   local codeLens = client.config.capabilities.textDocument.codeLens
-    --   client.server_capabilities.codeLensProvider = {
-    --     resolveProvider = true,
-    --   }
-    -- end
-    --
-    OnAttach(client, bufnr)
+
+    if not client.server_capabilities.codeLensProvider then
+      vim.notify("Lemminx doesn't have codeLens, we're trying anyway to force it")
+      local codeLens = client.config.capabilities.textDocument.codeLens
+      client.server_capabilities.codeLensProvider = {
+        resolveProvider = true,
+      }
+    end
+
+    -- OnAttach(client, bufnr)
 
     -- if not client.server_capabilities then
     --   vim.notify("nothing here bob")
@@ -73,6 +72,7 @@ return {
         lemminx = {
           cmd = { vim.fs.normalize(vim.fn.stdpath("data") or "c:/.local/share/nvim-data") .. "/mason/bin/lemminx.cmd" },
           filetypes = { "xml", "fsharp_project" },
+          -- on_attach = customOnAttach,
           settings = {
             xml = {
               java = {
@@ -172,12 +172,14 @@ return {
       ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
       setup = {
         lemminx = function(server, opts)
-          opts.on_attach = customOnAttach
+          -- opts.on_attach = customOnAttach
           opts.single_file_support = false
           opts.autostart = true
           vim.notify("Lemminx setup entered")
-
+          -- opts.on_attach =
           require("lazyvim.util").on_attach(customOnAttach)
+
+          -- require("lazyvim.util").on_attach(customOnAttach)
           -- end workaround
         end,
       },

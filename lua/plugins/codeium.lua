@@ -1,5 +1,5 @@
 -- local fn = vim.fn
-
+local vim = vim
 vim.api.nvim_create_user_command("CodeiumLogClear", function()
   vim.fn.writefile({}, vim.fn.stdpath("cache") .. "/codeium.log")
 end, { desc = "View CodeiumLog" })
@@ -10,20 +10,21 @@ vim.api.nvim_create_user_command("CodeiumLog", function()
 end, { desc = "View CodeiumLog" })
 
 vim.api.nvim_create_user_command("CodeiumCmpSourceHealthy", function()
-local sources = require("cmp").core.sources
-local cdm =vim.tbl_filter(function(t) return t.name == "codeium" end,  require("cmp").core.sources)[1]
-if cdm then
-    if  cdm.source.server.is_healthy() then 
-    vim.notify("Codeium cmp source server is healthy" )
-    else 
-    vim.notify("Codeium cmp source server is not healthy" )
-    end 
+  local sources = require("cmp").core.sources
+  local cdm = vim.tbl_filter(function(t)
+    return t.name == "codeium"
+  end, require("cmp").core.sources)[1]
+  if cdm then
+    if cdm.source.server.is_healthy() then
+      vim.notify("Codeium cmp source server is healthy")
+    else
+      vim.notify("Codeium cmp source server is not healthy")
+    end
   else
-    vim.notify("Codeium cmp source server is not healthy" )
+    vim.notify("Codeium cmp source server is not healthy")
   end
   -- vim.cmd.e(logpath)
 end, { desc = "check for current Codeium cmp source server health" })
-
 
 return {
   -- {
@@ -36,11 +37,15 @@ return {
       "nvim-lua/plenary.nvim",
       "hrsh7th/nvim-cmp",
     },
-    -- config = function()
-    --   require("codeium").setup({})
-    -- end,
-
-     config= true,
+    config = function(_, opts)
+      local codeium = require("codeium")
+      require("codeium").setup(opts)
+      require("lazyvim.util").on_attach(function(client)
+        if client.name == "codeium" then
+          codeium._on_insert_enter({})
+        end
+      end)
+    end,
   },
   -- {
   --   -- "jcdickinson/codeium.nvim",

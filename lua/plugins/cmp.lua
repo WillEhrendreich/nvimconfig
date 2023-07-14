@@ -1,25 +1,4 @@
 local cmp = require("cmp")
--- local function doWhenCmpVisible(fn, timeout, poll_interval)
---   if cmp.visible() then
---     fn()
---     return
---   end
---
---   if timeout <= 0 then
---     return
---   end
---
---   vim.defer_fn(function()
---     doWhenCmpVisible(fn, timeout - poll_interval, poll_interval)
---   end, poll_interval)
--- end
---
--- local function completeAndInsertFirstMatch()
---   cmp.complete()
---   doWhenCmpVisible(function()
---     cmp.select_next_item()
---   end, 1100, 50)
--- end
 local has_words_before = function()
   unpack = unpack or table.unpack
   local line, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -27,55 +6,6 @@ local has_words_before = function()
 end
 
 return {
-
-  {
-    "onsails/lspkind.nvim",
-    config = function()
-      require("lspkind").init({
-        mode = "symbol",
-        symbol_map = {
-          Text = "",
-          Method = "",
-          Function = "",
-          Constructor = "",
-          Field = "",
-          Variable = "",
-          Class = "ﴯ",
-          Interface = "",
-          Module = "",
-          Property = "ﰠ",
-          Value = "",
-          Enum = "",
-          Keyword = "",
-          Color = "",
-          File = "",
-          Reference = "",
-          Folder = "",
-          EnumMember = "",
-          Constant = "",
-          Struct = "",
-          Event = "",
-          Operator = "",
-          Array = "",
-          Codeium = "",
-          Boolean = "⊨",
-          Key = "",
-          Namespace = "",
-          Null = "NULL",
-          Number = "#",
-          Object = "",
-          Package = "",
-          Snippet = "",
-          String = "",
-          TypeParameter = "",
-          Unit = "",
-        },
-      })
-    end,
-    -- enabled = vim.g.icons_enabled,
-    -- config = true,
-    -- config = require "plugins.configs.lspkind",
-  },
 
   -- Use <tab> for completion and snippets (supertab)
   -- first: disable default <tab> and <s-tab> behavior in LuaSnip
@@ -255,7 +185,7 @@ return {
       "hrsh7th/cmp-path",
       "jcdickinson/codeium.nvim",
       {
-        --
+
         "hrsh7th/cmp-cmdline",
         dependencies = {
           "hrsh7th/cmp-nvim-lsp-document-symbol",
@@ -495,32 +425,32 @@ return {
         }),
 
         sources = cmp.config.sources({
-          { name = "codeium", keyword_length =1},
+          { name = "codeium", keyword_length = 1 },
           -- { name = "jupyter"},
           -- { name = "jupynium"},
-          { name = "luasnip", keyword_length =1 },
-          { name = "nvim_lsp", keyword_length =1, max_item_count = 100 },
-          { name = "nvim_lsp_signature_help", keyword_length =1 },
-          { name = "nvim_lua", keyword_length =1, max_item_count = 10 },
+          { name = "luasnip", keyword_length = 1 },
+          { name = "nvim_lsp", keyword_length = 1, max_item_count = 100 },
+          { name = "nvim_lsp_signature_help", keyword_length = 1 },
+          { name = "nvim_lua", keyword_length = 1, max_item_count = 10 },
           {
             name = "nuget",
             max_item_count = 20,
           },
-          { name = "path", keyword_length =1 },
+          { name = "path", keyword_length = 1 },
           { name = "buffer", keyword_length = 5, max_item_count = 10 },
           -- { name = "emoji" },
         }),
         sorting = {
           comparators = {
+            cmp.config.compare.order,
+            cmp.config.compare.kind,
             cmp.config.compare.score,
             cmp.config.compare.exact,
-            cmp.config.compare.kind,
             cmp.config.compare.recently_used,
             cmp.config.compare.sort_text,
             cmp.config.compare.offset,
             -- require("clangd_extensions.cmp_scores"),
             cmp.config.compare.length,
-            cmp.config.compare.order,
           },
         },
         formatting = {
@@ -687,3 +617,52 @@ return {
   --     end, -- )()
   --   },
 }
+
+-- {
+--   "onsails/lspkind.nvim",
+--   config = function()
+--     require("lspkind").init({
+--       mode = "symbol",
+--       symbol_map = {
+--         Text = "",
+--         Method = "",
+--         Function = "",
+--         Constructor = "",
+--         Field = "",
+--         Variable = "",
+--         Class = "ﴯ",
+--         Interface = "",
+--         Module = "",
+--         Property = "ﰠ",
+--         Value = "",
+--         Enum = "",
+--         Keyword = "",
+--         Color = "",
+--         File = "",
+--         Reference = "",
+--         Folder = "",
+--         EnumMember = "",
+--         Constant = "",
+--         Struct = "",
+--         Event = "",
+--         Operator = "",
+--         Array = "",
+--         Codeium = "",
+--         Boolean = "⊨",
+--         Key = "",
+--         Namespace = "",
+--         Null = "NULL",
+--         Number = "#",
+--         Object = "",
+--         Package = "",
+--         Snippet = "",
+--         String = "",
+--         TypeParameter = "",
+--         Unit = "",
+--       },
+--     })
+--   end,
+--   -- enabled = vim.g.icons_enabled,
+--   -- config = true,
+--   -- config = require "plugins.configs.lspkind",
+-- },

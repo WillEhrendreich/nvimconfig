@@ -1,7 +1,7 @@
 local fn = vim.fn
 local dap = require("dap")
 local tc = vim.tbl_contains
-local Util= require("lazyvim.util")
+local Util = require("lazyvim.util")
 local strs = require("plenary.strings")
 if not vim.g["DotnetStartupProjectRootPath"] then
   vim.g["DotnetStartupProjectRootPath"] = ""
@@ -780,7 +780,7 @@ local function beforeDebug(opts)
   local askForChanges
   -- vim.notify(vim.inspect(opts))
   if opts.args and opts.args[1] and opts.args[1] == true then
-    askForChanges =true 
+    askForChanges = true
   else
     askForChanges = false
   end
@@ -797,48 +797,45 @@ local function beforeDebug(opts)
       local path = GetDotnetProjectPath(askForChanges)
       local overseer = require("overseer")
       overseer.toggle()
-        -- {
-        --   _start_tasks = <function 1>,
-        --   add_template_hook = <function 2>,
-        --   clear_task_cache = <function 3>,
-        --   close = <function 4>,
-        --   debug_parser = <function 5>,
-        --   delete_task_bundle = <function 6>,
-        --   get_all_commands = <function 7>,
-        --   get_all_highlights = <function 8>,
-        --   list_task_bundles = <function 9>,
-        --   list_tasks = <function 10>,
-        --   load_task_bundle = <function 11>,
-        --   load_template = <function 12>,
-        --   new_task = <function 13>,
-        --   on_setup = <function 14>,
-        --   open = <function 15>,
-        --   preload_task_cache = <function 16>,
-        --   register_template = <function 17>,
-        --   remove_template_hook = <function 18>,
-        --   run_action = <function 19>,
-        --   run_template = <function 20>,
-        --   save_task_bundle = <function 21>,
-        --   setup = <function 22>,
-        --   toggle = <function 23>,
-        --   wrap_template = <function 24>,
-        --   <metatable> = {
-        --     __index = <function 25>
-        --   }
-        -- }
+      -- {
+      --   _start_tasks = <function 1>,
+      --   add_template_hook = <function 2>,
+      --   clear_task_cache = <function 3>,
+      --   close = <function 4>,
+      --   debug_parser = <function 5>,
+      --   delete_task_bundle = <function 6>,
+      --   get_all_commands = <function 7>,
+      --   get_all_highlights = <function 8>,
+      --   list_task_bundles = <function 9>,
+      --   list_tasks = <function 10>,
+      --   load_task_bundle = <function 11>,
+      --   load_template = <function 12>,
+      --   new_task = <function 13>,
+      --   on_setup = <function 14>,
+      --   open = <function 15>,
+      --   preload_task_cache = <function 16>,
+      --   register_template = <function 17>,
+      --   remove_template_hook = <function 18>,
+      --   run_action = <function 19>,
+      --   run_template = <function 20>,
+      --   save_task_bundle = <function 21>,
+      --   setup = <function 22>,
+      --   toggle = <function 23>,
+      --   wrap_template = <function 24>,
+      --   <metatable> = {
+      --     __index = <function 25>
+      --   }
+      -- }
 
       -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
       -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
       -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
       -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
 
-
       -- buildSuccessful = DotnetBuild(path, "debug", true, true)
-    -- else
+      -- else
       require("dap").continue()
     end
-
-    
   else
     if isDotnet and not isInDebugSession then
       -- local path = get_proj()
@@ -853,7 +850,6 @@ local function beforeDebug(opts)
     else
       require("dap").continue()
     end
-
   end
   return buildSuccessful or true
 end
@@ -876,25 +872,25 @@ vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
 local dotnetDapConfig = {
   type = "coreclr",
   name = "NetCoreDbg",
-  preLaunchTask="build",
+  preLaunchTask = "build",
   request = "launch",
-  console= "internalConsole",
+  console = "internalConsole",
   cwd = "${fileDirname}",
   program = get_dll,
-  }
-  -- {
-  --         type = "netcoredbg",
-  --         name = "attach - netcoredbg",
-  --         request = "attach",
-  --         processId = function()
-  --           local pgrep = vim.fn.system("pgrep -f 'dotnet run'")
-  --           vim.fn.setenv('NETCOREDBG_ATTACH_PID',"${command:pickProcess}")
-  --           return tonumber(pgrep)
-  --         end,
-  --       },
-  -- end
+}
+-- {
+--         type = "netcoredbg",
+--         name = "attach - netcoredbg",
+--         request = "attach",
+--         processId = function()
+--           local pgrep = vim.fn.system("pgrep -f 'dotnet run'")
+--           vim.fn.setenv('NETCOREDBG_ATTACH_PID',"${command:pickProcess}")
+--           return tonumber(pgrep)
+--         end,
+--       },
+-- end
 
-  -- end
+-- end
 
 -- local function getDapConfig()
 --   local root = FindRoot() or vim.fn.getcwd()
@@ -948,7 +944,6 @@ local function get_first_string_value(t)
 end
 
 local function dapconfig(_, opts)
-
   local mason_nvim_dap = require("mason-nvim-dap")
 
   dap.set_loglevel = "TRACE"
@@ -965,56 +960,54 @@ local function dapconfig(_, opts)
       ---@param config
       coreclr = function(config)
         -- local dap = require("dap")
-      local lldb = {
-            name = "Launch",
-            type = "codelldb",
-            request = "launch",
-            program = function()
-              if not vim.g.dap_program or #vim.g.dap_program == 0 then
-                vim.g.dap_program = vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
-              end
-              return vim.g.dap_program
-            end,
-            cwd = "${workspaceFolder}",
-            stopOnEntry = false,
-            args = {},
+        for _, lang in ipairs({ "c", "cpp", "rust" }) do
+          dap.configurations[lang] = {
+            {
+              type = "codelldb",
+              request = "launch",
+              name = "Launch file",
+              program = function()
+                return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+              end,
+              cwd = "${workspaceFolder}",
+            },
+            {
+              type = "codelldb",
+              request = "attach",
+              name = "Attach to process",
+              processId = require("dap.utils").pick_process,
+              cwd = "${workspaceFolder}",
+            },
           }
-
-          dap.configurations.c = {
-            lldb,
-          }
-          dap.configurations.cpp = {
-            lldb,
-          }
-          dap.configurations.rust = {
-            lldb,
-          }
+        end
         dap.configurations.cs = { dotnetDapConfig }
-        dap.configurations.fsharp = { dotnetDapConfig}
-        
+        dap.configurations.fsharp = { dotnetDapConfig }
+
         dap.adapters.codelldb = {
-              name = "codelldb",
-              type = "server",
-              host = "127.0.0.1",
-              port = "${port}",
-              executable = {
-                command = require("mason-registry").get_package("codelldb"):get_install_path() .. "/extension/adapter/codelldb",
-                args = { "--port", "${port}" },
-              },
-              detatched = false,
-            }
+          name = "codelldb",
+          type = "server",
+          -- host = "127.0.0.1",
+          host = "localhost",
+          port = "${port}",
+          executable = {
+            command = require("mason-registry").get_package("codelldb"):get_install_path()
+              .. "/extension/adapter/codelldb",
+            args = { "--port", "${port}" },
+          },
+          detatched = false,
+        }
 
         dap.adapters["coreclr"] = {
           type = "executable",
           -- command = (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1],
-          command = vim.fs.normalize( (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1]),
+          command = vim.fs.normalize((vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1]),
           -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
           -- command = vim.fs.normalize( (vim.fs.find("netcoredbg.exe", { path = require("mason-registry").get_package("netcoredbg") }))[1]),
           --require("mason-registry").get_package("netcoredbg")
           options = {
             initialize_timeout_sec = 10,
           },
-            detached = false,
+          detached = false,
           -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
           args = { "--interpreter=vscode" },
         }
@@ -1057,11 +1050,9 @@ return {
       opts = {
 
         -- automatic_setup = true,
-        handlers ={
-
-        },
+        handlers = {},
         automatic_installation = true,
-        ensure_installed = { "coreclr", "mock","codelldb" },
+        ensure_installed = { "coreclr", "mock", "codelldb" },
       },
 
       config = dapconfig,
@@ -1079,13 +1070,12 @@ return {
       config = true,
     },
 
-    {'Weissle/persistent-breakpoints.nvim',
-    opts ={
-        load_breakpoints_event={"BufReadPost"},
-      },},
+    { "Weissle/persistent-breakpoints.nvim", opts = {
+      load_breakpoints_event = { "BufReadPost" },
+    } },
   },
 
-    config = function()
+  config = function()
     local Config = require("lazyvim.config")
     vim.api.nvim_set_hl(0, "DapStoppedLine", { default = true, link = "Visual" })
 
@@ -1097,7 +1087,4 @@ return {
       )
     end
   end,
-
-
-  
 }
