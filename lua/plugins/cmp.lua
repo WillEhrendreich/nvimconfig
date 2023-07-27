@@ -183,7 +183,9 @@ return {
     dependencies = {
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
-      "jcdickinson/codeium.nvim",
+      -- "jcdickinson/codeium.nvim",
+      "willehrendreich/codeium.nvim",
+
       {
 
         "hrsh7th/cmp-cmdline",
@@ -252,13 +254,12 @@ return {
         "PasiBergman/cmp-nuget",
         -- config = function()
         opts = {
-          filetypes = { "fsharp_project" }, -- on which filetypes cmp-nuget is active
-          filetypes = { "csproj" }, -- on which filetypes cmp-nuget is active
+          filetypes = { "fsharp_project", "csproj" }, -- on which filetypes cmp-nuget is active
           file_extensions = { "csproj", "fsproj" }, -- on which file extensions cmp-nuget is active
           nuget = {
             packages = {
               -- configuration for searching packages
-              limit = 20, -- limit package serach to first 100 packages
+              limit = 100, -- limit package serach to first 100 packages
               prerelease = true, -- include prerelase (preview, rc, etc.) packages
               sem_ver_level = "2.0.0", -- semantic version level (*
               package_type = "", -- package type to use to filter packages (*
@@ -344,8 +345,8 @@ return {
               -- elseif cmp.visible() then
               if cmp.visible() then
                 cmp.select_next_item()
-              -- elseif has_words_before() then
-              --   completeAndInsertFirstMatch()
+                -- elseif has_words_before() then
+                --   completeAndInsertFirstMatch()
               elseif has_words_before() then
                 cmp.complete()
                 cmp.select_next_item()
@@ -356,8 +357,8 @@ return {
             s = function(fallback)
               if cmp.visible() then
                 cmp.select_next_item()
-              -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
-              -- they way you will only jump inside the snippet region
+                -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
+                -- they way you will only jump inside the snippet region
               elseif require("luasnip").expand_or_jumpable() then
                 require("luasnip").expand_or_jump()
               elseif has_words_before() then
@@ -397,8 +398,8 @@ return {
             i = function(fallback)
               if cmp.visible() then
                 cmp.select_prev_item()
-              -- elseif require('luasnip').jumpable( -1) then
-              --   require('luasnip').jump( -1)
+                -- elseif require('luasnip').jumpable( -1) then
+                --   require('luasnip').jump( -1)
               else
                 fallback()
               end
@@ -406,8 +407,8 @@ return {
             s = function(fallback)
               if cmp.visible() then
                 cmp.select_prev_item()
-              -- elseif require('luasnip').jumpable( -1) then
-              --   require('luasnip').jump( -1)
+                -- elseif require('luasnip').jumpable( -1) then
+                --   require('luasnip').jump( -1)
               else
                 fallback()
               end
@@ -425,13 +426,13 @@ return {
         }),
 
         sources = cmp.config.sources({
-          { name = "codeium", keyword_length = 1 },
+          { name = "codeium", keyword_length = 0 },
           -- { name = "jupyter"},
           -- { name = "jupynium"},
-          { name = "luasnip", keyword_length = 1 },
-          { name = "nvim_lsp", keyword_length = 1, max_item_count = 100 },
-          { name = "nvim_lsp_signature_help", keyword_length = 1 },
-          { name = "nvim_lua", keyword_length = 1, max_item_count = 10 },
+          { name = "luasnip", keyword_length = 0 },
+          { name = "nvim_lsp", keyword_length = 0, max_item_count = 100 },
+          { name = "nvim_lsp_signature_help", keyword_length = 0 },
+          { name = "nvim_lua", keyword_length = 0, max_item_count = 10 },
           {
             name = "nuget",
             max_item_count = 20,
@@ -442,8 +443,8 @@ return {
         }),
         sorting = {
           comparators = {
-            cmp.config.compare.order,
             cmp.config.compare.kind,
+            cmp.config.compare.order,
             cmp.config.compare.score,
             cmp.config.compare.exact,
             cmp.config.compare.recently_used,
