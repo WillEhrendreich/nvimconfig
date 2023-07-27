@@ -143,9 +143,11 @@ OnAttach =
     --     --   end
     --     -- end
 
-    -- if client.name == "jsonls" then
-    --   -- vim.lsp.buf.format()
-    -- end
+    if client.name == "jsonls" then
+      vim.bo.filetype = "jsonc"
+      vim.bo.syntax = "jsonc"
+      -- vim.lsp.buf.format()
+    end
     if client.name == "omnisharp" then
       client.server_capabilities.semanticTokensProvider = {
         full = vim.empty_dict(),
@@ -227,7 +229,7 @@ OnAttach =
 return {
   "neovim/nvim-lspconfig",
   init = function()
-    vim.notify("entered lspconfig init func, doing keymaps now. ")
+    -- vim.notify("entered lspconfig init func, doing keymaps now. ")
     local keys = require("lazyvim.plugins.lsp.keymaps").get()
     -- change a keymap
     -- keys[#keys + 1] = { "K", "<cmd>echo 'hello'<cr>" }
@@ -345,16 +347,29 @@ return {
     --      ---@type lspconfig.options
     servers = {
 
-      vimls = {},
+      -- vimls = {},
+      -- ---@type lspconfig.options.jsonls
+      -- jsonls = {
+      --   settings = {
+      --     json = {
+      --       -- format ={
+      --       -- enable},
+      --       validate = {
+      --         enable = true,
+      --       },
+      --     },
+      --   },
+      -- },
 
       -- all seperate lsp servers have thier own setup files, for clarity
     },
     -- you can do any additional lsp server setup here
     -- return true if you don't want this server to be setup with lspconfig
     ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
-    setup = {
-      -- all seperate lsp servers have thier own setup files, for clarity
-    },
+    -- setup = {
+
+    -- all seperate lsp servers have thier own setup files, for clarity
+    -- },
 
     on_attach = require("lazyvim.util").on_attach(OnAttach),
   },
