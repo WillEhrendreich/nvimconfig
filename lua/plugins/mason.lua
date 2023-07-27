@@ -17,7 +17,7 @@ return {
       -- "sqlls",
       "stylua",
       "fantomas",
-      "shfmt",
+      -- "shfmt",
       -- "flake8",
       "ols",
     },
