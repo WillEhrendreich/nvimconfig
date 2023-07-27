@@ -23,6 +23,8 @@ return {
 
                 IonideNvimSettings = {
                   LspRecommendedColorScheme = true,
+                  EnableFsiStdOutTeeToFile = true,
+                  FsiStdOutFileName = "./FsiOutput.txt",
                 },
                 cmd = {
                   -- "C:/.local/share/nvim-data/mason/bin/fsautocomplete.cmd",
@@ -39,7 +41,7 @@ return {
                     enableMSBuildProjectGraph = true,
                     -- enableTreeView = true,
                     fsiExtraParameters = {
-                      "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.4/depman-fsproj/0.2.4/tools/net6.0/any",
+                      "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
                     },
                   },
                 },
