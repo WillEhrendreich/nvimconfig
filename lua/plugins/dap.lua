@@ -554,7 +554,7 @@ end
 
 function DotnetBuildDebugPopup(p, launch, launchWithDebugger, askForChanges)
   local cmd = { "dotnet", "build", p, "--debug" }
-  local utils = require("dev.NeovimUtils")
+  local utils = require("config.util")
 
   -- vim.notify("Building command " .. cmd)
   local buildData = "Build Report: \n"
@@ -630,7 +630,7 @@ function DotnetBuildDebug(p, launch, launchWithDebugger, askForChanges)
           if launchWithDebugger then
             require("dap").continue()
           else
-            local utils = require("dev.NeovimUtils")
+            local utils = require("config.util")
             local dllpath = GetDotnetDllPath(askForChanges)
             local exe = StringReplace(dllpath, "dll", "exe")
             local exists = utils.file_exists(exe)
@@ -797,6 +797,7 @@ local function beforeDebug(opts)
       local path = GetDotnetProjectPath(askForChanges)
       local overseer = require("overseer")
       overseer.toggle()
+
       -- {
       --   _start_tasks = <function 1>,
       --   add_template_hook = <function 2>,
