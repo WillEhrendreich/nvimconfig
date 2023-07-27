@@ -31,25 +31,23 @@ return {
   --   "jcdickinson/http.nvim",  --   build = "cargo build --workspace --release",
   -- },
   {
-    "jcdickinson/codeium.nvim",
+    -- "jcdickinson/codeium.nvim",
+    "willehrendreich/codeium.nvim",
+    dev = true,
+    dir = os.getenv("repos") .. "/codeium.nvim/",
     dependencies = {
-      -- "jcdickinson/http.nvim",
       "nvim-lua/plenary.nvim",
       "hrsh7th/nvim-cmp",
     },
-    config = function(_, opts)
-      local codeium = require("codeium")
-      require("codeium").setup(opts)
-      require("lazyvim.util").on_attach(function(client)
-        if client.name == "codeium" then
-          codeium._on_insert_enter({})
-        end
-      end)
-    end,
+    config = true,
+    -- function()
+
+    -- require("codeium").setup({})
+    -- end,
   },
+  -- Install-Module -Name Get-GzipContent
   -- {
   --   -- "jcdickinson/codeium.nvim",
-  --   "Willehrendreich/codeium.nvim",
   --   dev = true,
   --   dir = os.getenv("repos") .. "/codeium.nvim/",
   --   opts = {
