@@ -18,17 +18,29 @@ if exists('g:fvim_loaded')
     endif
       
     " Ctrl-ScrollWheel for zooming in/out
-    nnoremap <silent> <C-ScrollWheelUp> :set guifont=+<CR>
-    nnoremap <silent> <C-ScrollWheelDown> :set guifont=-<CR>
     nnoremap <A-CR> :FVimToggleFullScreen<CR>    
   FVimCursorSmoothMove v:true
   FVimCursorSmoothBlink v:true
   " FVimUIWildMenu 
     " FVimUIPopupMenu v:false
     " FVimUIWildMenu v:false      " external wildmenu -- work in progress
-else
+elseif exists("g:neovide")
+    " Put anything you want to happen only in Neovide here
+    "
+    
 
       set guifont=Jetbrains\ Mono\ NF
-      set guifont=+
-      set guifont=+
+" g:neovide_transparency should be 0 if you want to unify transparency of content and title bar.
+  " let g:neovide_transparency = 0.0
+
+
+  else
+
+    " nnoremap <A-CR> :FVimToggleFullScreen<CR>    
+      set guifont=Jetbrains\ Mono\ NF
+      " set guifont=+
+      " set guifont=+
 endif
+
+    " nnoremap <silent> <C-ScrollWheelUp> :set guifont=+<CR>
+    " nnoremap <silent> <C-ScrollWheelDown> :set guifont=-<CR>
