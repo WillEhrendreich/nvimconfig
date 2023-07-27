@@ -2,6 +2,40 @@ local uc = vim.api.nvim_create_user_command
 local lazyvim = require("lazyvim")
 local M = {}
 
+M.WatchEvent = vim.uv.new_fs_event()
+local function on_change(err, fname, status)
+  -- Do work...
+  vim.api.nvim_command("checktime")
+  -- Debounce: stop/start.
+  M.WatchEvent:stop()
+  Watch_file(fname)
+end
+function Watch_file(fname)
+  local fullpath = vim.api.nvim_call_function("fnamemodify", { fname, ":p" })
+  M.WatchEvent:start(
+    fullpath,
+    {},
+    vim.schedule_wrap(function(...)
+      on_change(...)
+    end)
+  )
+end
+vim.api.nvim_command("command! -nargs=1 Watch call luaeval('Watch_file(_A)', expand('<args>'))")
+
+vim.api.nvim_create_user_command("WatchCurrentFile", function()
+  -- local success, fwatch = pcall(require, "fwatch")
+  -- if success then
+  local path = vim.fn.fnamemodify("%", ":p")
+  Watch_file(path)
+  --   fwatch.watch(path, {
+  --     on_event = function()
+  --       -- reload colorscheme whenever path changes
+  --       vim.
+  --     end,
+  --   })
+  -- end
+end, { desc = "watches current file " })
+
 ---@return string
 function M.norm(path)
   if path:sub(1, 1) == "~" then

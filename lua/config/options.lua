@@ -4,6 +4,7 @@
 local opt = vim.opt
 local o = vim.o
 
+vim.o.cmdheight = 1
 opt.runtimepath:append(os.getenv("repos") .. "/tree-sitter-odin/queries")
 vim.g.highlighturl_enabled = true -- highlight URLs by default
 -- vim.cmd([[colorscheme  kanagawa]])
