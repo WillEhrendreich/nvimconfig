@@ -348,11 +348,10 @@ local LSPWithDiagSource = {
   execute = function(done)
     local util = require("vim.lsp.util")
 
-    local params = util.make_position_params()
     ---@type table<string>
     local lines = {}
 
-    vim.lsp.buf_request_all(0, "textDocument/hover", params, function(responses)
+    vim.lsp.buf_request_all(0, "textDocument/hover", require("vim.lsp.util").make_position_params(), function(responses)
       -- vim.notify("responses for hover request " .. vim.inspect(responses))
       local lang = "markdown"
       for _, response in pairs(responses) do
