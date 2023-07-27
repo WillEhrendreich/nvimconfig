@@ -17,7 +17,7 @@ local customOnAttach = function(client, bufnr)
 
     --
     if not client.server_capabilities.hoverProvider then
-      vim.notify("Lemminx doesn't have hover, we're trying anyway to force it")
+      -- vim.notify("Lemminx doesn't have hover, we're trying anyway to force it")
       local hover = client.config.capabilities.textDocument.hover
       client.server_capabilities.hoverProvider = true
       -- {
@@ -40,7 +40,7 @@ local customOnAttach = function(client, bufnr)
     -- end
 
     if not client.server_capabilities.codeLensProvider then
-      vim.notify("Lemminx doesn't have codeLens, we're trying anyway to force it")
+      -- vim.notify("Lemminx doesn't have codeLens, we're trying anyway to force it")
       local codeLens = client.config.capabilities.textDocument.codeLens
       client.server_capabilities.codeLensProvider = {
         resolveProvider = true,
@@ -175,7 +175,6 @@ return {
           -- opts.on_attach = customOnAttach
           opts.single_file_support = false
           opts.autostart = true
-          vim.notify("Lemminx setup entered")
           -- opts.on_attach =
           require("lazyvim.util").on_attach(customOnAttach)
 
