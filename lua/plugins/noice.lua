@@ -431,14 +431,14 @@ return {
       format = {}, --- @see section on formatting
     },
     enabled = function()
-      local uis = vim.api.nvim_list_uis()
-      for _, ui in ipairs(uis) do
-        for _, ext in ipairs({ "ext_multigrid", "ext_cmdline", "ext_popupmenu", "ext_messages" }) do
-          if ui[ext] then
-            return false
-          end
-        end
-      end
+      -- local uis = vim.api.nvim_list_uis()
+      -- for _, ui in ipairs(uis) do
+      --   for _, ext in ipairs({ "ext_multigrid", "ext_cmdline", "ext_popupmenu", "ext_messages" }) do
+      --     if ui[ext] then
+      --       return false
+      --     end
+      --   end
+      -- end
 
       return true
     end,

@@ -1,7 +1,8 @@
 return {
-    "echasnovski/mini.starter",
+  "echasnovski/mini.starter",
 
- opts = function (_,o)   local logo = [[
+  opts = function(_, o)
+    local logo = [[
      ...     ..      ..                           ...                                                 .                
   x*8888x.:*8888: -"888:     ..               xH88"`~ .x8X                                 oec :    @88>              
  X   48888X `8888H  8888    @L              :8888   .f"8888Hf        u.      u.    u.     @88888    %8P               
@@ -19,9 +20,9 @@ X8888 X8888  88888   "*8%- `Y888k:*888.    X8888  X888h        888R Y888r ^"8888
                                ~`                                                          '8              ^"===*"`     
 
 
-                               ]]
+]]
     o.header = logo
-    return o 
+    return o
   end,
-  config = true, 
+  config = true,
 }

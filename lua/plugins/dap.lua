@@ -791,66 +791,72 @@ local function beforeDebug(opts)
   local isInDebugSession = session and session.closed == false
   local buildSuccessful
   local hasOverSeer = Util.has("overseer.nvim")
-  if hasOverSeer then
-    if isDotnet and not isInDebugSession then
-      -- local path = get_proj()
-      local path = GetDotnetProjectPath(askForChanges)
-      local overseer = require("overseer")
-      overseer.toggle()
 
-      -- {
-      --   _start_tasks = <function 1>,
-      --   add_template_hook = <function 2>,
-      --   clear_task_cache = <function 3>,
-      --   close = <function 4>,
-      --   debug_parser = <function 5>,
-      --   delete_task_bundle = <function 6>,
-      --   get_all_commands = <function 7>,
-      --   get_all_highlights = <function 8>,
-      --   list_task_bundles = <function 9>,
-      --   list_tasks = <function 10>,
-      --   load_task_bundle = <function 11>,
-      --   load_template = <function 12>,
-      --   new_task = <function 13>,
-      --   on_setup = <function 14>,
-      --   open = <function 15>,
-      --   preload_task_cache = <function 16>,
-      --   register_template = <function 17>,
-      --   remove_template_hook = <function 18>,
-      --   run_action = <function 19>,
-      --   run_template = <function 20>,
-      --   save_task_bundle = <function 21>,
-      --   setup = <function 22>,
-      --   toggle = <function 23>,
-      --   wrap_template = <function 24>,
-      --   <metatable> = {
-      --     __index = <function 25>
-      --   }
-      -- }
+  local path
+  if isDotnet and not isInDebugSession then
+    path = GetDotnetProjectPath(askForChanges)
+  end
+  if hasOverSeer == true then
+    vim.notify("Overseer present, handing build off to that")
+    -- local path = get_proj()
+    local overseer = require("overseer")
 
-      -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
-      -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
-      -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
-      -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
+    local thiswin = vim.api.nvim_get_current_win()
 
-      -- buildSuccessful = DotnetBuild(path, "debug", true, true)
-      -- else
-      require("dap").continue()
-    end
+    local dllpath = GetDotnetDllPath(askForChanges)
+    overseer.open({ bang = false })
+    vim.api.nvim_set_option_value("wrap", true, { win = vim.api.nvim_get_current_win() })
+    vim.api.nvim_set_current_win(thiswin)
+
+    -- {
+    --   _start_tasks = <function 1>,
+    --   add_template_hook = <function 2>,
+    --   clear_task_cache = <function 3>,
+    --   close = <function 4>,
+    --   debug_parser = <function 5>,
+    --   delete_task_bundle = <function 6>,
+    --   get_all_commands = <function 7>,
+    --   get_all_highlights = <function 8>,
+    --   list_task_bundles = <function 9>,
+    --   list_tasks = <function 10>,
+    --   load_task_bundle = <function 11>,
+    --   load_template = <function 12>,
+    --   new_task = <function 13>,
+    --   on_setup = <function 14>,
+    --   open = <function 15>,
+    --   preload_task_cache = <function 16>,
+    --   register_template = <function 17>,
+    --   remove_template_hook = <function 18>,
+    --   run_action = <function 19>,
+    --   run_template = <function 20>,
+    --   save_task_bundle = <function 21>,
+    --   setup = <function 22>,
+    --   toggle = <function 23>,
+    --   wrap_template = <function 24>,
+    --   <metatable> = {
+    --     __index = <function 25>
+    --   }
+    -- }
+
+    -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
+    -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
+    -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
+    -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
+
+    -- buildSuccessful = DotnetBuild(path, "debug", true, true)
+    -- else
+    require("dap").continue()
+    GetDotnetDllPath(askForChanges)
+    buildSuccessful = true
   else
-    if isDotnet and not isInDebugSession then
-      -- local path = get_proj()
-      local path = GetDotnetProjectPath(askForChanges)
+    -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
+    -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
+    -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
+    -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
 
-      -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
-      -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
-      -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
-      -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
-
-      buildSuccessful = DotnetBuild(path, "debug", true, true)
-    else
-      require("dap").continue()
-    end
+    buildSuccessful = DotnetBuild(path, "debug", true, true)
+    local dllpath = GetDotnetDllPath(askForChanges)
+    require("dap").continue()
   end
   return buildSuccessful or true
 end
@@ -860,6 +866,7 @@ vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
   nargs = "?",
   desc = "Dotnet Build Before Debug",
 })
+
 -- M.coreclr = {
 -- 	{                  /
 -- 		type = 'coreclr',
@@ -1005,10 +1012,10 @@ local function dapconfig(_, opts)
           -- command =  "C:/.local/share/nvim-data/mason/packages/netcoredbg/netcoredbg/netcoredbg.exe",
           -- command = vim.fs.normalize( (vim.fs.find("netcoredbg.exe", { path = require("mason-registry").get_package("netcoredbg") }))[1]),
           --require("mason-registry").get_package("netcoredbg")
-          options = {
-            initialize_timeout_sec = 10,
-          },
-          detached = false,
+          -- options = {
+          --   initialize_timeout_sec = 10,
+          -- },
+          -- detached = false,
           -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
           args = { "--interpreter=vscode" },
         }

@@ -37,6 +37,16 @@ autocmd("BufReadPost", {
   end,
 })
 
+autocmd({ "BufNewFile", "BufRead" }, {
+  desc = "Make sure tex type automatically compiles ",
+  group = grp("TexCompileGroup", { clear = true }),
+  pattern = "*.tex",
+  callback = function(ev)
+    vim.cmd("VimtexCompile")
+
+    -- print(string.format("event fired: %s", vim.inspect(ev)))
+  end,
+})
 autocmd("FileType", {
   desc = "Make sure the moon type automatically compiles on save ",
   group = grp("MoonAutoCompile", { clear = true }),

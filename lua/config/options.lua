@@ -9,15 +9,20 @@ opt.runtimepath:append(os.getenv("repos") .. "/tree-sitter-odin/queries")
 vim.g.highlighturl_enabled = true -- highlight URLs by default
 -- vim.cmd([[colorscheme  kanagawa]])
 -- opt.font
+
 opt.shortmess = "TtlFfOoCcIiWsxnq"
-opt.guifont = { "JetBrainsMono NF", "h14" }
+-- opt.guifont = { "JetBrainsMono NF", "h14" }
+-- opt.guifontwide = { "JetBrainsMono NF", "h14" }
 -- opt.guifont = { "cascadia code", "h14" }
+-- opt.guifont = { "Iosevka NF", "h14" }
+
 -- opt.guifont =*
 o.foldlevel = 99 -- Using ufo provider need a large value, feel free to decrease the value
 o.foldlevelstart = 99
 o.foldenable = true
 o.foldcolumn = "auto"
 vim.o.fillchars = [[eob: ,fold:,foldopen:,foldsep:│,foldclose:]]
+-- vim.o.listchars = [[ tab = "│→", extends = "⟩", precedes = "⟨", trail = "·", nbsp = "␣" ]]
 -- opt.completeopt = { "menu", "menuone", "preview" }
 opt.kp = ""
 opt.shell = "pwsh"

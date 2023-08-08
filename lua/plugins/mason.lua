@@ -13,6 +13,7 @@ return {
     },
     ensure_installed = {
       "lemminx",
+      "texlab",
       "csharp-language-server",
       -- "sqlls",
       "stylua",

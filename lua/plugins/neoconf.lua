@@ -1,7 +1,6 @@
 return {
   --
   "folke/neoconf.nvim",
-  --
   opts = {
     --
     --   -- name of the local settings files
@@ -26,6 +25,12 @@ return {
       --     -- - local json settings
       lspconfig = {
         enabled = true,
+      },
+      ---@type IonideOptions
+      ionide = {
+        settings = {
+          FSharp = {},
+        },
       },
       --     -- configures jsonls to get completion in .nvim.settings.json files
       jsonls = {

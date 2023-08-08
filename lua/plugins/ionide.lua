@@ -1,8 +1,7 @@
-local null_ls = require("null-ls")
 return {
   {
     "WillEhrendreich/ionide-vim",
-    dir = vim.fn.getenv("repos") .. "/ionide-vim/",
+    dir = vim.fn.getenv("repos") .. "/ionide-nvim/",
     dev = true,
     dependencies = {
       {

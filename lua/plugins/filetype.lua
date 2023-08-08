@@ -19,27 +19,27 @@ vim.filetype.add({
   },
 })
 
-local scrubExtraFsautocompleteStuff = function()
-  local pat = "/\\[ERROR\\].*INF\\] \\[.*] "
-  -- local buftext = vim.inspect(vim.api.nvim_buf_get_lines(0, 0, -1, false))
-  --
-  -- if string.match(buftext, pat) then
-  vim.cmd("%s" .. pat)
-
-  vim.cmd("set filetype=json")
-
-  vim.cmd([[%s/\\\\\\\\/\\\\/g]])
-  vim.cmd([[%s/\\\\/\//g]])
-  vim.cmd([[%s/\\r\\n/\n/g]])
-  -- vim.lsp.buf.format()
-
-  -- for _, line in pairs(buftext) do
-  -- if string.match(line, pat) then
-
-  -- StringReplace(line, string.match(line, pat), "")
-  -- end
-  -- end
-end
+-- local scrubExtraFsautocompleteStuff = function()
+--   local pat = "/\\[ERROR\\].*INF\\] \\[.*] "
+--   -- local buftext = vim.inspect(vim.api.nvim_buf_get_lines(0, 0, -1, false))
+--   --
+--   -- if string.match(buftext, pat) then
+--   vim.cmd("%s" .. pat)
+--
+--   vim.cmd("set filetype=json")
+--
+--   vim.cmd([[%s/\\\\\\\\/\\\\/g]])
+--   vim.cmd([[%s/\\\\/\//g]])
+--   vim.cmd([[%s/\\r\\n/\n/g]])
+--   -- vim.lsp.buf.format()
+--
+--   -- for _, line in pairs(buftext) do
+--   -- if string.match(line, pat) then
+--
+--   -- StringReplace(line, string.match(line, pat), "")
+--   -- end
+--   -- end
+-- end
 
 -- vim.api.nvim_create_autocmd("BufReadPost", {
 --

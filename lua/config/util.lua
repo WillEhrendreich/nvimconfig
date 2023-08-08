@@ -86,16 +86,6 @@ function M.markdown(msg, opts)
     }, opts or {})
   )
 end
-function M.scratch(input)
-  -- vim.cmd.Bufferize(input())
-  if type(input) == "function" then
-    vim.cmd.Bufferize(input())
-  elseif type(input) == "table" then
-    vim.cmd.Bufferize(vim.inspect(input))
-  elseif type(input) == "string" then
-    vim.cmd.Bufferize(vim.inspect(input))
-  end
-end
 
 function M.GetVisualSelection(keepSelectionIfNotInBlockMode, advanceCursorOneLine, debugNotify)
   local line_start, column_start
@@ -213,6 +203,7 @@ uc("Scratch", function(arg)
   M.scratch(arg)
   --local M = {}
 end, {})
+
 ---this is a test to see about structure and calling things
 ---@param s string
 ---@return string

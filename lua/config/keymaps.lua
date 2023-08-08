@@ -18,6 +18,8 @@ vim.api.nvim_del_keymap("n", "<leader>wd")
 vim.api.nvim_del_keymap("n", "<leader>w-")
 vim.api.nvim_del_keymap("n", "<leader>w|")
 
+map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
+map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
 
 map("n", "gx", function()

@@ -4,6 +4,7 @@ return {
     "nvim-neotest/neotest",
   },
   opts = {
+    dap = true,
     sections = {
       lualine_x = {
         {
@@ -25,6 +26,30 @@ return {
       },
     },
     strategy = { "toggleterm", open_on_start = false },
+    task_list = {
+      bindings = {
+        ["?"] = "ShowHelp",
+        ["g?"] = "ShowHelp",
+        ["<CR>"] = "RunAction",
+        ["<C-e>"] = "Edit",
+        ["o"] = "Open",
+        ["<C-v>"] = "OpenVsplit",
+        ["<C-s>"] = "OpenSplit",
+        ["<C-f>"] = "OpenFloat",
+        ["<C-q>"] = "OpenQuickFix",
+        ["p"] = "TogglePreview",
+        ["<S-l>"] = "IncreaseDetail",
+        ["<S-h>"] = "DecreaseDetail",
+        -- ["L"] = "IncreaseAllDetail",
+        -- ["H"] = "DecreaseAllDetail",
+        ["["] = "DecreaseWidth",
+        ["]"] = "IncreaseWidth",
+        ["{"] = "PrevTask",
+        ["}"] = "NextTask",
+        ["<C-u>"] = "ScrollOutputUp",
+        ["<C-d>"] = "ScrollOutputDown",
+      },
+    },
     -- consumers = {
     --   overseer = require("neotest.consumers.overseer"),
     -- },
