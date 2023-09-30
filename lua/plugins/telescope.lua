@@ -1,4 +1,6 @@
 -- require("telescope").load_extension("macros")
+
+vim.g["sqlite_clib_path"] = "C:/ProgramData/chocolatey/lib/SQLite/tools/sqlite3.dll"
 return {
   "nvim-telescope/telescope.nvim",
 
@@ -14,6 +16,11 @@ return {
 
     { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Find Files" },
 
+    {
+      "<leader>fq",
+      "<cmd>Telescope macros<cr>",
+      desc = "Find macros",
+    },
     {
       "<leader>fo",
       function()
@@ -42,41 +49,28 @@ return {
   },
 
   -- extensions = {
-  --   macros,
+  --   macros = {},
   -- },
   dependencies = {
-    {
-      "nvim-telescope/telescope-fzf-native.nvim",
-      build = "make",
-      config = function()
-        require("telescope").load_extension("fzf")
-      end,
-    },
     -- {
-    --   "ecthelionvi/NeoComposer.nvim",
-    --   dependencies = {
-    --     "kkharji/sqlite.lua",
-    --   },
-    --   opts = {
-    --     notify = true,
-    --     delay_timer = "150",
-    --     status_bg = "#16161e",
-    --     preview_fg = "#ff9e64",
-    --     keymaps = {
-    --       play_macro = "Q",
-    --       yank_macro = "yq",
-    --       stop_macro = "cq",
-    --       toggle_record = "q",
-    --       cycle_next = "<c-n>",
-    --       cycle_prev = "<c-p>",
-    --       toggle_macro_menu = "<m-q>",
-    --     },
-    --   },
+    -- "nvim-telescope/telescope-fzf-native.nvim",
+    -- build = "make",
+    -- config = function()
+    --   if vim.fn.executable("fzf") then
+    --
+    --   require("telescope").load_extension("fzf")
+    --   end
+    -- end,
     -- },
     -- "ecthelionvi/NeoComposer.nvim",
   },
 
-  -- config = function(opts)
-  --   require("telescope").setup(opts)
-  -- end,
+  config = function(opts)
+    -- require("telescope").load_extension("macros")
+    require("telescope").setup(opts)
+
+    -- local store = require("NeoComposer.store")
+    --
+    -- vim.notify(vim.inspect(store))
+  end,
 }

@@ -1,11 +1,18 @@
 local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+-- parser_config.fsharp = {
+--   install_info = {
+--     url = "https://github.com/Nsidorenco/tree-sitter-fsharp",
+--     branch = "develop",
+--     files = { "src/scanner.cc", "src/parser.c" },
+--     generate_requires_npm = true,
+--     requires_generate_from_grammar = true,
+--   },
+--   filetype = "fsharp",
+-- }
 parser_config.fsharp = {
   install_info = {
-    url = "https://github.com/Nsidorenco/tree-sitter-fsharp",
-    branch = "develop",
+    url = os.getenv("repos") .. "/tree-sitter-fsharp",
     files = { "src/scanner.cc", "src/parser.c" },
-    generate_requires_npm = true,
-    requires_generate_from_grammar = true,
   },
   filetype = "fsharp",
 }
@@ -13,6 +20,7 @@ parser_config.odin = {
   install_info = {
     branch = "main",
     url = os.getenv("repos") .. "/tree-sitter-odin",
+    -- url ="https://github.com/ap29600/tree-sitter-odin" ,
     files = { "src/parser.c" },
   },
   filetype = "odin",
@@ -76,19 +84,18 @@ return {
     context_commentstring = { enable = true, disable = { "fsharp", "odin" }, enable_autocmd = true },
     -- context_commentstring = { enable = true, disable = { "odin" }, enable_autocmd = false },
     ensure_installed = {
-      "bash",
+      -- "bash",
       "c",
       "cpp",
       "fsharp",
       "c_sharp",
-      "help",
       "html",
       "dap_repl",
       "javascript",
       "json",
       "jsonc",
       "lua",
-      "luap",
+      -- "luap",
       "markdown",
       "ocaml",
       "odin",
@@ -106,7 +113,7 @@ return {
     --    use_virtual_text = true,
     --    lint_events = { "BufWrite", "CursorHold" },
     --  },
-    compilers = { "gcc", "llvm", "clang", "cc" },
+    compilers = { "clang", "gcc", "llvm", "cc" },
     incremental_selection = {
       enable = true,
       keymaps = {

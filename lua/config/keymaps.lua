@@ -2,7 +2,8 @@
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
 -- Add any additional keymaps here
 
-local Util = require("lazyvim.util")
+local LazyVimUtil = require("lazyvim.util")
+local lazyutil = require("lazy.util")
 
 local function map(mode, lhs, rhs, opts)
   if type(opts) == "string" then
@@ -22,9 +23,62 @@ map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
 
-map("n", "gx", function()
-  Util.open()
-end, "Neotree Toggle")
+if LazyVimUtil.has("NeoComposer.nvim") then
+  map("n", "<leader>me", function()
+    require("NeoComposer.ui").edit_macros()
+  end, "Edit Macros")
+  map("n", "<leader>md", function()
+    require("NeoComposer.store").clear_macros()
+  end, "Clear Macros from NeoComposer")
+
+  -- play_macro = "Q",
+  map({ "n", "x" }, "<leader>Q", function()
+    require("NeoComposer.macro").toggle_play_macro()
+  end, "Toggle Play Macro")
+  -- yank_macro = "yq",
+  map("n", "yq", function()
+    require("NeoComposer.macro").yank_macro()
+  end, "Yank Macro")
+  -- toggle_record = "q",
+  map("n", "q", function()
+    require("NeoComposer.macro").toggle_record()
+  end, "Toggle record Macro")
+  map("n", "<leader>md", function()
+    require("NeoComposer.macro").toggle_delay()
+  end, "Toggle delay of macro execution")
+  map("n", "<leader>mm", function()
+    require("NeoComposer.ui").toggle_macro_menu()
+  end, "Toggle Macro Menu")
+  map("n", "<leader>mn", function()
+    require("NeoComposer.ui").cycle_next()
+  end, "Cycle next Macro")
+  map("n", "<leader>mp", function()
+    require("NeoComposer.ui").cycle_prev()
+  end, "Cycle previous Macro")
+  map("n", "<leader>mh", function()
+    require("NeoComposer.macro").halt_macro()
+  end, "Halt Macro")
+end
+
+map({ "n" }, "gx", function()
+  local currentWord = vim.fn.expand("<cWORD>")
+  if currentWord then
+    -- if not string.match(currentWord, "") then
+    vim.notify("trying to open " .. currentWord)
+    lazyutil.open(currentWord)
+    -- end
+  end
+end, "open WORD under cursor")
+
+map({ "v" }, "gx", function()
+  local currentWord = require("config.util").GetVisualSelection(true, false, false)[1]
+  if currentWord then
+    -- if not string.match(currentWord, "") then
+    vim.notify("trying to open " .. currentWord)
+    lazyutil.open(currentWord)
+    -- end
+  end
+end, "open selection if possible")
 
 map("n", "<leader>/", 'v:lua.MiniComment.operator() . "_"', { expr = true, desc = "Comment line" })
 map(
@@ -198,7 +252,7 @@ map("x", "<leader>/", function()
   -- local pos = unpack(vim.fn.getpos(">"), 2)
   -- local mc = require("mini.comment").MiniComment
   local s, e = GetVisualStartAndEndLineNumbers(false, true, false)
-  if Util.has("mini.comment") then
+  if LazyVimUtil.has("mini.comment") then
     -- local mc = require("mini.comment")
     MiniComment.toggle_lines(s, e)
   else
@@ -265,7 +319,7 @@ map("n", "<leader><leader>x", function()
   vim.cmd("source %")
 end, "save and source current file")
 map("n", "<leader><leader>i", function()
-  if Util.has("nvim-toggler") then
+  if LazyVimUtil.has("nvim-toggler") then
     require("nvim-toggler").toggle()
   else
     print("not implemented yet")
@@ -282,7 +336,7 @@ map("n", "<leader>lk", function()
   vim.fn.writefile({}, vim.lsp.get_log_path())
 end, "reset LSP log")
 
-if Util.has("telescope.nvim") then -- setup telescope mappings if available
+if LazyVimUtil.has("telescope.nvim") then -- setup telescope mappings if available
   map("n", "<leader>ft", function()
     require("telescope.builtin").builtin()
   end, "Telescope") -- map("n","<leader>gd", function()
@@ -296,12 +350,12 @@ if Util.has("telescope.nvim") then -- setup telescope mappings if available
     require("telescope.builtin").lsp_workspace_symbols()
   end, "Telescope lsp workspace symbols")
 end
-if Util.has("definition-or-references.nvim") then
+if LazyVimUtil.has("definition-or-references.nvim") then
   map("n", "gd", function()
     require("definition-or-references").definition_or_references()
   end, "Go to definition or references")
 end
-if Util.has("toggleterm.nvim") then
+if LazyVimUtil.has("toggleterm.nvim") then
   --if fn.executable "lazygit" == 1 then
 
   -- term_details can be either a string for just a command or
@@ -416,8 +470,8 @@ end
 --   -- require("cmp").complete({ select = true })
 -- end, "Cmp Complete")
 
-if Util.has("nvim-dap") then
-  if Util.has("hydra.nvim") then
+if LazyVimUtil.has("nvim-dap") then
+  if LazyVimUtil.has("hydra.nvim") then
     map("n", "<leader>dh", function()
       -- if vim.cmd.PreDebugTask() then
       local hydra = require("hydra")

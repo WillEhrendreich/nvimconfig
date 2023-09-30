@@ -212,10 +212,10 @@ return {
 
     opts = {
       cmdline = {
-        -- enabled = true, -- enables the Noice cmdline UI
-        enabled = false, -- enables the Noice cmdline UI
-        -- view = "cmdline_popup", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
-        view = "cmdline", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
+        enabled = true, -- enables the Noice cmdline UI
+        -- enabled = false, -- enables the Noice cmdline UI
+        view = "cmdline_popup", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
+        -- view = "cmdline", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
         opts = {}, -- global options for the cmdline. See section on views
         ---@type table<string, CmdlineFormat>
         format = {
@@ -225,31 +225,32 @@ return {
           -- icon_hl_group: optional hl_group for the icon
           -- title: set to anything or empty string to hide
           -- title = "",
-          conceal = false,
-          -- cmdline = { pattern = "^:", icon = "", lang = "vim" },
-          cmdline = false,
-          -- search_down = { kind = "search", pattern = "^/", icon = " ", lang = "regex" },
-          search_down = false,
-          -- search_up = { kind = "search", pattern = "^%?", icon = " ", lang = "regex" },
-          search_up = false,
-          -- filter = { pattern = "^:%s*!", icon = "$", lang = "bash" },
-          filter = false,
+          -- conceal = false,
+          cmdline = { pattern = "^:", icon = "", lang = "vim" },
+          -- cmdline = false,
+          search_down = { kind = "search", pattern = "^/", icon = " ", lang = "regex" },
+          -- search_down = false,
+          search_up = { kind = "search", pattern = "^%?", icon = " ", lang = "regex" },
+          -- search_up = false,
+          filter = { pattern = "^:%s*!", icon = "$", lang = "bash" },
+          -- filter = false,
           -- lua = { pattern = { "^:%s*lua%s+", "^:%s*lua%s*=%s*", "^:%s*=%s*" }, icon = "", lang = "lua" },
 
-          -- lua = { pattern = { "^:%s*lua%s+" }, icon = "", lang = "lua" },
-          lua = false, -- to disable a format, set to `false`
-          -- lua2 = { pattern = { "^:%s*lua%s+", "^:%s*lua%s*=%s*", "^:%s*=%s*" }, icon = "=", lang = "lua" },
-          -- help = { pattern = "^:%s*he?l?p?%s+", icon = "" },
-          help = false,
-          -- input = {}, -- Used by input()
-          input = false,
+          lua = { pattern = { "^:%s*lua%s+" }, icon = "", lang = "lua" },
+          -- lua = false, -- to disable a format, set to `false`
+          lua2 = { pattern = { "^:%s*lua%s+", "^:%s*lua%s*=%s*", "^:%s*=%s*" }, icon = "=", lang = "lua" },
+          help = { pattern = "^:%s*he?l?p?%s+", icon = "" },
+          -- help = false,
+          input = {}, -- Used by input()
+          -- input = false,
         },
       },
       messages = {
         -- NOTE: If you enable messages, then the cmdline is enabled automatically.
         -- This is a current Neovim limitation.
 
-        enabled = false, -- enables the Noice messages UI
+        enabled = true, -- enables the Noice messages UI
+        -- enabled = false, -- enables the Noice messages UI
         -- view = "notify", -- default view for messages
         view = "mini", -- default view for messages
         -- view_error = "notify", -- view for errors

@@ -2,7 +2,7 @@ local uc = vim.api.nvim_create_user_command
 local lazyvim = require("lazyvim")
 local M = {}
 
-M.WatchEvent = vim.uv.new_fs_event()
+-- M.WatchEvent = vim.uv.new_fs_event()
 local function on_change(err, fname, status)
   -- Do work...
   vim.api.nvim_command("checktime")
@@ -10,6 +10,7 @@ local function on_change(err, fname, status)
   M.WatchEvent:stop()
   Watch_file(fname)
 end
+
 function Watch_file(fname)
   local fullpath = vim.api.nvim_call_function("fnamemodify", { fname, ":p" })
   M.WatchEvent:start(
@@ -245,7 +246,7 @@ function M.system_open(path)
   if not cmd then
     M.notify("Available system opening tool not found!", "error")
   end
-  if Util.has("open-browser.vim") then
+  if require("lazy.util").has("open-browser.vim") then
     -- require("openbrowser-smart-search")
     vim.cmd.OpenBrowserSmartSearch(path)
   else

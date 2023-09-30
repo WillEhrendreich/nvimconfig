@@ -340,7 +340,8 @@ return {
     format = {
       -- formatting_options = nil,
 
-      timeout_ms = 10000,
+      -- timeout_ms = 10000,
+      timeout_ms = 1000,
     },
 
     -- LSP Server Settings

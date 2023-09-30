@@ -10,10 +10,15 @@ return {
       --   ["Warning"] = Util.fg("DiagnosticError"),
       --   ["InProgress"] = Util.fg("DiagnosticWarn"),
       -- }
-      -- table.insert(opts.sections.lualine_c, 2, {
-      --   require("NeoComposer.ui").status_recording,
-      -- })
-      table.insert(opts.sections.lualine_x, 2, { "overseer" , })
+
+      if require("lazyvim.util").has("NeoComposer.nvim") then
+        table.insert(opts.sections.lualine_c, 2, {
+          require("NeoComposer.ui").status_recording,
+        })
+      end
+      if require("lazyvim.util").has("overseer.nvim") then
+        table.insert(opts.sections.lualine_x, 2, { "overseer" })
+      end
     end,
   },
 }
