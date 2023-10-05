@@ -2,6 +2,117 @@ local uc = vim.api.nvim_create_user_command
 local lazyvim = require("lazyvim")
 local M = {}
 
+---tries to get an environment variable's value, and if it's not found or empty returns an empty string
+---@param name string
+---@return string
+function M.getEnvVariableOrEmptyString(name)
+  local var = os.getenv(name)
+  if var then
+    if var == "" then
+      return ""
+    end
+    return var
+  end
+  return ""
+end
+
+function M.hasEnvironmentVariableSet(name)
+  local EnvVar = M.getEnvVariableOrEmptyString(name)
+  if EnvVar then
+    if EnvVar == "" then
+      return false
+    end
+    return true
+  end
+  return false
+end
+
+---tries to get an environment variable's value, and if it's not found or empty returns the default value, or an empty string
+---@param name string
+---@param defaultValueIfEmpty string
+---@return string
+function M.getEnvVariableOrDefault(name, defaultValueIfEmpty)
+  defaultValueIfEmpty = defaultValueIfEmpty or ""
+  local var = M.getEnvVariableOrEmptyString(name)
+  if var == "" then
+    return defaultValueIfEmpty
+  end
+  return var
+end
+
+function M.hasReposEnvironmentVarSet()
+  return M.hasEnvironmentVariableSet("repos")
+end
+
+function M.getReposVariableIfSet()
+  return M.getEnvVariableOrEmptyString("repos")
+end
+
+-- Finds any files or directories given in {names} starting from {path}. If
+-- {upward} is "true" then the search traverses upward through parent
+-- directories; otherwise, the search traverses downward. Note that downward
+-- searches are recursive and may search through many directories! If {stop}
+-- is non-nil, then the search stops when the directory given in {stop} is
+-- reached. The search terminates when {limit} (default 1) matches are found.
+-- The search can be narrowed to find only files or only directories by
+-- specifying {type} to be "file" or "directory", respectively.
+--
+-- Examples:
+--
+-- -- location of Cargo.toml from the current buffer's path
+-- local cargo = vim.fs.find('Cargo.toml', {
+--   upward = true,
+--   stop = vim.loop.os_homedir(),
+--   path = vim.fs.dirname(vim.api.nvim_buf_get_name(0)),
+-- })
+--
+-- -- list all test directories under the runtime directory
+-- local test_dirs = vim.fs.find(
+--   {'test', 'tst', 'testdir'},
+--   {limit = math.huge, type = 'directory', path = './runtime/'}
+-- )
+--
+-- -- get all files ending with .cpp or .hpp inside lib/
+-- local cpp_hpp = vim.fs.find(function(name, path)
+--   return name:match('.*%.[ch]pp$') and path:match('[/\\\\]lib$')
+-- end, {limit = math.huge, type = 'file'})
+
+function M.getRepoWithName(name)
+  if M.hasReposEnvironmentVarSet() then
+    return (
+      vim.fs.find(name, { upward = false, limit = 1, path = M.getReposVariableIfSet(), type = "directory" })[1] or ""
+    )
+  else
+    return ""
+  end
+end
+
+function M.hasRepoWithName(name)
+  if M.hasReposEnvironmentVarSet() then
+    local repoWithName = M.getRepoWithName(name)
+    if repoWithName == "" then
+      return false
+    else
+      return true
+    end
+  else
+    return false
+  end
+end
+
+---tries to get an environment variable's value, and if it's not found or empty returns the default value, or an empty string
+---@param name string
+---@param defaultValueIfEmpty string
+---@return string
+function M.getRepoWithNameOrDefault(name, defaultValueIfEmpty)
+  defaultValueIfEmpty = defaultValueIfEmpty or ""
+  local var = M.getRepoWithName(name)
+  if var == "" then
+    return defaultValueIfEmpty
+  end
+  return var
+end
+
 -- M.WatchEvent = vim.uv.new_fs_event()
 local function on_change(err, fname, status)
   -- Do work...

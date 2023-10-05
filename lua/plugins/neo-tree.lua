@@ -123,9 +123,11 @@ local fsharpFileSystemSource = {
   -- "open_current",-- netrw disabled, opening a directory opens within the
   -- window like netrw would, regardless of window.position
   -- "disabled",    -- netrw left alone, neo-tree does not handle opening dirs
-  use_libuv_file_watcher = true, -- This will use the OS level file watchers to detect changes
+  use_libuv_file_watcher = false, -- This will use the OS level file watchers to detect changes
   -- instead of relying on nvim autocmd events.
 }
+
+local utils = require("config.util")
 
 return {
   "nvim-neo-tree/neo-tree.nvim",
@@ -134,8 +136,8 @@ return {
     "MunifTanjim/nui.nvim",
     {
       "WillEhrendreich/neo-tree-fsharp",
-      dev = true,
-      dir = os.getenv("repos") .. "/neo-tree-fsharp/",
+      dev = utils.hasRepoWithName("neo-tree-fsharp"),
+      dir = utils.getRepoWithName("neo-tree-fsharp"),
     },
   },
   opts = function(_, opts)

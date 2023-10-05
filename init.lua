@@ -109,8 +109,8 @@ else
     --- vim redraw
     vim.cmd.redraw()
   end
-
-  local debugCodeium = os.getenv("DEBUG_CODEIUM")
+  local utils = require("config.util")
+  local debugCodeium = utils.getEnvVariableOrDefault("DEBUG_CODEIUM", "info")
   if debugCodeium and debugCodeium ~= "warn" and debugCodeium ~= "info" then
     vim.opt.cmdheight = 1
   else

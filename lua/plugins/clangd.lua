@@ -1,3 +1,4 @@
+local utils = require("config.util")
 return {
 
   "neovim/nvim-lspconfig",
@@ -11,7 +12,7 @@ return {
         "clangd",
         "--background-index",
         "--clang-tidy",
-        "--query-driver=" .. os.getenv("CC"),
+        "--query-driver=" .. (utils.getEnvVariableOrDefault("CC", "clang")),
         "--cross-file-rename",
         "--header-insertion=iwyu",
         "--completion-style=detailed",

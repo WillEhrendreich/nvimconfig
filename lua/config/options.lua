@@ -3,9 +3,16 @@
 -- Add any additional options here
 local opt = vim.opt
 local o = vim.o
-
+local utils = require("config.util")
 vim.o.cmdheight = 1
-opt.runtimepath:append(os.getenv("repos") .. "/tree-sitter-odin/queries")
+if utils.hasReposEnvironmentVarSet() then
+  local odinrepo = utils.getRepoWithName("tree-sitter-odin")
+  if odinrepo == "" then
+    vim.notify("no odin repo found, cannot add treesitter queries to runtimepath")
+  else
+    opt.runtimepath:append(odinrepo .. "/queries")
+  end
+end
 vim.g.highlighturl_enabled = true -- highlight URLs by default
 -- vim.cmd([[colorscheme  kanagawa]])
 -- opt.font

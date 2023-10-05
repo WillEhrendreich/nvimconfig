@@ -8,7 +8,7 @@ vim.api.nvim_create_user_command("CodeiumLog", function()
   local logpath = vim.fn.stdpath("cache") .. "/codeium.log"
   vim.cmd.e(logpath)
 end, { desc = "View CodeiumLog" })
-
+local utils = require("config.util")
 vim.api.nvim_create_user_command("CodeiumCmpSourceHealthy", function()
   local sources = require("cmp").core.sources
   local cdm = vim.tbl_filter(function(t)
@@ -33,8 +33,8 @@ return {
   {
     -- "jcdickinson/codeium.nvim",
     "willehrendreich/codeium.nvim",
-    dev = true,
-    dir = os.getenv("repos") .. "/codeium.nvim/",
+    dev = utils.hasReposEnvironmentVarSet(),
+    dir = utils.getRepoWithName("codeium.nvim"),
     dependencies = {
       "nvim-lua/plenary.nvim",
       "hrsh7th/nvim-cmp",
