@@ -1,6 +1,10 @@
 local uc = vim.api.nvim_create_user_command
-local lazyvim = require("lazyvim")
+-- local lazyvim = require("lazyvim")
 local M = {}
+
+function M.stringContains(str, searchedForString)
+  return string.match(str, searchedForString)
+end
 
 ---tries to get an environment variable's value, and if it's not found or empty returns an empty string
 ---@param name string
