@@ -302,7 +302,7 @@ function SetUpExternalExecutables()
                 "Nvim looked for choco as executable, couldn't find it, it looks like you really will have to restart your terminal before this continues so that environment variables can be reloaded."
               )
             end
-            hasChoco = hasChoco2 == 1
+            hasChoco = hasChoco2
           else
             vim.notify(
               "well... I guess you don't like nice things... do you perhaps put your shoes on the wrong feet for discomfort too?"
