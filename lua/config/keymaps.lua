@@ -287,6 +287,43 @@ map("n", "<leader>pi", function()
   require("lazy").install()
 end, "Plugins Install")
 
+map("n", "<leader>pcua", function()
+  local chocoCmd = { "choco", "upgrade", "all" }
+  require("config.util").float_term(chocoCmd, {
+    style = "",
+    title = "Choco Packages upgrade all",
+  })
+end, "Choco Packages upgrade all")
+
+---@class LazyFloatOptions
+---@field buf? number
+---@field file? string
+---@field margin? {top?:number, right?:number, bottom?:number, left?:number}
+---@field size? {width:number, height:number}
+---@field zindex? number
+---@field style? "" | "minimal"
+---@field border? "none" | "single" | "double" | "rounded" | "solid" | "shadow"
+---@field title? string
+---@field title_pos? "center" | "left" | "right"
+---@field persistent? boolean
+---@field ft? string
+---@field noautocmd? boolean
+
+---@class LazyFloat
+---@field buf number
+---@field win number
+---@field opts LazyFloatOptions
+---@field win_opts LazyWinOpts
+---@overload fun(opts?:LazyFloatOptions):LazyFloat
+--
+map("n", "<leader>pcuw", function()
+  local chocoCmd = { "choco", "upgrade", "all", "--noop" }
+  require("config.util").float_term(chocoCmd, {
+    style = "",
+    title = "Choco Packages upgrade all whatif",
+  })
+end, "Choco Packages upgrade all whatif")
+
 map("n", "<leader>ps", function()
   require("lazy").home()
 end, "Plugins Status")
