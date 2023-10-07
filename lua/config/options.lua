@@ -45,5 +45,6 @@ opt.shellredir = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
 opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
 opt.shellquote = ""
 opt.shellxquote = ""
+vim.o.pumblend = 0
 -- vim.o.lazyredraw = false
 -- vim.cmd("hi Normal guibg=NONE ctermbg=NONE")
