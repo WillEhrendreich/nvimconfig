@@ -1,15 +1,3 @@
--- local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
--- if not vim.loop.fs_stat(lazypath) then
---   -- bootstrap lazy.nvim
---   -- stylua: ignore
---   vim.fn.system({ "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath })
--- end
--- vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
--- local lazyCore = vim.fn.stdpath("data") .. "/lazy/lazy.nvim/lua/lazy/core/"
--- vim.opt.rtp:prepend(lazyCore)
--- local lazyConfig = require("lazy.core.config").setup()
--- local lazyview = vim.fn.stdpath("data") .. "/lazy/lazy.nvim/lua/lazy/view/"
--- vim.opt.rtp:prepend(lazyview)
 local function fileExists(filePath)
   local file = io.open(filePath, "r")
   if file then
@@ -145,11 +133,9 @@ function UseChocoToInstallAllTheThings()
     ["Wget"] = "Wget",
     ["wiztree"] = "wiztree",
     ["zig"] = "zig",
-    ["cutepdf"] = "cutepdf",
   }
 
   local installsThatGetCalledFromNeovim = {
-
     "7zip",
     "bottom",
     "chocolatey",
@@ -296,106 +282,6 @@ function SetUpExternalExecutables()
           )
           vim.notify(type(choice))
           if choice == 1 then
-            -- function table.jobstart(cmd: any, opts?: table<string, any>)
-            --   -> number
-            --
-            --  Spawns {cmd} as a job.
-            --  If {cmd} is a List it runs directly (no 'shell').
-            --  If {cmd} is a String it runs in the 'shell', like this:
-            --
-            --    :call jobstart(split(&shell) + split(&shellcmdflag) + ['{cmd}'])
-            --
-            --  (See |shell-unquoting| for details.)
-            --
-            --  Example:
-            --
-            --    :call jobstart('nvim -h', {'on_stdout':{j,d,e->append(line('.'),d)}})
-            --
-            --  Returns |job-id| on success, 0 on invalid arguments (or job
-            --  table is full), -1 if {cmd}[0] or 'shell' is not executable.
-            --  The returned job-id is a valid |channel-id| representing the
-            --  job's stdio streams. Use |chansend()| (or |rpcnotify()| and
-            --  |rpcrequest()| if "rpc" was enabled) to send data to stdin and
-            --  |chanclose()| to close the streams without stopping the job.
-            --
-            --  See |job-control| and |RPC|.
-            --
-            --  NOTE: on Windows if {cmd} is a List:
-            --    - cmd[0] must be an executable (not a "built-in"). If it is
-            --      in $PATH it can be called by name, without an extension:
-            --
-            --        :call jobstart(['ping', 'neovim.io'])
-            --
-            --      If it is a full or partial path, extension is required: >
-            --        :call jobstart(['System32\ping.exe', 'neovim.io'])
-            --  <      - {cmd} is collapsed to a string of quoted args as expected
-            --      by CommandLineToArgvW https://msdn.microsoft.com/bb776391
-            --      unless cmd[0] is some form of "cmd.exe".
-            --
-            --  The job environment is initialized as follows:
-            --    $NVIM                is set to |v:servername| of the parent Nvim
-            --    $NVIM_LISTEN_ADDRESS is unset
-            --    $NVIM_LOG_FILE       is unset
-            --    $VIM                 is unset
-            --    $VIMRUNTIME          is unset
-            --  You can set these with the `env` option.
-            --
-            --  {opts} is a dictionary with these keys:
-            --    clear_env:  (boolean) `env` defines the job environment
-            --          exactly, instead of merging current environment.
-            --    cwd:        (string, default=|current-directory|) Working
-            --          directory of the job.
-            --    detach:     (boolean) Detach the job process: it will not be
-            --          killed when Nvim exits. If the process exits
-            --          before Nvim, `on_exit` will be invoked.
-            --    env:        (dict) Map of environment variable name:value
-            --          pairs extending (or replace with "clear_env")
-            --          the current environment. |jobstart-env|
-            --    height:     (number) Height of the `pty` terminal.
-            --    |on_exit|:    (function) Callback invoked when the job exits.
-            --    |on_stdout|:  (function) Callback invoked when the job emits
-            --          stdout data.
-            --    |on_stderr|:  (function) Callback invoked when the job emits
-            --          stderr data.
-            --    overlapped: (boolean) Set FILE_FLAG_OVERLAPPED for the
-            --          standard input/output passed to the child process.
-            --          Normally you do not need to set this.
-            --          (Only available on MS-Windows, On other
-            --          platforms, this option is silently ignored.)
-            --    pty:        (boolean) Connect the job to a new pseudo
-            --          terminal, and its streams to the master file
-            --          descriptor. `on_stdout` receives all output,
-            --          `on_stderr` is ignored. |terminal-start|
-            --    rpc:        (boolean) Use |msgpack-rpc| to communicate with
-            --          the job over stdio. Then `on_stdout` is ignored,
-            --          but `on_stderr` can still be used.
-            --    stderr_buffered: (boolean) Collect data until EOF (stream closed)
-            --          before invoking `on_stderr`. |channel-buffered|
-            --    stdout_buffered: (boolean) Collect data until EOF (stream
-            --          closed) before invoking `on_stdout`. |channel-buffered|
-            --    stdin:      (string) Either "pipe" (default) to connect the
-            --          job's stdin to a channel or "null" to disconnect
-            --          stdin.
-            --    width:      (number) Width of the `pty` terminal.
-            --
-            --  {opts} is passed as |self| dictionary to the callback; the
-            --  i
-            --  caller may set other keys to pass application-specific data.
-            --
-            --  Returns:
-            --    - |channel-id| on success
-            --    - 0 on invalid arguments
-            --    - -1 if {cmd}[0] is not executable.
-            --  See also |job-control|, |channel|, |msgpack-rpc|.
-            --
-            --
-            -- vim.fn.jobstart("[bool]([Security.Principal.WindowsPrincipal]  [Security.Principal.WindowsIdentity]::GetCurrent() ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)",
-            --           {on_stdout=
-            --             function(i)
-            --               if i then
-            -- if type(i) == "boolean" then
-
-            -- if i == true then
             vim.notify(
               "You've chosen to download chocolatey, thereby winning at everything forever.. lets do that automatcally shall we? "
             )
@@ -416,23 +302,6 @@ function SetUpExternalExecutables()
                 "Nvim looked for choco as executable, couldn't find it, it looks like you really will have to restart your terminal before this continues so that environment variables can be reloaded."
               )
             end
-
-            --       else
-            --         vim.notify("Cant download Choco automatically, you're not in an elevated powershell. \nhere's the link:\n https://chocolatey.org/install#individual \nhop to it. ")
-            --       end
-            --         -- isAdmin = i
-            --       else
-            --         vim.notify("Output: ".. vim.inspect(i))
-            --       end
-            --     end
-            --   end
-            -- })
-            --   if isAdmin then
-            --
-            --
-            --
-            -- else
-            -- end
             hasChoco = hasChoco2 == 1
           else
             vim.notify(
