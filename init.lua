@@ -36,7 +36,7 @@ local function runCommandIfFileOlderThanOneDay(filePath, command)
 end
 
 local function extractPackageId(inputString)
-  local pattern = '<package id="([^"]-)" />'
+  local pattern = '<package id="([^"]-)"'
   local packageName = inputString:match(pattern)
   return packageName
 end
