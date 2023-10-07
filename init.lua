@@ -92,12 +92,12 @@ function UseChocoToInstallAllTheThings()
   chocoPackagesConfig = vim.fn.stdpath("config") .. "/packages.config"
   local allPackagesLinesFromDistro = {}
   for i, p in ipairs(vim.fn.readfile(chocoPackagesConfig, "")) do
-    table.insert(allPackagesLinesFromDistro, p)
+    table.insert(allPackagesLinesFromDistro, extractPackageId(p))
   end
 
   local allPackagesLinesFromCurrent = {}
   for i, p in ipairs(vim.fn.readfile(currentPackagesExportPath, "")) do
-    table.insert(allPackagesLinesFromCurrent, p)
+    table.insert(allPackagesLinesFromCurrent, extractPackageId(p))
   end
 
   -- local installsFromPackagesConfig = {}
@@ -109,6 +109,9 @@ function UseChocoToInstallAllTheThings()
     end
   end
 
+  if vim.tbl_count(differences) > 0 then
+    vim.notify("Not included in current choco packages :" .. vim.inspect(differences))
+  end
   local packageToExecutableName = {
 
     ["7zip"] = "7z",
@@ -208,6 +211,24 @@ function UseChocoToInstallAllTheThings()
       -- )
       table.insert(notInstalled, pack)
     end
+  end
+
+  for i, pack in ipairs(differences) do
+    -- local p = pack
+    -- vim.notify("checking for program: " .. p)
+    -- local installed = vim.fn.executable(p) == 1
+    -- local installed = vim.fn.system("choco " .. p) == 1
+
+    -- if installed then
+    --   -- vim.notify("program: " .. p .. " is installed and executable. ")
+    -- else
+    -- vim.notify(
+    --   "program named: {"
+    --     .. p
+    --     .. "} is not executable. If it's intalled, then it's possible that it's parent directory is simply not included in the PATH variable. Adding it to the list of things chocolatey will try to install."
+    -- )
+    table.insert(notInstalled, pack)
+    -- end
   end
   if vim.tbl_count(notInstalled) > 0 then
     -- vim.notify(
