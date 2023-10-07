@@ -57,6 +57,39 @@ function UseChocoToInstallAllTheThings()
   -- vim.notify(
   --   "found packages.config in config dir that had these packages:\n" .. vim.inspect(installsFromPackagesConfig)
   -- )
+  local linesForMissingPackagesConfig = {
+    [[ <?xml version="1.0" encoding="utf-8"?>]],
+    [[<packages>]],
+    [[ <package id="7zip" />]],
+    [[ <package id="bottom" />]],
+    [[ <package id="chocolatey" />]],
+    [[ <package id="curl" />]],
+    [[ <package id="docker" />]],
+    [[ <package id="fzf" />]],
+    [[ <package id="gdu" />]],
+    [[ <package id="gh" />]],
+    [[ <package id="git" />]],
+    [[ <package id="github-desktop" />]],
+    [[ <package id="gzip" />]],
+    [[ <package id="ilspy" />]],
+    [[ <package id="lazygit" />]],
+    [[ <package id="llvm" />]],
+    [[ <package id="nerd-fonts-JetBrainsMono" />]],
+    [[ <package id="nodejs" />]],
+    [[ <package id="notepadplusplus" />]],
+    [[ <package id="powertoys" />]],
+    [[ <package id="pwsh" />]],
+    [[ <package id="ripgrep" />]],
+    [[ <package id="SQLite" />]],
+    [[ <package id="tree-sitter" />]],
+    [[ <package id="Wget" />]],
+    [[ <package id="zig" />]],
+    [[</packages>]],
+  }
+  if chocoPackagesConfig == "" then
+    vim.fn.writefile(linesForMissingPackagesConfig, vim.fn.stdpath("config") .. "/packages.config")
+  end
+  chocoPackagesConfig = vim.fn.stdpath("config") .. "/packages.config"
   local allPackagesLinesFromDistro = {}
   for i, p in ipairs(vim.fn.readfile(chocoPackagesConfig, "")) do
     table.insert(allPackagesLinesFromDistro, p)
