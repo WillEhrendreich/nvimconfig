@@ -17,6 +17,12 @@ vim.g.highlighturl_enabled = true -- highlight URLs by default
 -- vim.cmd([[colorscheme  kanagawa]])
 -- opt.font
 
+local debugCodeium = utils.getEnvVariableOrDefault("DEBUG_CODEIUM", "info")
+if debugCodeium and debugCodeium ~= "warn" and debugCodeium ~= "info" then
+  o.cmdheight = 1
+else
+  o.cmdheight = 0
+end
 opt.shortmess = "TtlFfOoCcIiWsxnq"
 -- opt.guifont = { "JetBrainsMono NF", "h14" }
 -- opt.guifontwide = { "JetBrainsMono NF", "h14" }
