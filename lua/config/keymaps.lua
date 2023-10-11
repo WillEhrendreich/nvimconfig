@@ -18,6 +18,7 @@ vim.api.nvim_del_keymap("n", "<leader>ww")
 vim.api.nvim_del_keymap("n", "<leader>wd")
 vim.api.nvim_del_keymap("n", "<leader>w-")
 vim.api.nvim_del_keymap("n", "<leader>w|")
+-- vim.api.nvim_del_keymap("n", "<leader>dc")
 
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
@@ -507,30 +508,16 @@ end
 --   -- require("cmp").complete({ select = true })
 -- end, "Cmp Complete")
 
-if LazyVimUtil.has("nvim-dap") then
-  if LazyVimUtil.has("hydra.nvim") then
-    map("n", "<leader>dh", function()
-      -- if vim.cmd.PreDebugTask() then
-      local hydra = require("hydra")
-      hydra.spawn("dap-hydra")
-      -- if vim.cmd.PreDebugTask() then
-      --   -- require("dap").continue()
-      -- else
-      --   print("predebug task was false, so assuming there was a problem and not debugging")
-      -- end
-      -- require("dap").continue()
-      -- else
-      -- print("predebug task was false, so assuming there was a problem and not debugging")
-      -- end
-    end, "Debugger: DapHydra")
-  end
+if require("lazyvim.util").has("nvim-dap") then
   -- ['<leader>da']  = {
   -- function()
-else
+  -- else
   -- 	-- require'dap'.set_breakpoint()
   -- 	-- require'dap'.run({type='python', request='attach', host='127.0.0.1', port=5678})
   -- end,    'Attach (localhost, 5678)'} ,
   map("n", "<F5>", function()
+    -- local currentBuf = vim.api.nvim_get_current_buf()
+    -- vim.notify("Current buf " .. vim.inspect(currentBuf))
     if vim.cmd.PreDebugTask() then
       -- require("dap").continue()
     else
@@ -601,9 +588,25 @@ else
     map("n", "<leader>du", function()
       require("dapui").toggle()
     end, "Toggle Debugger UI")
-    map("n", "<leader>dh", function()
+    map("n", "<leader>dk", function()
       require("dap.ui.widgets").hover()
     end, "Debugger Hover")
+  end
+  if LazyVimUtil.has("hydra.nvim") then
+    map("n", "<leader>dh", function()
+      -- if vim.cmd.PreDebugTask() then
+      local hydra = require("hydra")
+      hydra.spawn("dap-hydra")
+      -- if vim.cmd.PreDebugTask() then
+      --   -- require("dap").continue()
+      -- else
+      --   print("predebug task was false, so assuming there was a problem and not debugging")
+      -- end
+      -- require("dap").continue()
+      -- else
+      -- print("predebug task was false, so assuming there was a problem and not debugging")
+      -- end
+    end, "Debugger: DapHydra")
   end
 end
 

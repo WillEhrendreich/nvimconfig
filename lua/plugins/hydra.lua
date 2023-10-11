@@ -9,16 +9,12 @@ return {
     local dap = require("dap")
 
     local hint = [[
-      _o_: step over   _c_: Continue/Start   _b_: Breakpoint     _K_: Hover
-      _i_: step into   _x_: Quit             _d_: Toggle DapUi   ^ ^
-      _u_: step up/out _X_: Stop             ^ ^
-      _t_: to cursor   _C_: Close UI
-      ^
-      ^ ^              _q_: exit
+      _o_: step over   _c_: Continue/Start   _b_: Breakpoint     _K_: Hover        _i_: step into   _x_: Quit    _d_: Toggle DapUi   
+      _u_: step up/out _X_: Stop             _t_: to cursor      _C_: Close UI     _q_: exit
       ]]
 
     local dap_hydra = Hydra({
-      -- hint = hint,
+      hint = hint,
       config = {
         color = "pink",
         invoke_on_body = true,
@@ -46,9 +42,10 @@ return {
           { silent = true },
         },
 
-        { "c", dap.continue, { silent = true } },
+        -- { "c", dap.continue, { silent = true } },
+        -- { "c", dap.continue, { silent = true } },
         {
-          "p",
+          "c",
 
           function()
             vim.notify("trying to execute PreDebugTask user command ")

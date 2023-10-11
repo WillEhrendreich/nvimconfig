@@ -184,7 +184,7 @@ return {
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
       -- "jcdickinson/codeium.nvim",
-      "willehrendreich/codeium.nvim",
+      -- "willehrendreich/codeium.nvim",
 
       {
 
@@ -425,28 +425,28 @@ return {
           -- end, { "i", "s" }),
         }),
 
-        sources = cmp.config.sources({
-          { name = "codeium", keyword_length = 0 },
-          -- { name = "jupyter"},
-          -- { name = "jupynium"},
-          { name = "luasnip", keyword_length = 0 },
-          { name = "nvim_lsp", keyword_length = 0 },
-          { name = "buffer", keyword_length = 5, max_item_count = 10 },
-          -- { name = "emoji" },
-        }),
-        sorting = {
-          comparators = {
-            cmp.config.compare.exact,
-            cmp.config.compare.recently_used,
-            cmp.config.compare.sort_text,
-            cmp.config.compare.score,
-            cmp.config.compare.order,
-            cmp.config.compare.kind,
-            cmp.config.compare.offset,
-            -- require("clangd_extensions.cmp_scores"),
-            cmp.config.compare.length,
-          },
-        },
+        -- sources = cmp.config.sources({
+        --   -- { name = "codeium", keyword_length = 0 },
+        --   -- { name = "jupyter"},
+        --   -- { name = "jupynium"},
+        --   { name = "luasnip", keyword_length = 0 },
+        --   { name = "nvim_lsp", keyword_length = 0 },
+        --   { name = "buffer", keyword_length = 5, max_item_count = 10 },
+        --   -- { name = "emoji" },
+        -- }),
+        -- sorting = {
+        --   comparators = {
+        --     cmp.config.compare.exact,
+        --     cmp.config.compare.recently_used,
+        --     cmp.config.compare.sort_text,
+        --     cmp.config.compare.score,
+        --     cmp.config.compare.order,
+        --     cmp.config.compare.kind,
+        --     cmp.config.compare.offset,
+        --     -- require("clangd_extensions.cmp_scores"),
+        --     cmp.config.compare.length,
+        --   },
+        -- },
         formatting = {
           -- format = function(_, item)
           --   local icons = require("lazyvim.config").icons.kinds

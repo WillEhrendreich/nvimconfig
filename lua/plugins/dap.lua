@@ -1,7 +1,7 @@
 local fn = vim.fn
 local dap = require("dap")
 local tc = vim.tbl_contains
-local Util = require("lazyvim.util")
+local has = require("lazyvim.util").has
 local strs = require("plenary.strings")
 if not vim.g["DotnetStartupProjectRootPath"] then
   vim.g["DotnetStartupProjectRootPath"] = ""
@@ -108,8 +108,8 @@ local function pick_if_many_sync(items, prompt, label_fn)
   end
 end
 
-local function get_nearest_proj()
-  local currentFileDir = vim.fs.normalize(vim.fn.expand("%:p:h") or "")
+local function get_nearest_proj(buf)
+  local currentFileDir = vim.fs.normalize(vim.fs.dirname(vim.uri_from_bufnr(buf)) or vim.fn.getcwd())
   vim.notify("currentFileDir " .. vim.inspect(currentFileDir))
   local currentWorkingDir = vim.fs.normalize(vim.fn.getcwd() or "")
   vim.notify("currentWorkingDir " .. vim.inspect(currentWorkingDir))
@@ -162,11 +162,15 @@ end
 
 local function get_proj(projectName)
   ---@type table<string>
-  local items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "*/*proj", 0, 1) or {}
+  -- local items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "*/*proj", 0, 1) or {}
+  local items = vim.fs.find(function(name, path)
+    return name:match(projectName .. ".fsproj$")
+  end, { limit = 1, type = "file", path = FindRoot({ "" }, vim.lsp.buf_get_clients(0, { name = "ionide" })) }) or {}
 
-  if #items < 1 then
-    items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "**/*proj", 0, 1) or {}
-  end
+  -- local cpp_hpp = vim.fs.find()
+  --  if #items < 1 then
+  --    items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "**/*proj", 0, 1) or {}
+  --  end
 
   -- vim.tbl_map(function(path) return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")  ):shorten(3) end, vim.fn.globpath("c:/users/will.ehrendreich/source/repos/Fabload/", "**/bin/Debug/**/*.dll", 0, 1))
 
@@ -355,7 +359,7 @@ function GetCurrentBufDirname()
   local p = vim.fs.normalize(vim.fs.dirname(string.sub(vim.uri_from_bufnr(vim.api.nvim_get_current_buf()), 9)))
   return p
 end
-function GetDotnetProjectPath(askForChanges)
+function GetDotnetProjectPath(askForChanges, buf)
   ---@type string
   local dirname = GetCurrentBufDirname()
   ---@type string
@@ -367,7 +371,7 @@ function GetDotnetProjectPath(askForChanges)
   ---@type string
   local nearestProj
   if vim.g["DotnetStartupProjectPath"] == "" then
-    nearestProj = get_nearest_proj() or ""
+    nearestProj = get_nearest_proj(buf) or ""
   else
     nearestProj = vim.g["DotnetStartupProjectPath"]
   end
@@ -506,7 +510,7 @@ function GetDotnetProjectPath(askForChanges)
 end
 
 function OpenFileInNewBuffer(f)
-  local file_exists = require("dev.NeovimUtils").file_exists(f)
+  local file_exists = vim.fn.filereadable(f) == true
   if not file_exists then
     local file = io.open(f, "w")
     if file then
@@ -571,7 +575,14 @@ function DotnetBuildDebugPopup(p, launch, launchWithDebugger, askForChanges)
       -- buildData = buildData .. (vim.fn.inspect(StringReplace(data[1], "\\r", "\n")))
     end,
     on_exit = function(id, exitCode)
-      vim.notify(utils.markdown(buildData, { title = "DotnetBuildReport" }))
+      vim.notify(
+        (
+          utils.markdown(
+            buildData or "No Build Data populated!! did it run correctly?",
+            { title = "DotnetBuildReport" }
+          ) or "No Build Data populated!! did it run correctly?"
+        )
+      )
       local f = exitCode
       if f == 0 then
         vim.notify("\nBuild debug: ✔️ ")
@@ -655,7 +666,12 @@ end
 local function get_dll_Sync(startProjectPath, projectName)
   -- local proj = get_proj()
   ---@type table<string>
-  local items = vim.fn.globpath(startProjectPath, "bin/Debug/" .. projectName .. ".dll", false, true)
+  -- local items = vim.fn.globpath(startProjectPath, "bin/Debug/" .. projectName .. ".dll", false, true)
+
+  local items = vim.fs.find(projectName .. ".dll", {
+
+    { limit = math.huge, type = "file", path = startProjectPath },
+  })
   -- local items = vim.fn.globpath(vim.fn.getcwd(), "**/bin/Debug/*" .. projectName .. ".dll", false, true)
 
   -- vim.tbl_map(function(path) return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")  ):shorten(3) end, vim.fn.globpath("c:/users/will.ehrendreich/source/repos/Fabload/", "**/bin/Debug/**/*.dll", 0, 1))
@@ -677,11 +693,11 @@ local function get_dll_Sync(startProjectPath, projectName)
   -- vim.fn.browse(false, "Select Debug Target Dll.. ", vim.fn.getcwd(), default)
 end
 
-function GetDotnetDllPath(askForChanges)
+function GetDotnetDllPath(askForChanges, buf)
   ---@type string
   local nearestProj
   if vim.g["DotnetStartupProjectPath"] == "" then
-    nearestProj = get_nearest_proj() or ""
+    nearestProj = get_nearest_proj(buf) or ""
   else
     nearestProj = vim.g["DotnetStartupProjectPath"]
   end
@@ -701,7 +717,12 @@ function GetDotnetDllPath(askForChanges)
     vim.g["DotnetProjectFileName"] = projectName
   end
   -- local path = dirname .. "/bin/debug/" .. projectName .. ".dll"
-  local path = vim.fs.normalize(parentDir .. "bin/debug/" .. projectName .. ".dll")
+  -- local path = vim.fs.normalize(parentDir .. "bin/debug/" .. projectName .. ".dll")
+  --
+  local path = vim.fs.find(projectName .. ".dll", {
+    { limit = 1, type = "file", path = parentDir },
+  })[1] or vim.fs.normalize(parentDir .. "bin/debug/" .. projectName .. ".dll")
+
   -- print("path construction is " .. path)
   if not vim.g["DotnetDllPath"] or vim.g["DotnetDllPath"] == "" then
     vim.notify("DotnetDllPath was {" .. vim.inspect(vim.g["DotnetDllPath"]) .. "} Setting it to " .. path)
@@ -710,9 +731,10 @@ function GetDotnetDllPath(askForChanges)
   local request = function()
     -- local p = vim.fn.input({ prompt = "Path to dll ", default = givenPath, completion = "file", cancelreturn = "" })
     local p = get_dll_Sync(parentDir, projectName)
+    local pathWithExt = p .. ".dll"
+    local readable = vim.fn.filereadable(pathWithExt) == 1
     if not StringEndsWith(p, ".dll") then
-      local pathWithExt = p .. ".dll"
-      if not os.rename(pathWithExt, pathWithExt) then
+      if not readable then
         p = vim.fn.input({
           prompt = "Could not find " .. p .. ".dll, please try entering another path? ",
           default = p,
@@ -777,6 +799,11 @@ end
 
 local function beforeDebug(opts)
   --Check if the current filetype is one of the ones that are listed for the coreclr adapter, and if it is, then build
+  --
+  local bufferThatStarted = vim.api.nvim_get_current_buf()
+  -- vim.notify("buffer: " .. vim.inspect(opts))
+  -- vim.notify("bufferCurrent: " .. vim.inspect(bufferThatStarted))
+
   local askForChanges
   -- vim.notify(vim.inspect(opts))
   if opts.args and opts.args[1] and opts.args[1] == true then
@@ -790,23 +817,28 @@ local function beforeDebug(opts)
   local session = require("dap").session()
   local isInDebugSession = session and session.closed == false
   local buildSuccessful
-  local hasOverSeer = Util.has("overseer.nvim")
+  local hasOverSeer = has("overseer.nvim")
 
   local path
+
   if isDotnet and not isInDebugSession then
-    path = GetDotnetProjectPath(askForChanges)
+    path = GetDotnetProjectPath(askForChanges, bufferThatStarted)
   end
+
   if hasOverSeer == true then
     vim.notify("Overseer present, handing build off to that")
     -- local path = get_proj()
-    local overseer = require("overseer")
+    --
+    -- local overseer = require("overseer")
+    -- overseer
 
-    local thiswin = vim.api.nvim_get_current_win()
+    -- local thiswin = vim.api.nvim_get_current_win()
 
-    local dllpath = GetDotnetDllPath(askForChanges)
-    overseer.open({ bang = false })
-    vim.api.nvim_set_option_value("wrap", true, { win = vim.api.nvim_get_current_win() })
-    vim.api.nvim_set_current_win(thiswin)
+    -- local dllpath = GetDotnetDllPath(askForChanges, bufferThatStarted)
+    local oCmds = require("overseer.commands")
+    oCmds._open({ bang = true })
+    -- vim.api.nvim_set_option_value("wrap", true, { win = vim.api.nvim_get_current_win() })
+    -- vim.api.nvim_set_current_win(thiswin)
 
     -- {
     --   _start_tasks = <function 1>,
@@ -846,8 +878,12 @@ local function beforeDebug(opts)
     -- buildSuccessful = DotnetBuild(path, "debug", true, true)
     -- else
     require("dap").continue()
-    GetDotnetDllPath(askForChanges)
-    buildSuccessful = true
+    -- GetDotnetDllPath(askForChanges)
+    -- buildSuccessful = true
+    -- overseer
+    -- if buildSuccessful == true then
+    oCmds._close()
+    -- end
   else
     -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
     -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
@@ -855,12 +891,69 @@ local function beforeDebug(opts)
     -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
 
     buildSuccessful = DotnetBuild(path, "debug", true, true)
-    local dllpath = GetDotnetDllPath(askForChanges)
+    -- local dllpath = GetDotnetDllPath(askForChanges)
     require("dap").continue()
   end
   return buildSuccessful or true
 end
 
+-- Creating user commands                           *lua-guide-commands-create*
+--
+-- User commands can be created through with |nvim_create_user_command()|. This
+-- function takes three mandatory arguments:
+-- • a string that is the name of the command (which must start with an uppercase
+--   letter to distinguish it from builtin commands);
+-- • a string containing Vim commands or a Lua function that is executed when the
+--   command is invoked;
+-- • a table with |command-attributes|; in addition, it can contain the keys
+--   `desc` (a string describing the command); `force` (set to `false` to avoid
+--   replacing an already existing command with the same name), and `preview` (a
+--   Lua function that is used for |:command-preview|).
+--
+-- Example:
+-- >lua
+--     vim.api.nvim_create_user_command('Test', 'echo "It works!"', {})
+--     vim.cmd.Test()
+--     --> It works!
+-- <
+-- (Note that the third argument is mandatory even if no attributes are given.)
+--
+-- Lua functions are called with a single table argument containing arguments and
+-- modifiers. The most important are:
+-- • `name`: a string with the command name
+-- • `fargs`: a table containing the command arguments split by whitespace (see |<f-args>|)
+-- • `bang`: `true` if the command was executed with a `!` modifier (see |<bang>|)
+-- • `line1`: the starting line number of the command range (see |<line1>|)
+-- • `line2`: the final line number of the command range (see |<line2>|)
+-- • `range`: the number of items in the command range: 0, 1, or 2 (see |<range>|)
+-- • `count`: any count supplied (see |<count>|)
+-- • `smods`: a table containing the command modifiers (see |<mods>|)
+--
+-- For example:
+-- >lua
+--     vim.api.nvim_create_user_command('Upper',
+--       function(opts)
+--         print(string.upper(opts.fargs[1]))
+--       end,
+--       { nargs = 1 })
+--
+--     vim.cmd.Upper('foo')
+--     --> FOO
+-- <
+-- The `complete` attribute can take a Lua function in addition to the
+-- attributes listed in |:command-complete|. >lua
+--
+--     vim.api.nvim_create_user_command('Upper',
+--       function(opts)
+--         print(string.upper(opts.fargs[1]))
+--       end,
+--       { nargs = 1,
+--         complete = function(ArgLead, CmdLine, CursorPos)
+--           -- return completion candidates as a list-like table
+--           return { "foo", "bar", "baz" }
+--         end,
+--     })
+-- <
 vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
 
   nargs = "?",
@@ -1038,39 +1131,90 @@ local function dapconfig(_, opts)
   mason_nvim_dap.setup(o)
 end
 
+---@param config {args?:string[]|fun():string[]?}
+local function get_args(config)
+  local args = type(config.args) == "function" and (config.args() or {}) or config.args or {}
+  ---@cast args string[]
+  config.args = function()
+    local new_args = vim.fn.input("Run with args: ", table.concat(args, " ")) --[[@as string]]
+    return vim.split(vim.fn.expand(new_args) --[[@as string]], " ")
+  end
+  return config
+end
+
 return {
   "mfussenegger/nvim-dap",
 
   dependencies = {
+
+    -- fancy UI for the debugger
     {
       "rcarriga/nvim-dap-ui",
-      -- opts = { floating = { border = "rounded" } },
-      -- config = dapuiconfigFunc,
-      -- config = require "plugins.configs.nvim-dap-ui",
+      -- stylua: ignore
+      keys = {
+        { "<leader>du", function() require("dapui").toggle({ }) end, desc = "Dap UI" },
+        { "<leader>de", function() require("dapui").eval() end, desc = "Eval", mode = {"n", "v"} },
+      },
+      opts = {},
+      config = function(_, opts)
+        -- setup dap config by VsCode launch.json file
+        -- require("dap.ext.vscode").load_launchjs()
+        local dap = require("dap")
+        local dapui = require("dapui")
+        dapui.setup(opts)
+        dap.listeners.after.event_initialized["dapui_config"] = function()
+          dapui.open({})
+        end
+        dap.listeners.before.event_terminated["dapui_config"] = function()
+          dapui.close({})
+        end
+        dap.listeners.before.event_exited["dapui_config"] = function()
+          dapui.close({})
+        end
+      end,
     },
 
+    -- virtual text for the debugger
+    {
+      "theHamsta/nvim-dap-virtual-text",
+      opts = {},
+    },
+
+    -- which key integration
+    {
+      "folke/which-key.nvim",
+      optional = true,
+      opts = {
+        defaults = {
+          ["<leader>d"] = { name = "+debug" },
+          ["<leader>da"] = { name = "+adapters" },
+        },
+      },
+    },
+
+    -- mason.nvim integration
     {
       "jay-babu/mason-nvim-dap.nvim",
-      -- commit = "2b5f8a2",
-      dependencies = { "nvim-dap" },
+      dependencies = "mason.nvim",
       cmd = { "DapInstall", "DapUninstall" },
-
       opts = {
+        -- Makes a best effort to setup the various debuggers with
+        -- reasonable debug configurations
+        automatic_installation = true,
+
+        -- You can provide additional configuration to the handlers,
+        -- see mason-nvim-dap README for more information
+        handlers = {},
+
+        -- You'll need to check that you have the required things installed
+        -- online, please don't ask me how to install them :)
 
         -- automatic_setup = true,
-        handlers = {},
-        automatic_installation = true,
         ensure_installed = { "coreclr", "mock", "codelldb" },
       },
 
       config = dapconfig,
       -- config = require "plugins.configs.mason-nvim-dap",
-    },
-
-    {
-      -- virtual text for the debugger
-      "theHamsta/nvim-dap-virtual-text",
-      opts = {},
     },
 
     {

@@ -1,4 +1,16 @@
 local uc = vim.api.nvim_create_user_command
+function Reload(m)
+  vim.notify("attempting to reload " .. m, vim.log.levels.INFO)
+  require("plenary.reload").reload_module(m)
+  vim.notify("assuming reload was successful, you should now have the current version of " .. m, vim.log.levels.INFO)
+end
+
+uc("Reload", function()
+  vim.cmd.w()
+  Reload(vim.api.nvim_buf_get_name(0))
+end, {
+  desc = "Reload module",
+})
 -- local lazyvim = require("lazyvim")
 local M = {}
 
@@ -315,10 +327,11 @@ function M.GetVisualSelection(keepSelectionIfNotInBlockMode, advanceCursorOneLin
   return lines -- use this return if you want an array of text lines
   -- return table.concat(lines, "\n") -- use this return instead if you need a text block
 end
-uc("Scratch", function(arg)
-  M.scratch(arg)
-  --local M = {}
-end, {})
+
+-- uc("Scratch", function(arg)
+--   M.scratch(arg)
+--   --local M = {}
+-- end, {})
 
 ---this is a test to see about structure and calling things
 ---@param s string
@@ -361,7 +374,7 @@ function M.system_open(path)
   if not cmd then
     M.notify("Available system opening tool not found!", "error")
   end
-  if require("lazy.util").has("open-browser.vim") then
+  if require("lazyvim.util").has("open-browser.vim") then
     -- require("openbrowser-smart-search")
     vim.cmd.OpenBrowserSmartSearch(path)
   else

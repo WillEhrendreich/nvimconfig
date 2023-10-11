@@ -40,6 +40,41 @@ local function extractPackageId(inputString)
   local packageName = inputString:match(pattern)
   return packageName
 end
+local function ensureWingetSettings()
+  local settings = [[
+{
+    "$schema": "https://aka.ms/winget-settings.schema.json",
+
+    // For documentation on these settings, see: https://aka.ms/winget-settings
+    // "source": {
+    //    "autoUpdateIntervalInMinutes": 5
+    // },
+
+"interactivity": {
+    "disable": true
+},
+"experimentalFeatures": {
+    "windowsFeature": true,
+    "configuration": true,
+    "directMSI": true,
+    "experimentalARG": true,
+    "experimentalCMD": true
+}
+
+}
+  ]]
+  local wingetIsExecutable = vim.fn.executable("winget") == 1
+  vim.notify(vim.inspect(wingetIsExecutable))
+  local localAppDataPackages =
+    
+vim.fs.normalize((os.getenv("localappdata") or os.getenv("userprofile") .. "/AppData/local") .. "/Packages")
+  local defaultIsReadable = vim.fn.filereadable(
+    localAppDataPackages .. "/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe/LocalState/settings.json"
+  ) == 1
+  if defaultIsReadable then
+  else
+  end
+end
 
 function UseChocoToInstallAllTheThings()
   -- local currentPackagesExportPath = "c:\\temp\\packages.config"
@@ -86,6 +121,7 @@ function UseChocoToInstallAllTheThings()
     [[ <package id="zig" />]],
     [[</packages>]],
   }
+
   if chocoPackagesConfig == "" then
     vim.fn.writefile(linesForMissingPackagesConfig, vim.fn.stdpath("config") .. "/packages.config")
   end
@@ -100,17 +136,20 @@ function UseChocoToInstallAllTheThings()
     table.insert(allPackagesLinesFromCurrent, extractPackageId(p))
   end
 
-  -- local installsFromPackagesConfig = {}
   local differences = {}
   for i, p in ipairs(allPackagesLinesFromDistro) do
     if not vim.tbl_contains(allPackagesLinesFromCurrent, p) then
-      local chocoPackage = extractPackageId(p)
-      table.insert(differences, chocoPackage)
+      table.insert(differences, p)
     end
   end
+  -- for i, p in ipairs(allPackagesLinesFromCurrent) do
+  --   if not vim.tbl_contains(allPackagesLinesFromDistro, p) then
+  --     table.insert(differences, p)
+  --   end
+  -- end
 
   if vim.tbl_count(differences) > 0 then
-    vim.notify("Not included in current choco packages :" .. vim.inspect(differences))
+    -- vim.notify("Not included in current choco packages :" .. vim.inspect(differences))
   end
   local packageToExecutableName = {
 
@@ -177,6 +216,7 @@ function UseChocoToInstallAllTheThings()
     "chocolatey",
     "curl",
     "docker",
+    "fd",
     "fzf",
     "gdu",
     "gh",
@@ -190,6 +230,7 @@ function UseChocoToInstallAllTheThings()
     "ripgrep",
     "SQLite",
     "tree-sitter",
+    "unzip",
     "Wget",
     "zig",
   }
@@ -246,16 +287,69 @@ function UseChocoToInstallAllTheThings()
       -- filter = "",
       once = true,
       callback = function()
-        vim.notify("going to run " .. vim.inspect(chocoCmd))
+        -- vim.notify(
+        --   "Not included in current choco packages :"
+        --     .. vim.inspect(differences)
+        --     .. "\nGoing to run : "
+        --     .. vim.inspect(chocoCmd)
+        -- )
         local util = require("config.util")
-        util.float_term(chocoCmd)
+        -- util.float_term(chocoCmd)
+        ---@type LazyFloatOptions
+        local fopts = {
+          border = "double",
+          noautocmd = true,
+          -- style = "",
+          persistent = true,
+
+          buf = (function()
+            local buf = vim.api.nvim_create_buf(true, true)
+
+            local currentBlank = vim.api.nvim_get_current_buf()
+            -- vim.api.nvim_set_current_buf(buf)
+
+            -- vim.api.nvim_buf_delete(currentBlank, { force = true })
+            -- vim.fn.bufload(buf)
+            -- vim.bo[buf].modifiable = false
+
+            return buf
+          end)(),
+
+          -- size = { row = 1, height = 10, width = 80 },
+
+          title = "Choco.nvim installer process",
+          title_pos = "center",
+
+          -- file = "C:/temp/chocoNvimLog.log",
+        }
+        util.float_term(chocoCmd, fopts)
+
+        -- util.float_term({
+        vim.fn.jobstart({
+          -- 'write-host "Chocolatey will now re-export the list of currently installed plugins to: \n"'
+          --   .. currentPackagesExportPath,
+          "choco",
+          "export",
+          currentPackagesExportPath,
+        })
       end,
     })
 
     -- vim.fn.system(chocoCmd)
     -- vim.fn.system("refreshenv")
   else
-    -- vim.notify("all listed programs are installed and executable from neovim.")
+    --   vim.api.nvim_create_autocmd("BufEnter", {
+    --     group = vim.api.nvim_create_augroup("ChocoInstallAllGood", { clear = true }),
+    --     -- filter = "",
+    --     once = true,
+    --     callback = function()
+    --       -- vim.defer_fn(
+    --       vim.notify(
+    --         "\nAll Choco.nvim's listed programs are installed! Have a sweet day!... see what I did there?.. choco.. sweet.. cuz... it's. yeah nevermind.. I'll show myself out."
+    --       )
+    --       -- , 2000)
+    --     end,
+    --   })
   end
 end
 
