@@ -139,11 +139,11 @@ return {
         end
       end
 
-      local Util = require("lazyvim.util")
+      local ui = require("lazyvim.util").ui
       local colors = {
-        ok = Util.fg("Special"),
-        error = Util.fg("DiagnosticError"),
-        pending = Util.fg("DiagnosticWarn"),
+        ok = ui.fg("Special"),
+        error = ui.fg("DiagnosticError"),
+        pending = ui.fg("DiagnosticWarn"),
       }
       table.insert(opts.sections.lualine_x, 2, {
         function()
