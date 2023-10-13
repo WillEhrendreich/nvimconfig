@@ -359,6 +359,7 @@ function GetCurrentBufDirname()
   local p = vim.fs.normalize(vim.fs.dirname(string.sub(vim.uri_from_bufnr(vim.api.nvim_get_current_buf()), 9)))
   return p
 end
+
 function GetDotnetProjectPath(askForChanges, buf)
   ---@type string
   local dirname = GetCurrentBufDirname()
@@ -492,8 +493,8 @@ function GetDotnetProjectPath(askForChanges, buf)
     return response
   end
   if
-    askForChanges
-    and vim.fn.confirm(
+      askForChanges
+      and vim.fn.confirm(
         "Do you want to change the path to project? \n" .. vim.inspect(vim.fs.normalize(path)),
         "&yes\n&no",
         2
@@ -603,9 +604,9 @@ function DotnetBuildDebugPopup(p, launch, launchWithDebugger, askForChanges)
       else
         vim.notify(
           "\nBuild debug failed: ❌ (exit code: "
-            .. vim.inspect(f) -- .. "Build output :\n"
-            -- .. vim.inspect(buildData)
-            .. ")"
+          .. vim.inspect(f)   -- .. "Build output :\n"
+          -- .. vim.inspect(buildData)
+          .. ")"
         )
 
         --    LspOpenFileInNewBuffer(logfile)
@@ -617,6 +618,7 @@ function DotnetBuildDebugPopup(p, launch, launchWithDebugger, askForChanges)
   -- vim.notify(vim.inspect(f))
   return f
 end
+
 function DotnetBuildDebug(p, launch, launchWithDebugger, askForChanges)
   local cmd = "dotnet build " .. p .. " --debug"
   vim.notify("Building command " .. cmd)
@@ -752,8 +754,8 @@ function GetDotnetDllPath(askForChanges, buf)
     return p
   end
   if
-    askForChanges
-    and vim.fn.confirm("Do you want to change the path to dll? \n" .. vim.g["DotnetDllPath"], "&yes\n&no", 2) == 1
+      askForChanges
+      and vim.fn.confirm("Do you want to change the path to dll? \n" .. vim.g["DotnetDllPath"], "&yes\n&no", 2) == 1
   then
     path = request()
     vim.g["DotnetDllPath"] = path
@@ -1092,7 +1094,7 @@ local function dapconfig(_, opts)
           port = "${port}",
           executable = {
             command = require("mason-registry").get_package("codelldb"):get_install_path()
-              .. "/extension/adapter/codelldb",
+                .. "/extension/adapter/codelldb",
             args = { "--port", "${port}" },
           },
           detatched = false,
@@ -1152,8 +1154,8 @@ return {
       "rcarriga/nvim-dap-ui",
       -- stylua: ignore
       keys = {
-        { "<leader>du", function() require("dapui").toggle({ }) end, desc = "Dap UI" },
-        { "<leader>de", function() require("dapui").eval() end, desc = "Eval", mode = {"n", "v"} },
+        { "<leader>du", function() require("dapui").toggle({}) end,  desc = "Dap UI" },
+        { "<leader>de", function() require("dapui").eval() end,      desc = "Eval",  mode = { "n", "v" } },
       },
       opts = {},
       config = function(_, opts)
@@ -1222,9 +1224,12 @@ return {
       config = true,
     },
 
-    { "Weissle/persistent-breakpoints.nvim", opts = {
-      load_breakpoints_event = { "BufReadPost" },
-    } },
+    {
+      "Weissle/persistent-breakpoints.nvim",
+      opts = {
+        load_breakpoints_event = { "BufReadPost" },
+      }
+    },
   },
 
   config = function()
