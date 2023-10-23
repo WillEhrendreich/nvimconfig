@@ -1,8 +1,9 @@
+local util = require("config.util")
 return {
   {
-    "WillEhrendreich/ionide-vim",
-    dir = vim.fn.getenv("repos") .. "/ionide-nvim/",
-    dev = true,
+    "WillEhrendreich/Ionide-nvim",
+    dev = util.hasRepoWithName("Ionide-nvim"),
+    dir = util.getRepoWithName("Ionide-nvim"),
     dependencies = {
       {
         "williamboman/mason.nvim",
@@ -26,9 +27,8 @@ return {
                   FsiStdOutFileName = "./FsiOutput.txt",
                 },
                 cmd = {
-                  -- "C:/.local/share/nvim-data/mason/bin/fsautocomplete.cmd",
-
-                  vim.fs.normalize(vim.fn.stdpath("data") .. "/mason/bin/fsautocomplete.cmd"),
+                  -- vim.fs.normalize(vim.fn.stdpath("data") .. "/mason/bin/fsautocomplete.cmd"),
+                  util.getMasonBinCommandIfExists("fsautocomplete"),
                   -- "-l",
                   -- ".fsautocomplete.log",
                   -- "-v",
@@ -51,9 +51,9 @@ return {
             ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
             setup = {
               ionide = function(_, opts)
-                -- local inp = vim.fn.input("please attach debugger")
                 require("ionide").setup(opts)
               end,
+              -- NOTE: returning true will make sure fsautocomplete is not setup with neovim, which is what we want if we're using Ionide-nvim
               fsautocomplete = function(_, _)
                 return true
               end,

@@ -12,7 +12,7 @@ return {
       size = 12,
       open_mapping = [[<F7>]],
       shading_factor = 2,
-      direction = "float",
+      direction = "vertical",
       float_opts = {
         border = "curved",
         highlights = { border = "Normal", background = "Normal" },

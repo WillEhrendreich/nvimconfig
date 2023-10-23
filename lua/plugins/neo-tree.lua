@@ -1,3 +1,43 @@
+---@class NuiTree.Node
+---@field _id string
+---@field _depth integer
+---@field _parent_id? string
+---@field _child_ids? string[]
+---@field __children? NuiTree.Node[]
+---@field [string] any
+--
+---@alias NuiTreeNode NuiTree.Node
+
+--luacheck: push no max line length
+
+---@alias nui_tree_get_node_id fun(node: NuiTree.Node): string
+---@alias nui_tree_prepare_node fun(node: NuiTree.Node, parent_node?: NuiTree.Node): nil | string | string[] | NuiLine | NuiLine[]
+
+--luacheck: pop
+
+---@class nui_tree_internal
+---@field buf_options table<string, any>
+---@field get_node_id nui_tree_get_node_id
+---@field linenr { [1]?: integer, [2]?: integer }
+---@field linenr_by_node_id table<string, { [1]: integer, [2]: integer }>
+---@field node_id_by_linenr table<integer, string>
+---@field prepare_node nui_tree_prepare_node
+---@field win_options table<string, any> # deprecated
+
+---@class nui_tree_options
+---@field bufnr integer
+---@field ns_id? string|integer
+---@field nodes? NuiTree.Node[]
+---@field get_node_id? fun(node: NuiTree.Node): string
+---@field prepare_node? fun(node: NuiTree.Node, parent_node?: NuiTree.Node): nil|string|string[]|NuiLine|NuiLine[]
+
+---@class NuiTree
+---@field bufnr integer
+---@field nodes { by_id: table<string,NuiTree.Node>, root_ids: string[] }
+---@field ns_id integer
+---@field private _ nui_tree_internal
+---@field winid number # @deprecated
+
 --- Open a URL under the cursor with the current operating system
 -- @param path the path of the file to open with the system opener
 local function system_open(path)
@@ -132,6 +172,8 @@ local utils = require("config.util")
 return {
   "nvim-neo-tree/neo-tree.nvim",
   branch = "main",
+  dev = utils.hasRepoWithName("neo-tree.nvim"),
+  dir = utils.getRepoWithName("neo-tree.nvim"),
   dependencies = {
     "MunifTanjim/nui.nvim",
     {
@@ -175,6 +217,29 @@ return {
       system_open = function(state)
         system_open(state.tree:get_node():get_id())
       end,
+      open_containing_folder = function(state)
+        ---@type NuiTree.Node
+        local i = state.tree:get_node():get_parent_id()
+        -- vim.notify("opening " .. vim.fs.normalize(i))
+        if vim.fn.has("win32") == 1 then
+          -- vim.notify(i)
+          vim.cmd("!explorer " .. i)
+        end
+        -- vim.fn.setreg('"', parentNode)
+
+        -- if parentNode and parentNode.type == "directory" then
+        -- system_open(parentNode:get_id())
+        -- end
+      end,
+      open_containing_folder_in_terminal = function(state)
+        ---@type NuiTree.Node
+        local i = state.tree:get_node():get_parent_id()
+        -- vim.notify("opening " .. vim.fs.normalize(i))
+        if require("lazyvim.util").has("toggleterm.nvim") then
+          vim.cmd("ToggleTerm size=40 dir=" .. i .. " direction=vertical")
+        end
+      end,
+
       -- addFileAbove = function(state)
       --   local hasIonide, ionide = pcall(require, "ionide")
       --   local hasWillEhrendreichIonide = false
@@ -242,7 +307,7 @@ return {
       enable_diagnostics = true,
       sources = {
         "filesystem",
-        -- "neo-tree-fsharp",
+        "neo-tree-fsharp",
         "buffers",
         "git_status",
         -- "document_symbols",
@@ -259,7 +324,7 @@ return {
           { source = "filesystem" },
           { source = "buffers" },
           { source = "git_status" },
-          -- { source = "neo-tree-fsharp" },
+          { source = "neo-tree-fsharp" },
         },
         -- tab_labels = {
         -- filesystem = v.get_icon("FolderClosed") .. " File",
@@ -343,7 +408,7 @@ return {
         },
         group_empty_dirs = true, -- when true, empty folders will be grouped together
         hijack_netrw_behavior = "open_current",
-        use_libuv_file_watcher = true,
+        use_libuv_file_watcher = false,
         async_directory_scan = "auto", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
         -- "always" means directory scans are always async.
         -- "never"  means directory scans are never async.
@@ -384,6 +449,8 @@ return {
         window = {
           mappings = {
             O = "system_open",
+            x = "open_containing_folder",
+            X = "open_containing_folder_in_terminal",
             i = "toggle_hidden",
             h = "parent_or_close",
             l = "child_or_open",
@@ -401,9 +468,52 @@ return {
         },
       },
       buffers = {
+        follow_current_file = {
+          enabled = true, -- This will find and focus the file in the active buffer every time
+          --              -- the current file is changed while the tree is open.
+          leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
+        },
+        group_empty_dirs = true, -- when true, empty folders will be grouped together
+        show_unloaded = true,
+        window = {
+          mappings = {
+            ["bd"] = "buffer_delete",
+            -- ["<bs>"] = "navigate_up",
+            u = "navigate_up",
+            ["."] = "set_root",
+            ["o"] = { "show_help", nowait = false, config = { title = "Order by", prefix_key = "o" } },
+            ["oc"] = { "order_by_created", nowait = false },
+            ["od"] = { "order_by_diagnostics", nowait = false },
+            ["om"] = { "order_by_modified", nowait = false },
+            ["on"] = { "order_by_name", nowait = false },
+            ["os"] = { "order_by_size", nowait = false },
+            ["ot"] = { "order_by_type", nowait = false },
+          },
+        },
         commands = global_commands,
       },
-      git_status = { commands = global_commands },
+      git_status = {
+        window = {
+          position = "float",
+          mappings = {
+            ["A"] = "git_add_all",
+            ["gu"] = "git_unstage_file",
+            ["ga"] = "git_add_file",
+            ["gr"] = "git_revert_file",
+            ["gc"] = "git_commit",
+            ["gp"] = "git_push",
+            ["gg"] = "git_commit_and_push",
+            ["o"] = { "show_help", nowait = false, config = { title = "Order by", prefix_key = "o" } },
+            ["oc"] = { "order_by_created", nowait = false },
+            ["od"] = { "order_by_diagnostics", nowait = false },
+            ["om"] = { "order_by_modified", nowait = false },
+            ["on"] = { "order_by_name", nowait = false },
+            ["os"] = { "order_by_size", nowait = false },
+            ["ot"] = { "order_by_type", nowait = false },
+          },
+        },
+        commands = global_commands,
+      },
     })
   end,
 }

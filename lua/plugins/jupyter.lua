@@ -12,5 +12,5 @@ return {
   },
   cmd = { "JupyterAttach", "JupyterInspect", "JupyterExecute" },
   build = ":UpdateRemotePlugins",
-  keys = { { "<leader>k", "<Cmd>JupyterInspect<CR>", desc = "Inspect object in kernel" } },
+  keys = { { "<leader>jk", "<Cmd>JupyterInspect<CR>", desc = "Inspect object in kernel" } },
 }

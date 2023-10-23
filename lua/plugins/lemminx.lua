@@ -176,7 +176,7 @@ return {
           opts.single_file_support = false
           opts.autostart = true
           -- opts.on_attach =
-          require("lazyvim.util").on_attach(customOnAttach)
+          require("lazyvim.util").lsp.on_attach(customOnAttach)
 
           -- require("lazyvim.util").on_attach(customOnAttach)
           -- end workaround

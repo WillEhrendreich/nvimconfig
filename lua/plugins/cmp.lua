@@ -182,7 +182,11 @@ return {
     "hrsh7th/nvim-cmp",
     dependencies = {
       "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
+
+      -- {
+      --   "kola-web/cmp-path",
+      -- },
+
       -- "jcdickinson/codeium.nvim",
       -- "willehrendreich/codeium.nvim",
 
@@ -230,7 +234,13 @@ return {
                 },
               },
             }, {
-              { name = "path" },
+              --   {
+              --     name = "path",
+              --     option = {
+              --       trailing_slash = true,
+              --       label_trailing_slash = true,
+              --     },
+              --   },
             }),
           })
         end,

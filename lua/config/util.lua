@@ -18,6 +18,26 @@ function M.stringContains(str, searchedForString)
   return string.match(str, searchedForString)
 end
 
+function M.getMasonBinCommandIfExists(name)
+  local result = ""
+  local masonBinPath = vim.fs.normalize(vim.fn.stdpath("data") .. "/mason/bin")
+  local binPath = masonBinPath .. "/" .. name
+  if vim.fn.executable(binPath) == 1 then
+    result = binPath
+  else
+    vim.notify(
+      "Unable to find "
+        .. name
+        .. " in "
+        .. masonBinPath
+        .. ".\nAre you sure you installed mason.nvim, that the path exists, and that the command is really named "
+        .. name
+        .. "?"
+    )
+  end
+  return result
+end
+
 ---tries to get an environment variable's value, and if it's not found or empty returns an empty string
 ---@param name string
 ---@return string

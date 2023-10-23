@@ -29,11 +29,32 @@ autocmd("BufReadPost", {
       vim.notify("im totally going to set this filetype to jsonc. dawg")
       vim.cmd("set filetype=jsonc")
       vim.cmd("set syntax=jsonc")
-      vim.bo.filetype("jsonc")
+      -- vim.b[0].filetype("jsonc")
       vim.notify(
         "im totally going to set this filetype to " .. vim.opt.filetype .. " which by this point i hope is jsonc. dawg"
       )
     end)
+  end,
+})
+
+autocmd("LspAttach", {
+  desc = "Make sure the filetype turns off autoformat.",
+  group = grp("MakeFsToggleOffAutoformat", { clear = true }),
+  pattern = "*.fs",
+  callback = function(_)
+    local current = vim.api.nvim_get_current_buf()
+    vim.notify("LspAttach for .fs file " .. vim.uri_from_bufnr(current) .. "\nHope format is turned off.")
+
+    vim.schedule_wrap(function()
+      -- if vim.uri_from_bufnr(vim.api.nvim_get_current_buf()):match("", init?)
+      vim.b[current].autoformat = false
+      vim.cmd("LazyFormatInfo")
+    end)
+    if vim.b[current].autoformat == true then
+      vim.notify("file " .. vim.uri_from_bufnr(current) .. "\n Autoformat is turned ON!.")
+    else
+      vim.notify("file " .. vim.uri_from_bufnr(current) .. "\n Autoformat is turned OFF!.")
+    end
   end,
 })
 

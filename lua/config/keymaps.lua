@@ -11,14 +11,20 @@ local function map(mode, lhs, rhs, opts)
   end
   opts = opts or {}
   opts.silent = opts.silent ~= false
-  vim.keymap.set(mode, lhs, rhs, opts)
+  if type(rhs) == "table" then
+    local rhsTable = vim.inspect(rhs)
+    vim.notify(
+      "cannot set keymap for lhs: " .. lhs .. " with a table value, which when inspected looks like \n" .. rhsTable
+    )
+  else
+    vim.keymap.set(mode, lhs, rhs, opts)
+  end
 end
 -- within config/keymaps.lua
 vim.api.nvim_del_keymap("n", "<leader>ww")
 vim.api.nvim_del_keymap("n", "<leader>wd")
 vim.api.nvim_del_keymap("n", "<leader>w-")
 vim.api.nvim_del_keymap("n", "<leader>w|")
--- vim.api.nvim_del_keymap("n", "<leader>dc")
 
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
@@ -94,9 +100,18 @@ map("o", "<leader>/", "<cmd>lua MiniComment.textobject()<cr>", { desc = "Comment
 
 map({ "v", "x" }, "<M-CR>", function()
   local lua_ls = vim.lsp.get_active_clients({ name = "lua_ls" })[1]
+  ---@type lsp.Client
+  local ionide = vim.lsp.get_active_clients({ name = "ionide" })[1]
   if lua_ls then
     local text = vim.fn.join(require("config.util").GetVisualSelection(), "\n")
     require("luadev").exec(text)
+  else
+    if ionide then
+      local sendFunc = require("ionide").SendSelectionToFsi
+      if sendFunc then
+        sendFunc()
+      end
+    end
   end
 end, "Send Lines to Repl")
 
@@ -128,9 +143,15 @@ map("n", "<M-CR>", function()
     -- vim.notify("luadev here too ")
     -- end
   end
+  ---@type lsp.Client
   local ionide = vim.lsp.get_active_clients({ name = "ionide" })[1]
   if ionide then
-    vim.notify("ive got ionide  as a client ")
+    local sendFunc = require("ionide").SendLineToFsi
+    if sendFunc then
+      sendFunc()
+    end
+
+    -- vim.notify("ive got ionide  as a client ")
   end
 end, "Send to Repl")
 
@@ -264,22 +285,8 @@ end)
 -- fold
 map("n", "zz", "za", { desc = "Toggle Fold Under Cursor" })
 
-map("n", "<K>", function()
-  if vim.bo.filetype == "help" then
-    vim.api.nvim_feedkeys("K", "ni", true)
-    return
-  else
-    if require("lazyvim.util").has("hover.nvim") then
-      require("hover").hover()
-    else
-      vim.lsp.buf.hover()
-    end
-  end
-end, "Hover")
-
 -- map("n", "<leader>c", "", { desc = "Code" })
 -- map("n", "<leader>cm", , { desc = "Code" })
-map("n", "<leader>l", "", { desc = "LSP" })
 -- save file
 map({ "i" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save file" })
 map({ "n", "v", "s" }, "<leader>w", "<cmd>w<cr><esc>", { desc = "Save file" })
@@ -364,6 +371,7 @@ map("n", "<leader><leader>i", function()
   end
 end, "invert under cursor")
 
+map("n", "<leader>l", "", { desc = "LSP" })
 map("n", "<leader>llog", "<cmd>LspLog<cr>", "LspLog")
 -- map("n", "<leader>lI", "<cmd>LspRestart<cr>", "Lsp Reinit")
 map("n", "<leader>lI", "<cmd>LspRestart<cr>", "Lsp Reinit")
@@ -373,6 +381,18 @@ end, "LSP Info")
 map("n", "<leader>lk", function()
   vim.fn.writefile({}, vim.lsp.get_log_path())
 end, "reset LSP log")
+map("n", "<K>", function()
+  if vim.bo.filetype == "help" then
+    vim.api.nvim_feedkeys("K", "ni", true)
+    return
+  else
+    if require("lazyvim.util").has("hover.nvim") then
+      require("hover").hover()
+    else
+      vim.lsp.buf.hover()
+    end
+  end
+end, "Hover")
 
 if LazyVimUtil.has("telescope.nvim") then -- setup telescope mappings if available
   map("n", "<leader>ft", function()

@@ -144,8 +144,10 @@ OnAttach =
     --     -- end
 
     if client.name == "jsonls" then
-      vim.bo.filetype = "jsonc"
-      vim.bo.syntax = "jsonc"
+      if vim.bo.filetype == "json" then
+        vim.bo.syntax = "jsonc"
+        vim.bo.filetype = "jsonc"
+      end
       -- vim.lsp.buf.format()
     end
     if client.name == "omnisharp" then
@@ -247,9 +249,103 @@ return {
       end,
       "Hover",
     }
-    keys[#keys + 1] =
-      -- { "<leader>la", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" }, has = "codeAction" }
-      { "<leader>la", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" } }
+    keys[#keys + 1] = {
+      "<leader>laa",
+      function()
+        if require("lazyvim.util").has("clear-action.nvim") then
+          require("clear-action.actions").code_action()
+        else
+          -- vim.lsp.buf.hover()
+          vim.lsp.buf.code_action()
+        end
+      end,
+      desc = "Code Action",
+      mode = { "n", "v" },
+    }
+    keys[#keys + 1] = {
+      "<leader>laf",
+
+      function()
+        if require("lazyvim.util").has("clear-action.nvim") then
+          require("clear-action.actions").apply_first()
+        else
+          -- vim.lsp.buf.hover()
+          vim.lsp.buf.code_action()
+        end
+      end,
+      desc = "Apply first Code Action",
+      mode = { "n", "v" },
+    }
+    keys[#keys + 1] = {
+      "<leader>larr",
+
+      function()
+        if require("lazyvim.util").has("clear-action.nvim") then
+          require("clear-action.actions").refactor()
+        else
+          -- vim.lsp.buf.hover()
+          vim.lsp.buf.code_action()
+        end
+      end,
+      desc = "Refactor",
+      mode = { "n", "v" },
+    }
+    keys[#keys + 1] = {
+      "<leader>lari",
+
+      function()
+        if require("lazyvim.util").has("clear-action.nvim") then
+          require("clear-action.actions").refactor_inline()
+        else
+          -- vim.lsp.buf.hover()
+          vim.lsp.buf.code_action()
+        end
+      end,
+      desc = "Refactor Inline",
+      mode = { "n", "v" },
+    }
+    keys[#keys + 1] = {
+      "<leader>lari",
+
+      function()
+        if require("lazyvim.util").has("clear-action.nvim") then
+          require("clear-action.actions").refactor_inline()
+        else
+          -- vim.lsp.buf.hover()
+          vim.lsp.buf.code_action()
+        end
+      end,
+      desc = "Refactor Inline",
+      mode = { "n", "v" },
+    }
+    keys[#keys + 1] = {
+      "<leader>lare",
+
+      function()
+        if require("lazyvim.util").has("clear-action.nvim") then
+          require("clear-action.actions").refactor_extract()
+        else
+          -- vim.lsp.buf.hover()
+          vim.lsp.buf.code_action()
+        end
+      end,
+      desc = "Refactor extract",
+      mode = { "n", "v" },
+    }
+    keys[#keys + 1] = {
+      "<leader>larw",
+
+      function()
+        if require("lazyvim.util").has("clear-action.nvim") then
+          require("clear-action.actions").refactor_rewrite()
+        else
+          -- vim.lsp.buf.hover()
+          vim.lsp.buf.code_action()
+        end
+      end,
+      desc = "Refactor rewrite",
+      mode = { "n", "v" },
+    }
     keys[#keys + 1] = {
       "<leader>lcr",
       function()
@@ -263,18 +359,35 @@ return {
     }
     keys[#keys + 1] = {
       "<leader>lf",
-      require("lazyvim.plugins.lsp.format").format,
+      function()
+        require("lazyvim.util").format.format({ force = true })
+      end,
       desc = "Format Document",
       -- has = "documentFormatting",
     }
     keys[#keys + 1] = {
-      "<leader>lf",
-      require("lazyvim.plugins.lsp.format").format,
-      desc = "Format Range",
-      mode = "v",
-      -- has = "documentRangeFormatting",
+      "<leader>lF",
+      function()
+        require("lazyvim.util").format.info()
+      end,
+      desc = "Get LazyVim formatter info about the current buffer",
     }
-    keys[#keys + 1] = { "<leader>ld", vim.diagnostic.open_float, desc = "Line Diagnostics" }
+    keys[#keys + 1] = {
+      "<leader>lf",
+      function()
+        require("lazyvim.util").format.format({ force = true })
+      end,
+      desc = "Format Range",
+
+      mode = "v",
+    }
+    keys[#keys + 1] = {
+      "<leader>ld",
+      function()
+        vim.diagnostic.open_float()
+      end,
+      desc = "Line Diagnostics",
+    }
     -- keys[#keys + 1] = { "<leader>lI", "<cmd>LspRestart<cr>", desc = "Lsp Reinit" }
 
     if require("lazyvim.util").has("inc-rename.nvim") then
@@ -372,7 +485,7 @@ return {
     -- all seperate lsp servers have thier own setup files, for clarity
     -- },
 
-    on_attach = require("lazyvim.util").on_attach(OnAttach),
+    on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
   },
   -- },
 }
