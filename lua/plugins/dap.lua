@@ -108,53 +108,33 @@ local function pick_if_many_sync(items, prompt, label_fn)
   end
 end
 
+---gets nearest project file in relation to the open file.
+---@param buf integer
+---@return string
 local function get_nearest_proj(buf)
-  local currentFileDir = vim.fs.normalize(vim.fs.dirname(vim.uri_from_bufnr(buf)) or vim.fn.getcwd())
+  buf = buf or 0
+  local currentFileDir = vim.fs.normalize(vim.fs.dirname(vim.api.nvim_buf_get_name(buf or 0)) or vim.fn.getcwd())
   vim.notify("currentFileDir " .. vim.inspect(currentFileDir))
   local currentWorkingDir = vim.fs.normalize(vim.fn.getcwd() or "")
   vim.notify("currentWorkingDir " .. vim.inspect(currentWorkingDir))
-  local superlocal = "*/*proj"
-  local semilocal = "**/*proj"
-  ---@type table<string>
-  local items
-  local fsup = vim.fn.globpath(currentFileDir, superlocal, 0, 1) or {}
-  vim.notify("nearest proj glob with currentFileDir and superlocal filter  " .. vim.inspect(fsup))
-  local fsem = vim.fn.globpath(currentFileDir, semilocal, 0, 1) or {}
-  vim.notify("nearest proj glob with currentFileDir semilocal filter  " .. vim.inspect(fsem))
-  local wdsup = vim.fn.globpath(currentWorkingDir, superlocal, 0, 1) or {}
-  vim.notify("nearest proj glob with currentWorkingDir and superlocal filter  " .. vim.inspect(wdsup))
-  local wdsem = vim.fn.globpath(currentWorkingDir, semilocal, 0, 1) or {}
-  vim.notify("nearest proj glob with currentWorkingDir and semilocal filter  " .. vim.inspect(wdsem))
-  if fsup[1] then
-    items = fsup
-  elseif fsem[1] then
-    items = fsem
-  elseif wdsup[1] then
-    items = wdsup
-  elseif wdsem[1] then
-    items = wdsem
+  -- local superlocal = "*/*.*proj"
+  -- local semilocal = "**/*.*proj"
+  local proj = (vim.fs.find(
+    function(name, path)
+      return name:match(".*%.[cfv][sb]proj$")
+        and path:match(vim.fs.normalize(vim.fs.dirname(vim.api.nvim_buf_get_name(buf or 0)) or vim.fn.getcwd()))
+    end,
+    { type = "file", path = vim.fs.normalize(vim.fs.dirname(vim.api.nvim_buf_get_name(buf or 0)) or vim.fn.getcwd()) }
+  ))[1] or ""
+  -- ---@type string
+
+  local pick = proj or ""
+  if not currentWorkingDir == currentFileDir then
+    -- vim.cmd.chdir(currentFileDir)
   else
-    vim.notify(
-      "none of that worked to find a proj file, setting to the current file directory and hoping for the best in manual selection"
-    )
-    items = { currentFileDir }
   end
-  local pick = vim.fs.normalize(items[1] or "")
-  -- vim.tbl_map(function(path) return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")  ):shorten(3) end, vim.fn.globpath("c:/users/will.ehrendreich/source/repos/Fabload/", "**/bin/Debug/**/*.dll", 0, 1))
 
-  -- local opts = {
-  --   format_item = function(path)
-  --     return vim.fn.fnamemodify(path, ":t")
-  --     -- return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")):shorten(3)
-  --   end,
-  -- }
-
-  -- local pick = pick_if_many_sync(items, "Which Project is the startup project?", function(p)
-  --   return p
-  -- end)
-  vim.notify("picked " .. pick)
-  -- vim.notify(building " .. vim.inspect(pick))
-  -- return vim.fs.normalize(pick)
+  vim.notify("building " .. vim.inspect(pick))
   return pick
 
   -- end)
@@ -163,23 +143,94 @@ end
 local function get_proj(projectName)
   ---@type table<string>
   -- local items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "*/*proj", 0, 1) or {}
+  --
+
+  local projEndings = {
+    ".csproj",
+    ".fsproj",
+    ".vbproj",
+  }
+
   local items = vim.fs.find(function(name, path)
-    return name:match(projectName .. ".fsproj$")
+    local fsmatch = name:match(projectName .. ".fsproj")
+    local csmatch = name:match(projectName .. ".csproj")
+    local vbmatch = name:match(projectName .. ".vbproj")
+
+    if fsmatch then
+      return fsmatch
+    elseif csmatch then
+      return csmatch
+    elseif vbmatch then
+      return vbmatch
+    else
+      return false
+    end
   end, { limit = 1, type = "file", path = FindRoot({ "" }, vim.lsp.buf_get_clients(0, { name = "ionide" })) }) or {}
 
+  local omnisharpItems = vim.fs.find(function(name, path)
+    local fsmatch = name:match(projectName .. ".fsproj")
+    local csmatch = name:match(projectName .. ".csproj")
+    local vbmatch = name:match(projectName .. ".vbproj")
+
+    if fsmatch then
+      return fsmatch
+    elseif csmatch then
+      return csmatch
+    elseif vbmatch then
+      return vbmatch
+    else
+      return false
+    end
+  end, { limit = 1, type = "file", path = FindRoot({ "" }, vim.lsp.buf_get_clients(0, { name = "omnisharp" })) }) or {}
+  local fsautocompleteItems = vim.fs.find(function(name, path)
+    local fsmatch = name:match(projectName .. ".fsproj")
+    local csmatch = name:match(projectName .. ".csproj")
+    local vbmatch = name:match(projectName .. ".vbproj")
+
+    if fsmatch then
+      return fsmatch
+    elseif csmatch then
+      return csmatch
+    elseif vbmatch then
+      return vbmatch
+    else
+      return false
+    end
+  end, { limit = 1, type = "file", path = FindRoot({ "" }, vim.lsp.buf_get_clients(0, { name = "fsautcomplete" })) }) or {}
+  local csharplsItems = vim.fs.find(function(name, path)
+    local fsmatch = name:match(projectName .. ".fsproj")
+    local csmatch = name:match(projectName .. ".csproj")
+    local vbmatch = name:match(projectName .. ".vbproj")
+
+    if fsmatch then
+      return fsmatch
+    elseif csmatch then
+      return csmatch
+    elseif vbmatch then
+      return vbmatch
+    else
+      return false
+    end
+  end, { limit = 1, type = "file", path = FindRoot({ "" }, vim.lsp.buf_get_clients(0, { name = "csharp_ls" })) }) or {}
   -- local cpp_hpp = vim.fs.find()
   --  if #items < 1 then
   --    items = vim.fn.globpath(vim.fs.normalize(vim.fn.getcwd()), "**/*proj", 0, 1) or {}
   --  end
 
   -- vim.tbl_map(function(path) return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")  ):shorten(3) end, vim.fn.globpath("c:/users/will.ehrendreich/source/repos/Fabload/", "**/bin/Debug/**/*.dll", 0, 1))
+  -- for i,match in ipairs(omnisharpItems)
+  --   )
+  --
+  -- end
 
-  local opts = {
-    format_item = function(path)
-      return vim.fn.fnamemodify(path, ":t")
-      -- return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")):shorten(3)
-    end,
-  }
+  vim.tbl_extend("force", items, omnisharpItems, fsautocompleteItems, csharplsItems)
+
+  -- local opts = {
+  --   format_item = function(path)
+  --     return vim.fn.fnamemodify(path, ":t")
+  --     -- return require("plenary.path").new(vim.fn.fnamemodify(path, ":p")):shorten(3)
+  --   end,
+  -- }
 
   local pick = pick_if_many_sync(items, "Which Project is the startup project?", function(p)
     return vim.fs.normalize(p or "")
@@ -371,11 +422,11 @@ function GetDotnetProjectPath(askForChanges, buf)
   local path
   ---@type string
   local nearestProj
-  if vim.g["DotnetStartupProjectPath"] == "" then
-    nearestProj = get_nearest_proj(buf) or ""
-  else
-    nearestProj = vim.g["DotnetStartupProjectPath"]
-  end
+  -- if vim.g["DotnetStartupProjectPath"] == "" then
+  nearestProj = get_nearest_proj(buf) or ""
+  -- else
+  -- nearestProj = vim.g["DotnetStartupProjectPath"]
+  -- end
 
   if not nearestProj then
     nearestProj = ""
@@ -451,17 +502,17 @@ function GetDotnetProjectPath(askForChanges, buf)
   if not projectName or projectName == "" then
     projectName = StringReplace(fileShortNameAndExtension, ext, "")
   end
+  -- if not vim.g["DotnetProjectFileName"] or vim.g["DotnetProjectFileName"] == "" then
+  vim.g["DotnetProjectFileName"] = projectName
+  -- end
   vim.notify("project name is " .. projectName)
-  if not vim.g["DotnetProjectFileName"] or vim.g["DotnetProjectFileName"] == "" then
-    vim.g["DotnetProjectFileName"] = projectName
-  end
-  if not vim.g["DotnetProjectFileExtension"] or vim.g["DotnetProjectFileExtension"] == "" then
-    vim.g["DotnetProjectFileExtension"] = ext
-  end
+  -- if not vim.g["DotnetProjectFileExtension"] or vim.g["DotnetProjectFileExtension"] == "" then
+  vim.g["DotnetProjectFileExtension"] = ext
+  -- end
   -- path = dirname .. "/" .. projectName .. ext
-  if not vim.g["DotnetStartupProjectPath"] or vim.g["DotnetStartupProjectPath"] == "" then
-    vim.g["DotnetStartupProjectPath"] = nearestProj
-  end
+  -- if not vim.g["DotnetStartupProjectPath"] or vim.g["DotnetStartupProjectPath"] == "" then
+  vim.g["DotnetStartupProjectPath"] = nearestProj
+  -- end
 
   path = nearestProj
   if path == "" then
@@ -476,14 +527,14 @@ function GetDotnetProjectPath(askForChanges, buf)
     local response = (vim.fs.normalize(get_proj()))
 
     vim.notify(vim.inspect(response))
-    if not StringEndsWith(response, "proj") then
+    if not StringEndsWith(response, "sproj") then
       response = vim.fn.input({
-        "Given path didn't end with 'proj'.. " .. "\nPlease provide an actual path to the startup project: \n",
+        "Given path didn't end with 'sproj'.. " .. "\nPlease provide an actual path to the startup project: \n",
         initialPath,
         "file",
       })
     end
-    if not StringEndsWith(response, "proj") then
+    if not StringEndsWith(response, "sproj") then
       vim.notify(
         "Fine.. BE that way.. You don't want to give an actual path? I'm setting the path to ERROR.BADproj, and you will get errors.. but it's out of my hands now. *tsk tsk.* you try to help someone.. geeez.. "
       )
@@ -493,8 +544,8 @@ function GetDotnetProjectPath(askForChanges, buf)
     return response
   end
   if
-      askForChanges
-      and vim.fn.confirm(
+    askForChanges
+    and vim.fn.confirm(
         "Do you want to change the path to project? \n" .. vim.inspect(vim.fs.normalize(path)),
         "&yes\n&no",
         2
@@ -506,7 +557,9 @@ function GetDotnetProjectPath(askForChanges, buf)
   vim.notify("Path to startup project is set to: " .. vim.inspect(path))
   -- Lspdebug.GetConfig()
   -- local path =  vim.fn.input({ "Path to your startup *proj file ", LspStartupProjectPath, "file" })
-  vim.g["DotnetStartupProjectPath"] = path
+  local pathParent = vim.fs.dirname(path)
+  vim.fn.chdir(pathParent)
+  -- vim.g["DotnetStartupProjectPath"] = path
   return path
 end
 
@@ -604,9 +657,9 @@ function DotnetBuildDebugPopup(p, launch, launchWithDebugger, askForChanges)
       else
         vim.notify(
           "\nBuild debug failed: ❌ (exit code: "
-          .. vim.inspect(f)   -- .. "Build output :\n"
-          -- .. vim.inspect(buildData)
-          .. ")"
+            .. vim.inspect(f) -- .. "Build output :\n"
+            -- .. vim.inspect(buildData)
+            .. ")"
         )
 
         --    LspOpenFileInNewBuffer(logfile)
@@ -754,8 +807,8 @@ function GetDotnetDllPath(askForChanges, buf)
     return p
   end
   if
-      askForChanges
-      and vim.fn.confirm("Do you want to change the path to dll? \n" .. vim.g["DotnetDllPath"], "&yes\n&no", 2) == 1
+    askForChanges
+    and vim.fn.confirm("Do you want to change the path to dll? \n" .. vim.g["DotnetDllPath"], "&yes\n&no", 2) == 1
   then
     path = request()
     vim.g["DotnetDllPath"] = path
@@ -884,7 +937,7 @@ local function beforeDebug(opts)
     -- buildSuccessful = true
     -- overseer
     -- if buildSuccessful == true then
-    oCmds._close()
+    -- oCmds._close()
     -- end
   else
     -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
@@ -1094,7 +1147,7 @@ local function dapconfig(_, opts)
           port = "${port}",
           executable = {
             command = require("mason-registry").get_package("codelldb"):get_install_path()
-                .. "/extension/adapter/codelldb",
+              .. "/extension/adapter/codelldb",
             args = { "--port", "${port}" },
           },
           detatched = false,
@@ -1228,7 +1281,7 @@ return {
       "Weissle/persistent-breakpoints.nvim",
       opts = {
         load_breakpoints_event = { "BufReadPost" },
-      }
+      },
     },
   },
 
