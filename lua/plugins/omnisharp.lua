@@ -1,6 +1,16 @@
 local util = require("lspconfig.util")
 return {
   "neovim/nvim-lspconfig",
+  dependencies = {
+    {
+      "williamboman/mason.nvim",
+      opts = {
+        ensure_installed = {
+          "omnisharp",
+        },
+      },
+    },
+  },
   opts = {
     --
     --   ---@type lspconfig.options

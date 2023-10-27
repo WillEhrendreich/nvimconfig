@@ -147,9 +147,9 @@ OnAttach =
       client.server_capabilities.documentFormattingProvider = false
     end
     if client.name == "jsonls" then
-      if vim.bo.filetype == "json" then
-        vim.bo.syntax = "jsonc"
-        vim.bo.filetype = "jsonc"
+      if vim.bo[buffer].filetype == "json" then
+        vim.bo[buffer].syntax = "jsonc"
+        vim.bo[buffer].filetype = "jsonc"
       end
       -- vim.lsp.buf.format()
     end

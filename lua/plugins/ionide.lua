@@ -27,7 +27,6 @@ return {
                   FsiStdOutFileName = "./FsiOutput.txt",
                 },
                 cmd = {
-                  -- vim.fs.normalize(vim.fn.stdpath("data") .. "/mason/bin/fsautocomplete.cmd"),
                   util.getMasonBinCommandIfExists("fsautocomplete"),
                   -- "-l",
                   -- ".fsautocomplete.log",

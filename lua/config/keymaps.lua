@@ -408,11 +408,41 @@ if LazyVimUtil.has("telescope.nvim") then -- setup telescope mappings if availab
     require("telescope.builtin").lsp_workspace_symbols()
   end, "Telescope lsp workspace symbols")
 end
+
+if LazyVimUtil.has("neotest") then
+  map("n", "<leader>tr", function()
+    require("neotest").run.run()
+  end, "Run the nearest test")
+
+  map("n", "<leader>tR", function()
+    local thisFile = vim.fs.normalize(vim.fn.expand("%:p"))
+    vim.notify("running tests in file: " .. thisFile)
+    require("neotest").run.run(thisFile)
+  end, "Run the current file")
+
+  map("n", "<leader>ts", function()
+    require("neotest").run.stop()
+  end, "stop the nearest test")
+
+  map("n", "<leader>ta", function()
+    require("neotest").run.attach()
+  end, "attach to the nearest test")
+
+  map("n", "<leader>th", function()
+    require("neotest").output.open({ enter = true })
+  end, "open output window")
+
+  map("n", "<leader>td", function()
+    require("neotest").run.run({ strategy = "dap" })
+  end, "run the test in debug mode.")
+end
+
 if LazyVimUtil.has("definition-or-references.nvim") then
   map("n", "gd", function()
     require("definition-or-references").definition_or_references()
   end, "Go to definition or references")
 end
+
 if LazyVimUtil.has("toggleterm.nvim") then
   --if fn.executable "lazygit" == 1 then
 
@@ -449,33 +479,6 @@ if LazyVimUtil.has("toggleterm.nvim") then
     terms[opts.cmd][num]:toggle()
   end
 
-  map("n", "<leader>tr", function()
-    require("neotest").run.run()
-  end, "Run the nearest test")
-
-  map("n", "<leader>tR", function()
-    local path = require("plenary.path")
-    local thisFile = StringReplace(vim.fn.expand("%:p"), "\\", "/")
-    vim.notify("running tests in file: " .. thisFile)
-    require("neotest").run.run(thisFile)
-  end, "Run the current file")
-
-  map("n", "<leader>ts", function()
-    require("neotest").run.stop()
-  end, "stop the nearest test")
-
-  map("n", "<leader>ta", function()
-    require("neotest").run.attach()
-  end, "attach to the nearest test")
-
-  map("n", "<leader>th", function()
-    require("neotest").output.open({ enter = true })
-  end, "open output window")
-
-  map("n", "<leader>td", function()
-    require("neotest").run.run({ strategy = "dap" })
-  end, "run the test in debug mode.")
-
   -- Improved Terminal Navigation
   map("t", "<C-h>", "<c-\\><c-n><c-w>h", "Terminal left window navigation")
   map("t", "<C-j>", "<c-\\><c-n><c-w>j", "Terminal down window navigation")
@@ -484,9 +487,15 @@ if LazyVimUtil.has("toggleterm.nvim") then
   map("t", "<C-q>", "<C-\\><C-n>", "Terminal normal mode")
   map("t", "<esc><esc>", "<C-\\><C-n>:q<cr>", "Terminal quit")
   --["<C-'>","<F7>"],
-  map("n", "<leader>gg", function()
-    toggle_term_cmd("lazygit")
-  end, "ToggleTerm lazygit")
+  map(
+    "n",
+    "<leader>gg",
+    -- "<cmd>ToggleTerm lazygit direction=float<cr>",
+    function()
+      toggle_term_cmd({ cmd = "lazygit", direction = "float" })
+    end,
+    "ToggleTerm lazygit"
+  )
   -- map("n", "<leader>tl", function()
   --   toggle_term_cmd("lazygit")
   -- end, "ToggleTerm lazygit")
@@ -497,9 +506,15 @@ if LazyVimUtil.has("toggleterm.nvim") then
   -- end, "ToggleTerm node")
   --end
   --if fn.executable "gdu" == 1 then
-  map("n", "<leader>tu", function()
-    toggle_term_cmd("gdu")
-  end, "ToggleTerm gdu")
+  map(
+    "n",
+    "<leader>tu",
+    -- "<cmd>ToggleTerm gdu direction=float<cr>",
+    function()
+      toggle_term_cmd("gdu")
+    end
+    -- "ToggleTerm gdu"
+  )
   --end
   --if fn.executable "btm" == 1 then
   map("n", "<leader>tb", function()
@@ -544,6 +559,14 @@ if require("lazyvim.util").has("nvim-dap") then
       print("predebug task was false, so assuming there was a problem and not debugging")
     end
   end, "Debugger: Start")
+  map("n", "<leader>dc", function()
+    if vim.cmd.PreDebugTask() then
+      -- require("dap").continue()
+    else
+      print("predebug task was false, so assuming there was a problem and not debugging")
+    end
+  end, "Start/Continue (F5)")
+
   map("n", "<F17>", function()
     require("dap").terminate()
   end, "Debugger: Stop") -- Shift+F5,
@@ -571,13 +594,6 @@ if require("lazyvim.util").has("nvim-dap") then
   map("n", "<leader>dB", function()
     require("dap").clear_breakpoints()
   end, "Clear Breakpoints")
-  map("n", "<leader>dc", function()
-    if vim.cmd.PreDebugTask() then
-      -- require("dap").continue()
-    else
-      print("predebug task was false, so assuming there was a problem and not debugging")
-    end
-  end, "Start/Continue (F5)")
   map("n", "<leader>di", function()
     require("dap").step_into()
   end, "Step Into (F11)")
