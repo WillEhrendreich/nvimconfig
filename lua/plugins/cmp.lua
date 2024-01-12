@@ -283,12 +283,12 @@ return {
         -- end,
       },
       "onsails/lspkind.nvim",
-      {
-        "rafamadriz/friendly-snippets",
-        config = function()
-          require("luasnip.loaders.from_vscode").lazy_load()
-        end,
-      },
+      -- {
+      -- "rafamadriz/friendly-snippets",
+      -- config = function()
+      --   require("luasnip.loaders.from_vscode").lazy_load()
+      -- end,
+      -- },
     },
     opts = function(_, opts)
       -- local cmp = require("cmp")
@@ -302,6 +302,14 @@ return {
         completion = {
           completeopt = "menu,menuone,noinsert,noselect",
           -- completeopt = "menu,menuone,noinsert",
+        },
+        sources = {
+          { name = "luasnip", max_item_count = 4 },
+          { name = "nvim_lsp" },
+          { name = "nvim_lsp_signature_help" },
+          { name = "path" },
+          { name = "buffer" },
+          { name = "nvim_lua" },
         },
         snippet = {
           expand = function(args)
