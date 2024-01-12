@@ -14,7 +14,8 @@ return {
     ensure_installed = {
       "lemminx",
       "texlab",
-      "csharp-language-server",
+      -- "csharp-language-server",
+      "omnisharp",
       -- "sqlls",
       "stylua",
       "fantomas",

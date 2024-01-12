@@ -1,4 +1,5 @@
 local vim = vim
+local util = require("config.util")
 -- local fn = vim.fn
 -- local rootSwitchSecondsInterval = 5
 -- vim.g["LspRootSwitchLastAskedTime"] = 0
@@ -145,6 +146,13 @@ OnAttach =
 
     if client.name == "ionide" then
       client.server_capabilities.documentFormattingProvider = false
+
+      vim.bo[buffer].commentstring = "// %s"
+    end
+    if client.name == "csharp_ls" then
+      -- client.server_capabilities.documentFormattingProvider = false
+
+      vim.bo[buffer].commentstring = "// %s"
     end
     if client.name == "jsonls" then
       if vim.bo[buffer].filetype == "json" then
@@ -154,6 +162,7 @@ OnAttach =
       -- vim.lsp.buf.format()
     end
     if client.name == "omnisharp" then
+      vim.bo[buffer].commentstring = "// %s"
       client.server_capabilities.semanticTokensProvider = {
         full = vim.empty_dict(),
         legend = {
@@ -459,36 +468,164 @@ return {
       -- timeout_ms = 10000,
       timeout_ms = 1000,
     },
+    dependencies = {
+      {
 
-    -- LSP Server Settings
-    --      ---@type lspconfig.options
-    servers = {
-
-      -- vimls = {},
-      -- ---@type lspconfig.options.jsonls
-      -- jsonls = {
-      --   settings = {
-      --     json = {
-      --       -- format ={
-      --       -- enable},
-      --       validate = {
-      --         enable = true,
-      --       },
-      --     },
-      --   },
-      -- },
-
-      -- all seperate lsp servers have thier own setup files, for clarity
+        "Decodetalkers/csharpls-extended-lsp.nvim",
+      },
+      {
+        "WillEhrendreich/Ionide-nvim",
+        dev = util.hasRepoWithName("Ionide-nvim"),
+        dir = util.getRepoWithName("Ionide-nvim"),
+        dependencies = {
+          {
+            "williamboman/mason.nvim",
+            opts = {
+              ensure_installed = {
+                "fsautocomplete",
+              },
+            },
+          },
+        },
+      },
     },
-    -- you can do any additional lsp server setup here
-    -- return true if you don't want this server to be setup with lspconfig
-    ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
-    -- setup = {
-
-    -- all seperate lsp servers have thier own setup files, for clarity
-    -- },
-
-    on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
   },
   -- },
+
+  -- LSP Server Settings
+  --      ---@type lspconfig.options
+  -- servers = {
+  -- {
+  --         ---@type IonideOptions
+  --           ionide = {
+  --
+  --             IonideNvimSettings = {
+  --               LspRecommendedColorScheme = true,
+  --               EnableFsiStdOutTeeToFile = true,
+  --               FsiStdOutFileName = "./FsiOutput.txt",
+  --             },
+  --             cmd = {
+  --               util.getMasonBinCommandIfExists("fsautocomplete"),
+  --               -- "-l",
+  --               -- ".fsautocomplete.log",
+  --               -- "-v",
+  --               -- '--wait-for-debugger',
+  --               -- "--project-graph-enabled",
+  --             },
+  --             settings = {
+  --               FSharp = {
+  --                 enableMSBuildProjectGraph = true,
+  --                 -- enableTreeView = true,
+  --                 fsiExtraParameters = {
+  --                   "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
+  --                 },
+  --               },
+  --             },
+  --           },
+  --         },
+  --         -- you can do any additional lsp server setup here
+  --         -- return true if you don't want this server to be setup with lspconfig
+  --         ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
+  --         setup = {
+  --           ionide = function(_, opts)
+  --             print("setup ionide")
+  --             require("ionide").setup(opts)
+  --           end,
+  --           -- NOTE: returning true will make sure fsautocomplete is not setup with neovim, which is what we want if we're using Ionide-nvim
+  --           fsautocomplete = function(_, _)
+  --             return true
+  --           end,
+  --         },
+  --       },
+  -- {
+  -- Syntax highlighting
+
+  -- LspConfig
+
+  -- purescriptls will be automatically installed with mason and loaded with lspconfig
+  servers = {
+
+    -- ---@type IonideOptions
+    -- ionide = {
+    --
+    --   IonideNvimSettings = {
+    --     LspRecommendedColorScheme = true,
+    --     EnableFsiStdOutTeeToFile = true,
+    --     FsiStdOutFileName = "./FsiOutput.txt",
+    --   },
+    --   cmd = {
+    --     util.getMasonBinCommandIfExists("fsautocomplete"),
+    --     -- "-l",
+    --     -- ".fsautocomplete.log",
+    --     -- "-v",
+    --     -- '--wait-for-debugger',
+    --     -- "--project-graph-enabled",
+    --   },
+    --   settings = {
+    --     FSharp = {
+    --       enableMSBuildProjectGraph = true,
+    --       -- enableTreeView = true,
+    --       fsiExtraParameters = {
+    --         "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
+    --       },
+    --     },
+    --   },
+    -- },
+    purescriptls = {
+      settings = {
+        purescript = {
+          formatter = "purs-tidy",
+        },
+      },
+    },
+  },
+  setup = {
+    -- ionide = function(_, opts)
+    --   -- print("setup ionide")
+    --   require("ionide").setup(opts)
+    -- end,
+    -- -- NOTE: returning true will make sure fsautocomplete is not setup with neovim, which is what we want if we're using Ionide-nvim
+    -- fsautocomplete = function(_, _)
+    --   return true
+    -- end,
+
+    purescriptls = function(_, opts)
+      opts.root_dir = function(path)
+        local util = require("lspconfig.util")
+        -- if path:match("/.spago/") then
+        --   return nil
+        -- end
+        return util.root_pattern("bower.json", "psc-package.json", "spago.dhall", "flake.nix", "shell.nix")(path)
+      end
+    end,
+  },
+  on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
 }
+
+-- vimls = {},
+-- ---@type lspconfig.options.jsonls
+-- jsonls = {
+--   settings = {
+--     json = {
+--       -- format ={
+--       -- enable},
+--       validate = {
+--         enable = true,
+--       },
+--     },
+--   },
+-- },
+
+-- all seperate lsp servers have thier own setup files, for clarity
+-- },
+-- you can do any additional lsp server setup here
+-- return true if you don't want this server to be setup with lspconfig
+---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
+-- setup = {
+
+-- all seperate lsp servers have thier own setup files, for clarity
+-- },
+
+-- },
+-- },
+-- }

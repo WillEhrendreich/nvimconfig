@@ -4,11 +4,10 @@
 --
 local grp = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
-grp("xamlCommands", { clear = true })
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   desc = "changes comment style, folding for xaml",
   pattern = "*.xaml",
-  group = "xamlCommands",
+  group = grp("xamlCommands", { clear = true }),
   callback = function()
     vim.schedule_wrap(function()
       vim.cmd("set filetype=xml")
@@ -16,6 +15,24 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
       vim.cmd("let g:xml_syntax_folding=1")
       vim.cmd("set foldmethod=syntax")
       vim.cmd("set foldlevelstart=999  foldminlines=0")
+      vim.cmd("set syntax=xml")
+    end)
+  end,
+})
+
+grp("AxamlCommands", { clear = true })
+autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+  desc = "changes comment style, folding for xaml",
+  pattern = "*.axaml",
+  group = grp("axamlCommands", { clear = true }),
+  callback = function()
+    vim.schedule_wrap(function()
+      vim.cmd("set filetype=xml")
+      vim.cmd("set commentstring=<!--%s-->")
+      vim.cmd("let g:xml_syntax_folding=1")
+      vim.cmd("set foldmethod=syntax")
+      vim.cmd("set foldlevelstart=999  foldminlines=0")
+      vim.cmd("set syntax=xml")
     end)
   end,
 })
@@ -104,3 +121,4 @@ autocmd("FileType", {
     vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = event.buf, silent = true, nowait = true })
   end,
 })
+
