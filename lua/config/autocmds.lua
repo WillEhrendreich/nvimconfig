@@ -6,7 +6,7 @@ local grp = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   desc = "changes comment style, folding for xaml",
-  pattern = "*.xaml",
+  pattern = "xaml",
   group = grp("xamlCommands", { clear = true }),
   callback = function()
     vim.schedule_wrap(function()
@@ -17,6 +17,16 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
       vim.cmd("set foldlevelstart=999  foldminlines=0")
       vim.cmd("set syntax=xml")
     end)
+  end,
+})
+
+autocmd("FileType", {
+  desc = "odin load overseer",
+  group = grp("OdinLoadOverseer", { clear = true }),
+  pattern = { "odin" },
+  callback = function(event)
+
+    -- vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = event.buf, silent = true, nowait = true })
   end,
 })
 
@@ -121,4 +131,3 @@ autocmd("FileType", {
     vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = event.buf, silent = true, nowait = true })
   end,
 })
-
