@@ -167,6 +167,21 @@ local function get_proj(projectName)
     end
   end, { limit = 1, type = "file", path = FindRoot({ "" }, vim.lsp.buf_get_clients(0, { name = "ionide" })) }) or {}
 
+  local roslynItems = vim.fs.find(function(name, path)
+    local fsmatch = name:match(projectName .. ".fsproj")
+    local csmatch = name:match(projectName .. ".csproj")
+    local vbmatch = name:match(projectName .. ".vbproj")
+
+    if fsmatch then
+      return fsmatch
+    elseif csmatch then
+      return csmatch
+    elseif vbmatch then
+      return vbmatch
+    else
+      return false
+    end
+  end, { limit = 1, type = "file", path = FindRoot({ "" }, vim.lsp.buf_get_clients(0, { name = "roslyn" })) }) or {}
   local omnisharpItems = vim.fs.find(function(name, path)
     local fsmatch = name:match(projectName .. ".fsproj")
     local csmatch = name:match(projectName .. ".csproj")
@@ -223,7 +238,7 @@ local function get_proj(projectName)
   --
   -- end
 
-  vim.tbl_extend("force", items, omnisharpItems, fsautocompleteItems, csharplsItems)
+  vim.tbl_extend("force", items, omnisharpItems, fsautocompleteItems, csharplsItems, roslynItems)
 
   -- local opts = {
   --   format_item = function(path)
