@@ -123,7 +123,7 @@ return {
       "dap_repl",
       "javascript",
       "json",
-      "jsonc",
+      -- "jsonc",
       "lua",
       -- "luap",
       "markdown",

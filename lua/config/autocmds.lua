@@ -20,6 +20,36 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   end,
 })
 
+autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+  pattern = { "cs" },
+  group = grp("csFTAutocommand", { clear = true }),
+  callback = function(opt)
+    vim.notify("I opened a cs file ", _, opt)
+
+    vim.cmd("set filetype=cs")
+    vim.cmd("set syntax=cs")
+    vim.cmd("set commentstring=//%s")
+    -- M.init_buf_targets(opt.buf)
+    -- M.attach_or_spawn(opt.buf)
+  end,
+  desc = "",
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "razor" },
+  group = grp("razorFTAutocommand", { clear = true }),
+  callback = function(opt)
+    vim.notify("I opened a razor page", _, opt)
+
+    vim.cmd("set commentstring=<!--%s-->")
+    vim.cmd("set filetype=razor")
+    vim.cmd("set syntax=razor")
+    -- M.init_buf_targets(opt.buf)
+    -- M.attach_or_spawn(opt.buf)
+  end,
+  desc = "",
+})
+
 autocmd("FileType", {
   desc = "odin load overseer",
   group = grp("OdinLoadOverseer", { clear = true }),
@@ -78,7 +108,7 @@ autocmd({ "BufNewFile", "BufRead" }, {
 autocmd("FileType", {
   desc = "Make sure the moon type automatically compiles on save ",
   group = grp("MoonAutoCompile", { clear = true }),
-  pattern = "*.moon",
+  pattern = "moon",
   callback = function(ev)
     vim.schedule_wrap(function()
       vim.cmd("set syntax=moon")
@@ -89,7 +119,7 @@ autocmd("FileType", {
 
 autocmd({ "BufReadPost", "FileType" }, {
   desc = "Make sure the lua transpiled from moon type automatically re-reads on moon change",
-  pattern = "*.moon",
+  pattern = "moon",
   group = grp("MoonDerivedAutoRead", { clear = true }),
   callback = function(ev)
     vim.schedule(function()

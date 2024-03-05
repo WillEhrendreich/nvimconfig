@@ -243,6 +243,21 @@ OnAttach =
 return {
   "neovim/nvim-lspconfig",
   init = function()
+    local configs = require("lspconfig.configs")
+
+    if not configs["razorLsp"] then
+      vim.notify("creating entry in lspconfig configs for razorLsp ")
+      configs["razorLsp"] = {
+        default_config = {
+
+          settings = vim.empty_dict(),
+          init_options = vim.empty_dict(),
+          handlers = {},
+          autostart = true,
+        },
+      }
+    end
+    -- opts.on_attach = OnAttach(, buffer)
     -- vim.notify("entered lspconfig init func, doing keymaps now. ")
     local keys = require("lazyvim.plugins.lsp.keymaps").get()
     -- change a keymap
@@ -571,6 +586,86 @@ return {
     --     },
     --   },
     -- },
+
+    razorLsp = {
+      cmd = {
+        "c:/Users/ehrwi/.vscode/extensions/ms-dotnettools.csharp-2.18.16-win32-x64/.razor/rzls.exe",
+        "--logLevel",
+        "2",
+        "--projectConfigurationFileName",
+        "project.razor.vscode.bin",
+        "--DelegateToCSharpOnDiagnosticPublish",
+        "true",
+        "--UpdateBuffersForClosedDocuments",
+        "true",
+        "--telemetryLevel",
+        "none",
+      },
+      filetypes = { "razor", "cshtml" },
+      on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
+      -- cmd = "",
+      capabilities = require("lazyvim.util").lsp.capabilities,
+      settings = {
+        DefaultCSharpVirtualDocumentSuffix = ".ide.g.cs",
+        DefaultHtmlVirtualDocumentSuffix = "__virtual.html",
+
+        SupportsFileManipulation = true,
+
+        ProjectConfigurationFileName = "project.razor.bin",
+
+        CSharpVirtualDocumentSuffix = ".ide.g.cs",
+
+        HtmlVirtualDocumentSuffix = "__virtual.html",
+
+        SingleServerCompletionSupport = false,
+
+        SingleServerSupport = false,
+
+        DelegateToCSharpOnDiagnosticPublish = false,
+
+        UpdateBuffersForClosedDocuments = false,
+
+        --// Code action and rename paths in Windows VS Code need to be prefixed with '/':
+        -- // https://github.com/dotnet/razor/issues/8131
+        ReturnCodeActionAndRenamePathsWithPrefixedSlash = true,
+
+        ShowAllCSharpCodeActions = false,
+
+        IncludeProjectKeyInGeneratedFilePath = false,
+
+        UsePreciseSemanticTokenRanges = false,
+
+        MonitorWorkspaceFolderForConfigurationFiles = true,
+
+        UseRazorCohostServer = false,
+
+        DisableRazorLanguageServer = false,
+      },
+    },
+    roslyn = {
+
+      filetypes = { "cs", "csx" },
+
+      -- cmd = "",
+      -- settings = {},
+      -- handlers = {
+      -- ["textDocument/definition"] = function(...)
+      --   return require("omnisharp_extended").handler(...)
+      -- end,
+      -- },
+      -- keys = {
+      --   {
+      --     "gd",
+      --     function()
+      --       require("omnisharp_extended").telescope_lsp_definitions()
+      --     end,
+      --     desc = "Goto Definition",
+      --   },
+      -- },
+      -- enable_roslyn_analyzers = true,
+      -- organize_imports_on_format = true,
+      -- enable_import_completion = true,
+    },
     purescriptls = {
       settings = {
         purescript = {
@@ -589,13 +684,34 @@ return {
     --   return true
     -- end,
 
+    razorLsp = function(_, opts)
+      -- code
+      require("razorLsp").setup(opts)
+    end,
+
+    roslyn = function(_, opts)
+      local configs = require("lspconfig.configs")
+
+      if not configs["roslyn"] then
+        vim.notify("creating entry in lspconfig configs for roslyn ")
+        configs["roslyn"] = {
+          default_config = opts,
+        }
+      end
+      require("roslyn").setup(opts)
+      vim.notify("setup roslyn")
+      vim.notify(vim.inspect(opts))
+      -- opts.on_attach = OnAttach(, buffer)
+    end,
     purescriptls = function(_, opts)
       opts.root_dir = function(path)
-        local util = require("lspconfig.util")
+        local lspConfigUtil = require("lspconfig.util")
         -- if path:match("/.spago/") then
         --   return nil
         -- end
-        return util.root_pattern("bower.json", "psc-package.json", "spago.dhall", "flake.nix", "shell.nix")(path)
+        return lspConfigUtil.root_pattern("bower.json", "psc-package.json", "spago.dhall", "flake.nix", "shell.nix")(
+          path
+        )
       end
     end,
   },
