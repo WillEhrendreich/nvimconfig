@@ -11,12 +11,12 @@ vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
-    { "LazyVim/LazyVim",                                     import = "lazyvim.plugins" },
+    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
     -- import any extras modules here
 
     -- { import = "lazyvim.plugins.extras.coding.codeium" },
     -- { import = "lazyvim.plugins.extras.dap.core" },
-    { import = "lazyvim.plugins.extras.dap.nlua" },
+    -- { import = "lazyvim.plugins.extras.dap.nlua" },
     { import = "lazyvim.plugins.extras.editor.mini-files" },
     -- { import = "lazyvim.plugins.extras.formatting.prettier" },
     -- { import = "lazyvim.plugins.extras.formatting.conform" },
@@ -83,7 +83,7 @@ require("lazy").setup({
     -- directory where you store your local plugin projects
     path = "~/source/repos/",
     ---@type string[] plugins that match these patterns will use your local versions instead of being fetched from GitHub
-    patterns = {},   -- For example {"folke"}
+    patterns = {}, -- For example {"folke"}
     fallback = true, -- Fallback to git when local plugin doesn't exist
   },
   -- concurrency = 10,
@@ -115,4 +115,3 @@ require("lazy").setup({
     },
   },
 })
-
