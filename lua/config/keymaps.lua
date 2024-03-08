@@ -533,11 +533,6 @@ if LazyVimUtil.has("toggleterm.nvim") then
   --end
 end
 
--- if Util.has("mini.align") then
---   map({ "v" }, "ga", function()
---     require("mini.align").align()
---   end, "Mini Align")
--- end
 if require("lazyvim.util").has("harpoon") then
   local harpoon = require("harpoon")
   map("n", "<leader>h", "", "Harpoon")
