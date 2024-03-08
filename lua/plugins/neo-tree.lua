@@ -193,9 +193,28 @@ return {
     vim.g.neo_tree_remove_legacy_commands = true
   end,
   config = function()
+    local cc = require("neo-tree.sources.common.commands")
+    local fs = require("neo-tree.sources.filesystem")
+    local utils = require("neo-tree.utils")
+    local filter = require("neo-tree.sources.filesystem.lib.filter")
+    local renderer = require("neo-tree.ui.renderer")
+    local log = require("neo-tree.log")
     -- re "configs.neo-tree"
     -- TODO move after neo-tree improves (https://github.com/nvim-neo-tree/neo-tree.nvim/issues/707)
     local global_commands = {
+      set_root_and_pwd = function(state)
+        local tree = state.tree
+        local node = tree:get_node()
+        if node.type == "directory" then
+          if state.search_pattern then
+            fs.reset_search(state, false)
+          end
+          fs._navigate_internal(state, node.id, nil, nil, false)
+        end
+        local here = state.path
+        vim.cmd("cd " .. here)
+        vim.notify("CWD set to: " .. here)
+      end,
       parent_or_close = function(state)
         local node = state.tree:get_node()
         if (node.type == "directory" or node:has_children()) and node:is_expanded() then
@@ -209,7 +228,7 @@ return {
         if node.type == "directory" or node:has_children() then
           if not node:is_expanded() then -- if unexpanded, expand
             state.commands.toggle_node(state)
-          else                           -- if expanded and has children, seleect the next child
+          else -- if expanded and has children, seleect the next child
             require("neo-tree.ui.renderer").focus_node(state, node:get_child_ids()[1])
           end
         else -- if not a directory just open it
@@ -404,11 +423,11 @@ return {
       -- },
       filesystem = {
         follow_current_file = {
-          enabled = true,          -- This will find and focus the file in the active buffer every time
+          enabled = true, -- This will find and focus the file in the active buffer every time
           --              -- the current file is changed while the tree is open.
           leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
         },
-        group_empty_dirs = true,   -- when true, empty folders will be grouped together
+        group_empty_dirs = true, -- when true, empty folders will be grouped together
         hijack_netrw_behavior = "open_current",
         use_libuv_file_watcher = false,
         async_directory_scan = "auto", -- "auto"   means refreshes are async, but it's synchronous when called from the Neotree commands.
@@ -416,15 +435,15 @@ return {
         -- "never"  means directory scans are never async.
         scan_mode = "shallow", -- "shallow": Don't scan into directories to detect possible empty directory a priori
         -- "deep": Scan into directories to detect empty or grouped empty directories a priori.
-        bind_to_cwd = false,   -- true creates a 2-way binding between vim's cwd and neo-tree's root
+        bind_to_cwd = false, -- true creates a 2-way binding between vim's cwd and neo-tree's root
         cwd_target = {
-          sidebar = "tab",     -- sidebar is when position = left or right
-          current = "window",  -- current is when position = current
+          sidebar = "tab", -- sidebar is when position = left or right
+          current = "window", -- current is when position = current
         },
         filtered_items = {
-          visible = true,                       -- when true, they will just be displayed differently than normal items
+          visible = true, -- when true, they will just be displayed differently than normal items
           force_visible_in_empty_folder = true, -- when true, hidden files will be shown if the root folder is otherwise empty
-          show_hidden_count = true,             -- when true, the number of hidden items in each folder will be shown as the last entry
+          show_hidden_count = true, -- when true, the number of hidden items in each folder will be shown as the last entry
           hide_dotfiles = false,
           hide_gitignored = false,
           hide_hidden = false, -- only works on Windows for hidden files/directories
@@ -450,6 +469,9 @@ return {
         },
         window = {
           mappings = {
+
+            ["."] = "set_root",
+            ["o"] = "set_root_and_pwd",
             O = "system_open",
             x = "open_containing_folder",
             X = "open_containing_folder_in_terminal",
@@ -471,11 +493,11 @@ return {
       },
       buffers = {
         follow_current_file = {
-          enabled = true,          -- This will find and focus the file in the active buffer every time
+          enabled = true, -- This will find and focus the file in the active buffer every time
           --              -- the current file is changed while the tree is open.
           leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
         },
-        group_empty_dirs = true,   -- when true, empty folders will be grouped together
+        group_empty_dirs = true, -- when true, empty folders will be grouped together
         show_unloaded = true,
         window = {
           mappings = {
@@ -483,7 +505,7 @@ return {
             -- ["<bs>"] = "navigate_up",
             u = "navigate_up",
             ["."] = "set_root",
-            ["o"] = { "show_help", nowait = false, config = { title = "Order by", prefix_key = "o" } },
+            -- ["o"] = { "show_help", nowait = false, config = { title = "Order by", prefix_key = "o" } },
             ["oc"] = { "order_by_created", nowait = false },
             ["od"] = { "order_by_diagnostics", nowait = false },
             ["om"] = { "order_by_modified", nowait = false },
@@ -519,4 +541,3 @@ return {
     })
   end,
 }
-
