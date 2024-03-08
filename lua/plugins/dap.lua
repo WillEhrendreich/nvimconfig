@@ -867,6 +867,23 @@ local function get_dll()
   end)
 end
 
+---tells you if you have a current buffer open that is a dotnet filetype
+---@return boolean
+local function BufIsDotnet()
+  local ft = vim.bo.filetype
+  local isDotnet = ft == "csx"
+    or ft == "cs"
+    or ft == "csproj"
+    or ft == "cs_project"
+    or ft == "razor"
+    or ft == "cshtml"
+    or ft == "vb"
+    or ft == "cs"
+    or ft == "fsharp"
+    or ft == "fsharp_project"
+  return isDotnet
+end
+
 local function beforeDebug(opts)
   --Check if the current filetype is one of the ones that are listed for the coreclr adapter, and if it is, then build
   --
