@@ -35,15 +35,15 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
 })
 
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "razor" },
+  pattern = { "*.razor" },
   group = grp("razorFTAutocommand", { clear = true }),
-  callback = function(opt)
-    vim.notify("I opened a razor page", _, opt)
+  callback = function()
+    -- vim.notify("I opened a razor page")
 
     vim.cmd("set commentstring=<!--%s-->")
-    vim.cmd("set filetype=razor")
-    vim.cmd("set syntax=razor")
+    -- vim.cmd("set filetype=html")
+    vim.bo.filetype = "razor"
+    vim.bo.syntax = "xml"
     -- M.init_buf_targets(opt.buf)
     -- M.attach_or_spawn(opt.buf)
   end,
