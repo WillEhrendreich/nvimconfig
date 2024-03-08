@@ -899,8 +899,6 @@ local function beforeDebug(opts)
     askForChanges = false
   end
 
-  local ft = vim.api.nvim_buf_get_option(0, "filetype")
-  local isDotnet = ft == "cs" or ft == "fsharp" or ft == "fsharp_project"
   local session = require("dap").session()
   local isInDebugSession = session and session.closed == false
   local buildSuccessful
@@ -908,7 +906,7 @@ local function beforeDebug(opts)
 
   local path
 
-  if isDotnet and not isInDebugSession then
+  if BufIsDotnet() and not isInDebugSession then
     path = GetDotnetProjectPath(askForChanges, bufferThatStarted)
   end
 
