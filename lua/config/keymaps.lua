@@ -538,10 +538,56 @@ end
 --     require("mini.align").align()
 --   end, "Mini Align")
 -- end
+if require("lazyvim.util").has("harpoon") then
+  local harpoon = require("harpoon")
+  map("n", "<leader>h", "", "Harpoon")
+  map("n", "<leader>ha", function()
+    harpoon:list():append()
+  end, "Harpoon Append")
+  map("n", "<leader>hn", function()
+    harpoon:list():next()
+  end, "Harpoon Next")
+  map("n", "<leader>hp", function()
+    harpoon:list():prev()
+  end, "Harpoon Previous")
+  map("n", "<leader>hl", function()
+    if require("lazyvim.util").has("telescope") then
+      local conf = require("telescope.config").values
+      local function toggle_telescope(harpoon_files)
+        local file_paths = {}
+        for _, item in ipairs(harpoon_files.items) do
+          table.insert(file_paths, item.value)
+        end
 
--- map({ "i", "s" }, "<cr>", function()
---   -- require("cmp").complete({ select = true })
--- end, "Cmp Complete")
+        require("telescope.pickers")
+          .new({}, {
+            prompt_title = "Harpoon",
+            finder = require("telescope.finders").new_table({
+              results = file_paths,
+            }),
+            previewer = conf.file_previewer({}),
+            sorter = conf.generic_sorter({}),
+          })
+          :find()
+      end
+      toggle_telescope(harpoon:list())
+    else
+      harpoon.ui:toggle_quick_menu(harpoon:list())
+    end
+  end, "Harpoon UI")
+  map("n", "<leader>h1", function()
+    harpoon:list():select(1)
+  end, "Harpoon select 1")
+  map("n", "<leader>h2", function()
+    harpoon:list():select(2)
+  end, "Harpoon select 2")
+  map("n", "<leader>h3", function()
+    harpoon:list():select(3)
+  end, "Harpoon select 3")
+  map("n", "<leader>h4", function()
+    harpoon:list():select(4)
+  end, "Harpoon select 4")
+end
 
 if require("lazyvim.util").has("nvim-dap") then
   -- ['<leader>da']  = {
