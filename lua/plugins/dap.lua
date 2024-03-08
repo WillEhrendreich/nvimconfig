@@ -40,7 +40,7 @@ local function get_filename_without_extension(path)
   -- extract the filename with extension from the path
   local filename_with_extension = string.match(path or "", "[^/]+$")
   -- extract the filename without extension from the filename with extension
-  local filename_without_extension = string.match(filename_with_extension, "^(.+)%..+$")
+  local filename_without_extension = (string.match(filename_with_extension or "", "^(.+)%..+$")) or ""
   return filename_without_extension
 end
 
