@@ -7,7 +7,7 @@ return {
     config = function(_, opts)
       local configs = require("lspconfig.configs")
       require("roslyn").setup(opts)
-      vim.notify("creating entry in lspconfig configs for roslyn ")
+      -- vim.notify("creating entry in lspconfig configs for roslyn ")
       configs["roslyn"] = {
         default_config = opts,
       }
@@ -39,6 +39,7 @@ return {
                 vim.bo[bufnr].formatoptions = "croql"
                 -- vim.bo[bufnr].commentstring = "(*%s*)"
                 vim.bo[bufnr].commentstring = "<!--%s-->"
+                vim.bo[bufnr].syntax = "xml"
                 -- vim.bo[bufnr].commentstring = "//%s"
                 -- vim.bo[bufnr].comments = [[s0:*\ -,m0:*\ \ ,ex0:*),s1:(*,mb:*,ex:*),:\/\/\/,:\/\/]]
               end

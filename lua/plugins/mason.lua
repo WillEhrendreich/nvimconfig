@@ -15,8 +15,6 @@ return {
       "lemminx",
       "texlab",
       -- "csharp-language-server",
-      --
-      -- "omnisharp",
       -- "sqlls",
       "stylua",
       "fantomas",
