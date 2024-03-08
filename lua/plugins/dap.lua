@@ -843,6 +843,96 @@ function DotnetBuild(path, buildType, launch, launchWithDebugger, askForChanges)
   end
 end
 
+-- local function pick_one(items, prompt, label_fn, cb)
+--   local co
+--   if not cb then
+--     co = coroutine.running()
+--     if co then
+--       cb = function(item)
+--         coroutine.resume(co, item)
+--       end
+--     end
+--   end
+--   cb = vim.schedule_wrap(cb)
+--   if vim.ui then
+--     vim.ui.select(items, {
+--       prompt = prompt,
+--       format_item = label_fn,
+--     }, cb)
+--   else
+--     local result = M.pick_one_sync(items, prompt, label_fn)
+--     cb(result)
+--   end
+--   if co then
+--     return coroutine.yield()
+--   end
+-- end
+--- Show a prompt to select a process pid
+--- Requires `ps ah -u $USER` on Linux/Mac and `tasklist /nh /fo csv` on windows.
+--
+--- Takes an optional `opts` table with the following options:
+---
+--- - filter string|fun: A lua pattern or function to filter the processes.
+---                      If a function the parameter is a table with
+---                      {pid: integer, name: string}
+---                      and it must return a boolean.
+---                      Matches are included.
+---
+--- <pre>
+--- require("dap.utils").pick_process({ filter = "sway" })
+--- </pre>
+---
+--- <pre>
+--- require("dap.utils").pick_process({
+---   filter = function(proc) return vim.endswith(proc.name, "sway") end
+--- })
+--- </pre>
+---
+---@param opts? {filter: string|(fun(proc: {pid: integer, name: string}): boolean)}
+local function pick_process(opts)
+  opts = opts or {}
+  local label_fn = function(proc)
+    return string.format("id=%d name=%s", proc.pid, proc.name)
+  end
+  local procs = require("dap.utils").get_processes(opts)
+
+  local co = coroutine.running()
+  if co then
+    return coroutine.create(function()
+      if require("lazyvim.util").has("telescope") then
+        local conf = require("telescope.config").values
+        local function toggle_telescope(processItems)
+          local procs = {}
+          for _, item in ipairs(processItems.items) do
+            table.insert(procs, item.value)
+          end
+
+          require("telescope.pickers")
+            .new({}, {
+              prompt_title = "Pick Process",
+              finder = require("telescope.finders").new_table({
+                results = procs,
+              }),
+              previewer = conf.file_previewer({}),
+              sorter = conf.generic_sorter({}),
+            })
+            :find()
+        end
+        local choice = toggle_telescope(procs)
+        vim.notify(choice or "NO process choice selected")
+        coroutine.resume(co, choice and choice.pid or nil)
+      else
+        require("dap.ui").pick_one(procs, "Select process: ", label_fn, function(choice)
+          coroutine.resume(co, choice and choice.pid or nil)
+        end)
+      end
+    end)
+  else
+    local result = require("dap.ui").pick_one_sync(procs, "Select process: ", label_fn)
+    return result and result.pid or nil
+  end
+end
+
 -- if vim.g.lsp_handlers_enabled then
 -- vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
 -- vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
@@ -1056,13 +1146,22 @@ vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
 -- }
 
 local dotnetDapConfig = {
+  -- {
+  --   type = "coreclr",
+  --   name = "NetCoreDbg",
+  --   preLaunchTask = "build",
+  --   request = "launch",
+  --   console = "internalConsole",
+  --   cwd = "${fileDirname}",
+  --   program = get_dll,
+  -- },
+  -- {
   type = "coreclr",
-  name = "NetCoreDbg",
-  preLaunchTask = "build",
-  request = "launch",
-  console = "internalConsole",
-  cwd = "${fileDirname}",
-  program = get_dll,
+  name = "attach - netcoredbg",
+  request = "attach",
+  -- processId = require("dap.utils").pick_process,
+  processId = pick_process,
+  -- },
 }
 -- {
 --         type = "netcoredbg",
@@ -1168,7 +1267,6 @@ local function dapconfig(_, opts)
         end
         dap.configurations.cs = { dotnetDapConfig }
         dap.configurations.fsharp = { dotnetDapConfig }
-
         dap.adapters.codelldb = {
           name = "codelldb",
           type = "server",
@@ -1184,6 +1282,7 @@ local function dapconfig(_, opts)
         }
 
         dap.adapters["coreclr"] = {
+          name = "netCoreDbg",
           type = "executable",
           -- command = (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1],
           command = vim.fs.normalize((vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1]),
