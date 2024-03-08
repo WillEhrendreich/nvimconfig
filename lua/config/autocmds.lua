@@ -4,6 +4,20 @@
 --
 local grp = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
+
+autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+  pattern = { "cs" },
+  group = grp("csFTAutocommand", { clear = true }),
+  callback = function(event)
+    -- vim.notify("I opened a cs file ")
+
+    vim.cmd("set filetype=cs")
+    vim.cmd("set syntax=cs")
+    vim.cmd("set commentstring=//%s")
+  end,
+  desc = "",
+})
+
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   desc = "changes comment style, folding for xaml",
   pattern = "xaml",
@@ -21,20 +35,6 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
 })
 
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
-  pattern = { "cs" },
-  group = grp("csFTAutocommand", { clear = true }),
-  callback = function(opt)
-    vim.notify("I opened a cs file ", _, opt)
-
-    vim.cmd("set filetype=cs")
-    vim.cmd("set syntax=cs")
-    vim.cmd("set commentstring=//%s")
-    -- M.init_buf_targets(opt.buf)
-    -- M.attach_or_spawn(opt.buf)
-  end,
-  desc = "",
-})
-
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "razor" },
   group = grp("razorFTAutocommand", { clear = true }),
