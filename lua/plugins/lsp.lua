@@ -1,5 +1,74 @@
 local vim = vim
 local util = require("config.util")
+local function get_rid()
+  local system_info = vim.uv.os_uname()
+  local platform = system_info.sysname:lower()
+  local arch = system_info.machine:lower()
+
+  if platform == "darwin" then
+    if arch == "x86_64" then
+      return "osx-x64"
+    elseif arch == "arm64" then
+      return "osx-arm64"
+    end
+  end
+
+  -- probably missing linux-musl/alpine
+  if platform == "linux" then
+    if arch == "x86_64" then
+      return "linux-x64"
+    elseif arch == "arm64" then
+      return "linux-arm64"
+    end
+  end
+
+  -- not sure about this one
+  if platform == "windows_nt" then
+    if arch == "x86_64" then
+      return "win-x64"
+    elseif arch == "x86" then
+      return "win-x86"
+    end
+  end
+
+  vim.notify("Unsupported platform: " .. vim.inspect(system_info), vim.log.levels.ERROR, { title = "Roslyn" })
+end
+-- local function getRoslynCommand()
+--   local dotnet_cmd = "dotnet"
+--   local server_path = vim.fs.joinpath(vim.fn.stdpath("data"), "roslyn", "Microsoft.CodeAnalysis.LanguageServer.dll")
+--
+-- 	local server_args = {
+-- 		server_path,
+-- 		"--logLevel=Information",
+-- 		"--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
+-- 	}
+--
+--
+-- 	-- capabilities = vim.tbl_deep_extend("force", capabilities, {
+-- 	-- 	workspace = {
+-- 	-- 		didChangeWatchedFiles = {
+-- 	-- 			dynamicRegistration = false,
+-- 	-- 		},
+-- 	-- 	},
+-- 	-- })
+--
+-- 	local spawned = RoslynClient.new(target)
+--
+---@diagnostic disable-next-line: missing-fields
+-- spawned.id = vim.lsp.start_client({
+-- name = "roslyn",
+-- capabilities = capabilities,
+-- settings = settings,
+-- -- cmd = hacks.wrap_server_cmd(vim.lsp.rpc.connect("127.0.0.1", 8080)),
+-- cmd = hacks.wrap_server_cmd(roslyn_lsp_rpc.start_uds(cmd, server_args)),
+
+-- vim.fn.rename(
+--   vim.fs.joinpath(download_path, "out", roslyn_pkg_name, roslyn_pkg_version, "content", "LanguageServer", rid),
+--   server_path
+-- )
+--
+-- end
+
 -- local fn = vim.fn
 -- local rootSwitchSecondsInterval = 5
 -- vim.g["LspRootSwitchLastAskedTime"] = 0
@@ -587,85 +656,62 @@ return {
     --   },
     -- },
 
-    razorLsp = {
-      cmd = {
-        "c:/Users/ehrwi/.vscode/extensions/ms-dotnettools.csharp-2.18.16-win32-x64/.razor/rzls.exe",
-        "--logLevel",
-        "2",
-        "--projectConfigurationFileName",
-        "project.razor.vscode.bin",
-        "--DelegateToCSharpOnDiagnosticPublish",
-        "true",
-        "--UpdateBuffersForClosedDocuments",
-        "true",
-        "--telemetryLevel",
-        "none",
-      },
-      filetypes = { "razor", "cshtml" },
-      on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
-      -- cmd = "",
-      capabilities = require("lazyvim.util").lsp.capabilities,
-      settings = {
-        DefaultCSharpVirtualDocumentSuffix = ".ide.g.cs",
-        DefaultHtmlVirtualDocumentSuffix = "__virtual.html",
+    -- razorLsp = {
+    --   cmd = {
+    --     "c:/Users/ehrwi/.vscode/extensions/ms-dotnettools.csharp-2.18.16-win32-x64/.razor/rzls.exe",
+    --     "--logLevel",
+    --     "2",
+    --     "--projectConfigurationFileName",
+    --     "project.razor.vscode.bin",
+    --     "--DelegateToCSharpOnDiagnosticPublish",
+    --     "true",
+    --     "--UpdateBuffersForClosedDocuments",
+    --     "true",
+    --     "--telemetryLevel",
+    --     "none",
+    --   },
+    --   filetypes = { "razor", "cshtml" },
+    --   on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
+    --   -- cmd = "",
+    --   capabilities = require("lazyvim.util").lsp.capabilities,
+    --   settings = {
+    --     DefaultCSharpVirtualDocumentSuffix = ".ide.g.cs",
+    --     DefaultHtmlVirtualDocumentSuffix = "__virtual.html",
+    --
+    --     SupportsFileManipulation = true,
+    --
+    --     ProjectConfigurationFileName = "project.razor.bin",
+    --
+    --     CSharpVirtualDocumentSuffix = ".ide.g.cs",
+    --
+    --     HtmlVirtualDocumentSuffix = "__virtual.html",
+    --
+    --     SingleServerCompletionSupport = false,
+    --
+    --     SingleServerSupport = false,
+    --
+    --     DelegateToCSharpOnDiagnosticPublish = false,
+    --
+    --     UpdateBuffersForClosedDocuments = false,
+    --
+    --     --// Code action and rename paths in Windows VS Code need to be prefixed with '/':
+    --     -- // https://github.com/dotnet/razor/issues/8131
+    --     ReturnCodeActionAndRenamePathsWithPrefixedSlash = true,
+    --
+    --     ShowAllCSharpCodeActions = false,
+    --
+    --     IncludeProjectKeyInGeneratedFilePath = false,
+    --
+    --     UsePreciseSemanticTokenRanges = false,
+    --
+    --     MonitorWorkspaceFolderForConfigurationFiles = true,
+    --
+    --     UseRazorCohostServer = false,
+    --
+    --     DisableRazorLanguageServer = false,
+    --   },
+    -- },
 
-        SupportsFileManipulation = true,
-
-        ProjectConfigurationFileName = "project.razor.bin",
-
-        CSharpVirtualDocumentSuffix = ".ide.g.cs",
-
-        HtmlVirtualDocumentSuffix = "__virtual.html",
-
-        SingleServerCompletionSupport = false,
-
-        SingleServerSupport = false,
-
-        DelegateToCSharpOnDiagnosticPublish = false,
-
-        UpdateBuffersForClosedDocuments = false,
-
-        --// Code action and rename paths in Windows VS Code need to be prefixed with '/':
-        -- // https://github.com/dotnet/razor/issues/8131
-        ReturnCodeActionAndRenamePathsWithPrefixedSlash = true,
-
-        ShowAllCSharpCodeActions = false,
-
-        IncludeProjectKeyInGeneratedFilePath = false,
-
-        UsePreciseSemanticTokenRanges = false,
-
-        MonitorWorkspaceFolderForConfigurationFiles = true,
-
-        UseRazorCohostServer = false,
-
-        DisableRazorLanguageServer = false,
-      },
-    },
-    roslyn = {
-
-      filetypes = { "cs", "csx" },
-
-      -- cmd = "",
-      -- settings = {},
-      -- handlers = {
-      -- ["textDocument/definition"] = function(...)
-      --   return require("omnisharp_extended").handler(...)
-      -- end,
-      -- },
-      -- keys = {
-      --   {
-      --     "gd",
-      --     function()
-      --       require("omnisharp_extended").telescope_lsp_definitions()
-      --     end,
-      --     desc = "Goto Definition",
-      --   },
-      -- },
-      -- enable_roslyn_analyzers = true,
-      -- organize_imports_on_format = true,
-      -- enable_import_completion = true,
-    },
     purescriptls = {
       settings = {
         purescript = {
@@ -684,25 +730,10 @@ return {
     --   return true
     -- end,
 
-    razorLsp = function(_, opts)
-      -- code
-      require("razorLsp").setup(opts)
-    end,
+    -- razorLsp = function(_, opts) -- code
+    --   require("razorLsp").setup(opts)
+    -- end,
 
-    roslyn = function(_, opts)
-      local configs = require("lspconfig.configs")
-
-      if not configs["roslyn"] then
-        vim.notify("creating entry in lspconfig configs for roslyn ")
-        configs["roslyn"] = {
-          default_config = opts,
-        }
-      end
-      require("roslyn").setup(opts)
-      vim.notify("setup roslyn")
-      vim.notify(vim.inspect(opts))
-      -- opts.on_attach = OnAttach(, buffer)
-    end,
     purescriptls = function(_, opts)
       opts.root_dir = function(path)
         local lspConfigUtil = require("lspconfig.util")
