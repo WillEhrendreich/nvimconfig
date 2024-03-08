@@ -2,6 +2,8 @@ return {
   "willothy/flatten.nvim",
   lazy = false,
   opts = {
+    -- Allow a nested session to open if Neovim is opened without arguments
+    nest_if_no_args = true,
     callbacks = {
       pre_open = function()
         -- Close toggleterm when an external open request is received
