@@ -1072,69 +1072,25 @@ local function beforeDebug(opts)
   return buildSuccessful or true
 end
 
--- Creating user commands                           *lua-guide-commands-create*
---
--- User commands can be created through with |nvim_create_user_command()|. This
--- function takes three mandatory arguments:
--- • a string that is the name of the command (which must start with an uppercase
---   letter to distinguish it from builtin commands);
--- • a string containing Vim commands or a Lua function that is executed when the
---   command is invoked;
--- • a table with |command-attributes|; in addition, it can contain the keys
---   `desc` (a string describing the command); `force` (set to `false` to avoid
---   replacing an already existing command with the same name), and `preview` (a
---   Lua function that is used for |:command-preview|).
---
--- Example:
--- >lua
---     vim.api.nvim_create_user_command('Test', 'echo "It works!"', {})
---     vim.cmd.Test()
---     --> It works!
--- <
--- (Note that the third argument is mandatory even if no attributes are given.)
---
--- Lua functions are called with a single table argument containing arguments and
--- modifiers. The most important are:
--- • `name`: a string with the command name
--- • `fargs`: a table containing the command arguments split by whitespace (see |<f-args>|)
--- • `bang`: `true` if the command was executed with a `!` modifier (see |<bang>|)
--- • `line1`: the starting line number of the command range (see |<line1>|)
--- • `line2`: the final line number of the command range (see |<line2>|)
--- • `range`: the number of items in the command range: 0, 1, or 2 (see |<range>|)
--- • `count`: any count supplied (see |<count>|)
--- • `smods`: a table containing the command modifiers (see |<mods>|)
---
--- For example:
--- >lua
---     vim.api.nvim_create_user_command('Upper',
---       function(opts)
---         print(string.upper(opts.fargs[1]))
---       end,
---       { nargs = 1 })
---
---     vim.cmd.Upper('foo')
---     --> FOO
--- <
--- The `complete` attribute can take a Lua function in addition to the
--- attributes listed in |:command-complete|. >lua
---
---     vim.api.nvim_create_user_command('Upper',
---       function(opts)
---         print(string.upper(opts.fargs[1]))
---       end,
---       { nargs = 1,
---         complete = function(ArgLead, CmdLine, CursorPos)
---           -- return completion candidates as a list-like table
---           return { "foo", "bar", "baz" }
---         end,
---     })
--- <
 vim.api.nvim_create_user_command("PreDebugTask", beforeDebug, {
 
   nargs = "?",
   desc = "Dotnet Build Before Debug",
 })
 
+vim.api.nvim_create_user_command("DotnetDebugInfo", function()
+  if BufIsDotnet() then
+    vim.notify("Dll Path: " .. GetDotnetDllPath(false, 0) .. "\nProject Path: " .. GetDotnetProjectPath(false, 0))
+  else
+    vim.notify(
+      "file doesn't seem to be listed as a dotnet file, check config to see if you're just not detecting it correctly.. "
+    )
+  end
+end, {
+
+  nargs = "?",
+  desc = "Dotnet Debug Info",
+})
 -- M.coreclr = {
 -- 	{                  /
 -- 		type = 'coreclr',
