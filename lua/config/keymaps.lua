@@ -585,27 +585,20 @@ if require("lazyvim.util").has("harpoon") then
 end
 
 if require("lazyvim.util").has("nvim-dap") then
-  -- ['<leader>da']  = {
-  -- function()
-  -- else
-  -- 	-- require'dap'.set_breakpoint()
-  -- 	-- require'dap'.run({type='python', request='attach', host='127.0.0.1', port=5678})
-  -- end,    'Attach (localhost, 5678)'} ,
-  map("n", "<F5>", function()
-    -- local currentBuf = vim.api.nvim_get_current_buf()
-    -- vim.notify("Current buf " .. vim.inspect(currentBuf))
+  -- map("n", "<F5>", function()
+
+  map("n", "<leader>ds", function()
     if vim.cmd.PreDebugTask() then
       -- require("dap").continue()
     else
       print("predebug task was false, so assuming there was a problem and not debugging")
     end
-  end, "Debugger: Start")
+  end, "Start with PreDebugTask(F5)")
+  map("n", "<leader>da", function()
+    require("dap").continue()
+  end, "Dap Attach to process")
   map("n", "<leader>dc", function()
-    if vim.cmd.PreDebugTask() then
-      -- require("dap").continue()
-    else
-      print("predebug task was false, so assuming there was a problem and not debugging")
-    end
+    require("dap").continue()
   end, "Start/Continue (F5)")
 
   map("n", "<F17>", function()
@@ -620,15 +613,17 @@ if require("lazyvim.util").has("nvim-dap") then
   map("n", "<F9>", function()
     require("dap").toggle_breakpoint()
   end, "Debugger: Toggle Breakpoint")
-  map("n", "<F10>", function()
-    require("dap").step_over()
-  end, "Debugger: Step Over")
-  map("n", "<F11>", function()
+
+  map("n", "<F1>", function()
     require("dap").step_into()
   end, "Debugger: Step Into")
-  map("n", "<F23>", function()
+  map("n", "<F2>", function()
+    require("dap").step_over()
+  end, "Debugger: Step Over")
+  map("n", "<F3>", function()
     require("dap").step_out()
   end, "Debugger: Step Out") -- Shift+F11,
+
   map("n", "<leader>db", function()
     require("dap").toggle_breakpoint()
   end, "Toggle Breakpoint (F9)")
@@ -669,6 +664,7 @@ if require("lazyvim.util").has("nvim-dap") then
       require("dap.ui.widgets").hover()
     end, "Debugger Hover")
   end
+
   if LazyVimUtil.has("hydra.nvim") then
     map("n", "<leader>dh", function()
       -- if vim.cmd.PreDebugTask() then
