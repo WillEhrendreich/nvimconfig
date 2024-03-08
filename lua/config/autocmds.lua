@@ -60,7 +60,6 @@ autocmd("FileType", {
   end,
 })
 
-grp("AxamlCommands", { clear = true })
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   desc = "changes comment style, folding for xaml",
   pattern = "*.axaml",
