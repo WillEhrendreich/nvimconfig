@@ -1303,6 +1303,17 @@ return {
     },
 
     {
+      "jbyuki/one-small-step-for-vimkind",
+      keys = {
+        {
+          "<leader>dl",
+          function()
+            require("osv").launch({ port = 8086 })
+          end,
+        },
+      },
+    },
+    {
       "LiadOz/nvim-dap-repl-highlights",
       config = true,
     },
