@@ -16,6 +16,8 @@ return {
         ["yes"] = "no",
         ["Some"] = "None",
         ["Ok"] = "Error",
+        ["public"] = "private",
+        ["/"] = "\\",
       },
       remove_default_keybinds = true,
     })

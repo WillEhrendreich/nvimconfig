@@ -30,6 +30,13 @@ map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
 
+if LazyVimUtil.has("lsplinks.nvim") then
+  map("n", "gx", function()
+    vim.notify("I have lsplinks")
+    require("lsplinks").gx()
+  end, "LspLinksGx")
+end
+
 if LazyVimUtil.has("NeoComposer.nvim") then
   map("n", "<leader>me", function()
     require("NeoComposer.ui").edit_macros()
@@ -387,7 +394,15 @@ map("n", "<K>", function()
     return
   else
     if require("lazyvim.util").has("hover.nvim") then
-      require("hover").hover()
+      local h = require("hover")
+      local hover_is_open = false
+      vim.notify("hover preview: " .. (vim.inspect(vim.b[vim.api.nvim_get_current_buf()].hover_preview) or "none"))
+      hover_is_open = vim.b[vim.api.nvim_get_current_buf()].hover_preview == 0 or false
+      if not hover_is_open then
+        h.hover()
+      else
+        h.hover_select()
+      end
     else
       vim.lsp.buf.hover()
     end

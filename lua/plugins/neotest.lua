@@ -12,6 +12,7 @@ return {
     "nvim-neotest/neotest",
 
     dependencies = {
+      "nvim-neotest/nvim-nio",
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
       "WillEhrendreich/neotest-dotnet",
@@ -20,7 +21,6 @@ return {
       "nvim-neotest/neotest-vim-test",
     },
     config = function(_, opts)
-
       -- get neotest namespace (api call creates or returns namespace)
       local neotest_ns = vim.api.nvim_create_namespace("neotest")
       vim.diagnostic.config({
@@ -42,14 +42,14 @@ return {
           vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = event.buf, silent = true })
         end,
       })
-  -- overseer.nvim
-    opts.consumers = {
-      overseer = require "neotest.consumers.overseer",
-    }
-    opts.overseer = {
-      enabled = true,
-      force_default = true,
-    }
+      -- overseer.nvim
+      opts.consumers = {
+        overseer = require("neotest.consumers.overseer"),
+      }
+      opts.overseer = {
+        enabled = true,
+        force_default = true,
+      }
       require("neotest").setup(opts)
     end,
   },
