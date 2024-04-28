@@ -305,8 +305,9 @@ return {
         },
         sources = {
           { name = "luasnip", max_item_count = 4 },
-          { name = "nvim_lsp" },
           { name = "nvim_lsp_signature_help" },
+          { name = "nvim_lsp" },
+          { name = "copilot" },
           { name = "path" },
           { name = "buffer" },
           { name = "nvim_lua" },
@@ -322,7 +323,7 @@ return {
           ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
           ["<C-b>"] = cmp.mapping.scroll_docs(-4),
           ["<C-f>"] = cmp.mapping.scroll_docs(4),
-          ["<C-space>"] = cmp.mapping.complete({
+          ["<C-Tab>"] = cmp.mapping.complete({
             config = {
               view = {
                 entries = { name = "custom" },

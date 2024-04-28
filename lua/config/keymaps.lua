@@ -389,20 +389,28 @@ map("n", "<leader>lk", function()
   vim.fn.writefile({}, vim.lsp.get_log_path())
 end, "reset LSP log")
 map("n", "<K>", function()
+  local api = vim.api
+  local hover_win = vim.b.hover_preview
+
   if vim.bo.filetype == "help" then
     vim.api.nvim_feedkeys("K", "ni", true)
     return
   else
     if require("lazyvim.util").has("hover.nvim") then
-      local h = require("hover")
-      local hover_is_open = false
-      vim.notify("hover preview: " .. (vim.inspect(vim.b[vim.api.nvim_get_current_buf()].hover_preview) or "none"))
-      hover_is_open = vim.b[vim.api.nvim_get_current_buf()].hover_preview == 0 or false
-      if not hover_is_open then
-        h.hover()
+      -- local h = require("hover")
+      -- local hover_is_open = false
+      -- vim.notify("hover preview: " .. (vim.inspect(vim.b[vim.api.nvim_get_current_buf()].hover_preview) or "none"))
+      -- hover_is_open = vim.b[vim.api.nvim_get_current_buf()].hover_preview == 0 or false
+      if hover_win and api.nvim_win_is_valid(hover_win) then
+        api.nvim_set_current_win(hover_win)
       else
-        h.hover_select()
+        require("hover").hover()
       end
+      -- if not hover_is_open then
+      --   h.hover()
+      -- else
+      --   h.hover_select()
+      -- end
     else
       vim.lsp.buf.hover()
     end

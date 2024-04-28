@@ -1,3 +1,4 @@
+local util = require("config.util")
 return {
   -- -- Use <tab> for completion and snippets (supertab)
   -- -- first: disable default <tab> and <s-tab> behavior in LuaSnip
@@ -165,7 +166,9 @@ return {
   --   end,
   dependencies = {
     -- {
-    -- "rafamadriz/friendly-snippets",
+    "rafamadriz/friendly-snippets",
+    dev = util.hasRepoWithName("friendly-snippets"),
+    dir = util.getRepoWithName("friendly-snippets"),
     -- config = function()
     --   require("luasnip.loaders.from_vscode").lazy_load()
     -- end,
@@ -175,4 +178,3 @@ return {
   --     return {}
   --   end,
 }
-

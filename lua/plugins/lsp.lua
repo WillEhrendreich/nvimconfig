@@ -525,6 +525,7 @@ return {
     -- keys[#keys + 1] = { "H", "<cmd>echo 'hello'<cr>" }
   end,
   opts = {
+    inlay_hints = { enabled = true },
     capabilities = {
       textDocument = {
         foldingRange = {
@@ -623,6 +624,7 @@ return {
   --       },
   -- {
   -- Syntax highlighting
+  --
 
   -- LspConfig
 
@@ -711,6 +713,10 @@ return {
     --     DisableRazorLanguageServer = false,
     --   },
     -- },
+
+    roslyn = {
+      on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
+    },
 
     purescriptls = {
       settings = {

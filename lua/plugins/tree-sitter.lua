@@ -91,11 +91,15 @@ return {
     auto_install = true,
     -- highlight = { enable = true, disable = { "fsharp" } },
     highlight = {
-      enable = true, -- Disable slow treesitter highlight for large files
+      enable = true,
+      -- Disable slow treesitter highlight for large files
       disable = function(lang, buf)
         local max_filesize = 100 * 1024 -- 100 KB
         local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
         if ok and stats and stats.size > max_filesize then
+          return true
+        end
+        if lang == "fsharp" then
           return true
         end
         -- if lang == "odin" then
@@ -143,7 +147,7 @@ return {
     --    use_virtual_text = true,
     --    lint_events = { "BufWrite", "CursorHold" },
     --  },
-    compilers = { "clang", "gcc", "llvm", "cc" },
+    compilers = { "zig", "clang", "gcc", "llvm", "cc" },
     incremental_selection = {
       enable = true,
       keymaps = {
