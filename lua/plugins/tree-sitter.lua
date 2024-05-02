@@ -10,7 +10,6 @@ local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
 --   filetype = "fsharp",
 -- }
 local utils = require("config.util")
-
 if utils.hasRepoWithName("tree-sitter-fsharp") then
   parser_config.fsharp = {
     install_info = {
@@ -52,6 +51,25 @@ else
   }
 end
 
+if utils.hasRepoWithName("tree-sitter-jsonc") then
+  parser_config.jsonc = {
+    install_info = {
+      branch = "main",
+      url = utils.getRepoWithNameOrDefault("tree-sitter-jsonc", "https://gitlab.com/WhyNotHugo/tree-sitter-jsonc.git"),
+      files = { "src/parser.c" },
+    },
+    filetype = "json",
+  }
+else
+  parser_config.jsonc = {
+    install_info = {
+      branch = "main",
+      url = "https://gitlab.com/WhyNotHugo/tree-sitter-jsonc.git",
+      files = { "src/parser.c" },
+    },
+    filetype = "json",
+  }
+end
 return {
 
   "nvim-treesitter/nvim-treesitter",
