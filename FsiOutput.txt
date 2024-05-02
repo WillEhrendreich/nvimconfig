@@ -1,7 +1,0 @@
-
-Microsoft (R) F# Interactive version 12.8.0.0 for F# 8.0
-Copyright (c) Microsoft Corporation. All Rights Reserved.
-
-For help type #help;;
-
-> > 
