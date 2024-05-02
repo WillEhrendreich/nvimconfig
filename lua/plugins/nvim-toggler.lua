@@ -5,6 +5,7 @@ return {
     require("nvim-toggler").setup({
       inverses = {
         ["bad"] = "good",
+        ["before"] = "after",
         ["up"] = "down",
         ["left"] = "right",
         ["1"] = "0",
