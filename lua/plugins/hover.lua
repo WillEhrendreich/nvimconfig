@@ -189,6 +189,7 @@ local split = function(toSplit, separator)
   else
     for substring in string.gmatch(vim.inspect(toSplit), separator) do
       -- vim.notify("chunk \n" .. substring .. " \n being added to table")
+      substring = substring:gsub("$nbsp", " ")
       chunks = vim.tbl_deep_extend("force", chunks, { substring })
     end
   end
@@ -229,6 +230,7 @@ local tbl_contains = function(tbl, el)
   end
   return false
 end
+
 ---Converts a string returned by response.result.contents.value from vim.lsp[textDocument/hover] to markdown.
 ---@param toConvert string|table Documentation of the string to be converted.
 ---@param opts table? Table of options to be used for the conversion to the markdown language.
@@ -263,7 +265,7 @@ local convert_to_markdown = function(toConvert, opts)
       table.insert(chunks, chunk)
     end
   else
-    chunks = split(toConvert, "([^\n]*)\n?")
+    chunks = split(toConvert, "([^\r\n]*)\r\n?")
   end
 
   if #chunks == 0 then
@@ -338,6 +340,37 @@ end
 --   end
 --   return contents
 -- end
+--
+
+---takes out any &nbsp; from the string
+---@param s string
+---@return string
+local function replace_nbsp_in_string(s)
+  local r = vim.regex("&nbsp;")
+  if r:match_str(s) then
+    local f = r:match_str(s)
+    return replace_nbsp_in_string(s:gsub(s:sub(f + 1, f + 6), " ", 1))
+  else
+    return s
+  end
+end
+
+---takes out any &nbsp; from the table
+local function replace_nbsp_in_table(t)
+  if type(t) == "string" then
+    return replace_nbsp_in_string(t)
+  elseif type(t) == "table" then
+    for k, v in pairs(t) do
+      if type(v) == "table" then
+        return replace_nbsp_in_table(v)
+      elseif type(v) == "string" then
+        local result = replace_nbsp_in_string(v)
+        t[k] = result
+      end
+    end
+    return t
+  end
+end
 
 local LSPWithDiagSource = {
   name = "LSPWithDiag",
@@ -352,12 +385,14 @@ local LSPWithDiagSource = {
     local lines = {}
 
     vim.lsp.buf_request_all(0, "textDocument/hover", require("vim.lsp.util").make_position_params(), function(responses)
-      -- vim.notify("responses for hover request " .. vim.inspect(responses))
       local lang = "markdown"
       for _, response in pairs(responses) do
         if response.result and response.result.contents then
           lang = response.result.contents.language or "markdown"
           local contents = response.result.contents
+          if lang ~= "markdown" then
+            vim.notify("lang is : " .. lang)
+          end
 
           -- if vim.lsp.get_active_clients({ bufnr = 0, name = "ionide" })[1] then
           --   -- if lang == "fsharp" then
@@ -370,9 +405,10 @@ local LSPWithDiagSource = {
           -- else
           -- vim.notify("responses for hover request " .. vim.inspect(contents))
           lines = convert_to_markdown(util.convert_input_to_markdown_lines(contents) or {}, nil)
+          replace_nbsp_in_table(lines)
           -- end
           -- lines = parselinesForfsharpDocs(lines)
-          lines = util.trim_empty_lines(lines or {})
+          -- lines = util.trim_empty_lines(lines or {})
         end
       end
 
@@ -413,6 +449,7 @@ return {
       require("hover").register(LSPWithDiagSource)
       require("hover.providers.gh")
     end,
+    stylize_markdown = true,
     preview_opts = {
       border = nil,
     },
