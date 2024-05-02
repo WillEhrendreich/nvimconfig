@@ -1,6 +1,6 @@
 return {
   "icholy/lsplinks.nvim",
-  setup = function()
+  config = function()
     require("lsplinks").setup()
   end,
 }
