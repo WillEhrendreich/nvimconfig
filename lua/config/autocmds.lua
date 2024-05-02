@@ -39,7 +39,7 @@ autocmd({ "LspAttach" }, {
     vim.defer_fn(function()
       -- M.notify("enabling lsp inlayHint")
       if vim.lsp.inlay_hint then
-        vim.lsp.inlay_hint.enable(args.buf, true)
+        vim.lsp.inlay_hint.enable(true)
       elseif vim.lsp.buf.inlay_hint then
         vim.lsp.buf.inlay_hint(args.buf, true)
       else
