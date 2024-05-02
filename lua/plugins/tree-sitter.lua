@@ -14,20 +14,19 @@ local utils = require("config.util")
 if utils.hasRepoWithName("tree-sitter-fsharp") then
   parser_config.fsharp = {
     install_info = {
-      -- url = os.getenv("repos") .. "/tree-sitter-fsharp",
-      url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/Nsidorenco/tree-sitter-fsharp"),
-      files = { "src/scanner.cc", "src/parser.c" },
+      url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/ionide/tree-sitter-fsharp"),
+      files = { "src/scanner.c", "src/parser.c" },
     },
     filetype = "fsharp",
   }
 else
   parser_config.fsharp = {
     install_info = {
-      url = "https://github.com/Nsidorenco/tree-sitter-fsharp",
-      branch = "develop",
-      files = { "src/scanner.cc", "src/parser.c" },
-      generate_requires_npm = true,
-      requires_generate_from_grammar = true,
+      url = "https://github.com/ionide/tree-sitter-fsharp",
+      branch = "main",
+      files = { "src/scanner.c", "src/parser.c" },
+      -- generate_requires_npm = true,
+      -- requires_generate_from_grammar = true,
     },
     filetype = "fsharp",
   }
