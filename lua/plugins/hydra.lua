@@ -87,7 +87,7 @@ return {
     -- end
   end,
 
-  dependancies = {
+  dependencies = {
     "mfussenegger/nvim-dap",
   },
 }
