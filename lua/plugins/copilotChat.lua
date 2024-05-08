@@ -4,7 +4,7 @@ local hasCopilotChat = LazyVimUtil.has("CopilotChat.nvim")
 if hasCopilotChat then
   vim.notify("CopilotChat found")
 else
-  vim.notify("CopilotChat not found, skipping some config properties")
+  -- vim.notify("CopilotChat not found, skipping some config properties")
 end
 local prompts = {
   -- Code related prompts
