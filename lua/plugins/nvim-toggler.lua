@@ -5,6 +5,8 @@ return {
     require("nvim-toggler").setup({
       inverses = {
         ["bad"] = "good",
+        ["horizontal"] = "vertical",
+        ["Horizontal"] = "Vertical",
         ["before"] = "after",
         ["up"] = "down",
         ["left"] = "right",
@@ -16,6 +18,9 @@ return {
         ["+"] = "-",
         ["yes"] = "no",
         ["Some"] = "None",
+        ["IsSome"] = "IsNone",
+        ["start"] = "stop",
+        ["Start"] = "Stop",
         ["Ok"] = "Error",
         ["public"] = "private",
         ["/"] = "\\",
