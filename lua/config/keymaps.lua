@@ -37,6 +37,12 @@ if LazyVimUtil.has("lsplinks.nvim") then
   end, "LspLinksGx")
 end
 
+if require("lazyvim.util").has("nvim-dbee") then
+  map("n", "<leader>sq", function()
+    require("dbee").toggle()
+  end, "Dbee Toggle")
+end
+
 if LazyVimUtil.has("NeoComposer.nvim") then
   map("n", "<leader>me", function()
     require("NeoComposer.ui").edit_macros()
