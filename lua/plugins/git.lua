@@ -1,19 +1,18 @@
 return {
 
-  "lewis6991/gitsigns.nvim",
-  enabled = vim.fn.executable("git") == 1,
-  ft = "gitcommit",
-  -- init = function()
-  --   table.insert(vimsharp.git_plugins, "gitsigns.nvim")
-  -- end,
-  opts = {
-    signs = {
-      add = { text = "▎" },
-      change = { text = "▎" },
-      delete = { text = "▎" },
-      topdelete = { text = "契" },
-      changedelete = { text = "▎" },
-      untracked = { text = "▎" },
+  {
+    "lewis6991/gitsigns.nvim",
+    enabled = vim.fn.executable("git") == 1,
+    ft = "gitcommit",
+    opts = {
+      signs = {
+        add = { text = "┃" },
+        change = { text = "┃" },
+        delete = { text = "_" },
+        topdelete = { text = "‾" },
+        changedelete = { text = "~" },
+        untracked = { text = "┆" },
+      },
     },
   },
 }
