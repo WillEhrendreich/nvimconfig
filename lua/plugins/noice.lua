@@ -336,7 +336,7 @@ return {
           format = "lsp_progress",
           --- 50@type NoiceFormat|string
           format_done = "lsp_progress_done",
-          throttle = 1000 / 70, -- frequency to update lsp progress message
+          throttle = 1000 / 10, -- frequency to update lsp progress message
           -- throttle = 1000, -- frequency to update lsp progress message
           view = "mini",
         },
