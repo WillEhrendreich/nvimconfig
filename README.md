@@ -21,7 +21,8 @@ It uses the packages.config file in the root of the repository to install packag
 If you're using powershell, you can install chocolatey with the initChocoScript.ps1 script, if I've done it right,
 but if that doesn't work for you go to the [chocolatey website](https://docs.chocolatey.org/en-us/choco/setup) and follow the instructions there.
 
-You can set environment variables on windows by opening the start menu and searching for edit environment variables.
+You can set environment variables on windows by opening the start menu and searching for edit environment variables.![editEnvironmentVariables](https://github.com/WillEhrendreich/nvimconfig/assets/55286472/bb26e542-79a1-4d70-8e5e-83f4b5e7d921)
+
 
 I recommend setting the following user environment variables:
 
