@@ -1,5 +1,5 @@
 <a href="https://dotfyle.com/WillEhrendreich/nvimconfig"><img src="https://dotfyle.com/WillEhrendreich/nvimconfig/badges/plugins?style=flat" /></a>
-<a href="https://dotfyle.com/WillEhrendreich/nvimconfig"><img src="https://dotfyle.com/WillEhrendreich/nvimconfig/badges/leaderkey?style=flat" /></a>
+<a href="https://dotfyle.com/WillEhrendreich/nvimconfig"><img src="https://dotfyle.com/WillEhrendreich/nvimconfig/badges/leaderkey?style=flat" />(space)</a>
 <a href="https://dotfyle.com/WillEhrendreich/nvimconfig"><img src="https://dotfyle.com/WillEhrendreich/nvimconfig/badges/plugin-manager?style=flat" /></a>
 
 ## Install Instructions
@@ -15,7 +15,11 @@ This is a fantastic tool that makes it very easy to install and update Neovim, a
 
 Incredibly important is this: this configuration is heavily reliant on having Chocolatey installed.
 In fact, I have a super secret plugin of my own invention that handles chocolatey installations, but you have to have it installed first.
-If you're using powershell, you can install it with the initChocoScript.ps1 script, if I've done it right.
+Choco.nvim is the name of the plugin, and it's not available aside from in this configuration.
+It uses the packages.config file in the root of the repository to install packages.
+
+If you're using powershell, you can install chocolatey with the initChocoScript.ps1 script, if I've done it right,
+but if that doesn't work for you go to the [chocolatey website](https://docs.chocolatey.org/en-us/choco/setup) and follow the instructions there.
 
 You can set environment variables on windows by opening the start menu and searching for edit environment variables.
 
@@ -27,7 +31,7 @@ XDG_STATE_HOME to c:/.local/state
 NVIM_APPNAME to nvim
 
 REPOS to c:/repos or whatever you want to use as your repository directory.
-(this is because of checks that are occurring in the configuration for if there are local repos of specific plugins: see ./lua/config/util.lua )
+(this is because of checks that are occurring in the configuration for if there are local repos of specific plugins: see [./lua/config/util.lua](https://github.com/WillEhrendreich/nvimconfig/blob/master/lua/config/util.lua) )
 
 Clone the repository and install the plugins:
 
@@ -36,7 +40,8 @@ git clone git@github.com:WillEhrendreich/nvimconfig c:/.config/nvim
 nvim --headless +"Lazy! sync" +qa
 ```
 
-Open Neovim with this config:
+Also, take a look at this great video guide to having multiple nvim configurations: [Elijah Manor - Neovim Config Switcher](https://www.youtube.com/watch?v=LkHjJlSgKZY)
+I've implemented a similar system in this my [pwsh profile](https://github.com/WillEhrendreich/pwshProfile), and it's fantastic.
 
 ## Plugins
 
@@ -180,7 +185,7 @@ Open Neovim with this config:
 ## Language Servers
 
 - clangd
-- fsautocomplete
+- [Ionide-Nvim](https://github.com/WillEhrendreich/Ionide-nvim)
 - html
 - jsonls
 - lemminx
