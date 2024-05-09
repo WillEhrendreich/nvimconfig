@@ -4,8 +4,4 @@ non choco downloads:
 github releases:
 
 MordechaiHadad/bob - gh release download --pattern '*windows-x86_64.zip' --repo MordechaiHadad/bob --dir $env:USERPROFILE\downloads\ 
-ahrm/sioyek gh release download --pattern '*windows.zip' --repo ahrm/sioyek --dir $env:USERPROFILE\downloads\ 
-ahrm/sioyek gh release download --pattern '*windows.zip' --repo ahrm/sioyek --dir $env:USERPROFILE\downloads\ 
 
-things I'll have to curl or something: 
-ssms - "https://aka.ms/ssmsfullsetup"
