@@ -1,6 +1,7 @@
 <a href="https://dotfyle.com/WillEhrendreich/nvimconfig"><img src="https://dotfyle.com/WillEhrendreich/nvimconfig/badges/plugins?style=flat" /></a>
 <a href="https://dotfyle.com/WillEhrendreich/nvimconfig"><img src="https://dotfyle.com/WillEhrendreich/nvimconfig/badges/leaderkey?style=flat" />(space)</a>
 <a href="https://dotfyle.com/WillEhrendreich/nvimconfig"><img src="https://dotfyle.com/WillEhrendreich/nvimconfig/badges/plugin-manager?style=flat" /></a>
+![nvimIntro](https://github.com/WillEhrendreich/nvimconfig/assets/55286472/fa233924-2a26-4c7d-8190-4b84cef06f7e)
 
 ## Install Instructions
 
