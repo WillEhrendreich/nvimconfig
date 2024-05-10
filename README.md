@@ -25,7 +25,7 @@ but if that doesn't work for you go to the [chocolatey website](https://docs.cho
 You can set environment variables on windows by opening the start menu and searching for edit environment variables.
 
 I recommend setting the following user environment variables:
-CC to zig cc
+CC to zig
 XDG_CONFIG_HOME to c:/.config
 XDG_DATA_HOME to c:/.local/share
 XDG_STATE_HOME to c:/.local/state
