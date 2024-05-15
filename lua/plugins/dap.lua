@@ -975,6 +975,7 @@ local function BufIsDotnet()
 end
 
 local function beforeDebug(opts)
+  vim.notify("beforeDebug called")
   --Check if the current filetype is one of the ones that are listed for the coreclr adapter, and if it is, then build
   --
   local bufferThatStarted = vim.api.nvim_get_current_buf()
@@ -998,77 +999,78 @@ local function beforeDebug(opts)
 
   if BufIsDotnet() and not isInDebugSession then
     path = GetDotnetProjectPath(askForChanges, bufferThatStarted)
-  end
-
-  if hasOverSeer == true then
-    vim.notify("Overseer present, handing build off to that")
-    -- local path = get_proj()
-    --
-    -- local overseer = require("overseer")
-    -- overseer
-
-    -- local thiswin = vim.api.nvim_get_current_win()
-
-    -- local dllpath = GetDotnetDllPath(askForChanges, bufferThatStarted)
-    local oCmds = require("overseer.commands")
-    oCmds._open({ bang = true })
-    -- vim.api.nvim_set_option_value("wrap", true, { win = vim.api.nvim_get_current_win() })
-    -- vim.api.nvim_set_current_win(thiswin)
-
-    -- {
-    --   _start_tasks = <function 1>,
-    --   add_template_hook = <function 2>,
-    --   clear_task_cache = <function 3>,
-    --   close = <function 4>,
-    --   debug_parser = <function 5>,
-    --   delete_task_bundle = <function 6>,
-    --   get_all_commands = <function 7>,
-    --   get_all_highlights = <function 8>,
-    --   list_task_bundles = <function 9>,
-    --   list_tasks = <function 10>,
-    --   load_task_bundle = <function 11>,
-    --   load_template = <function 12>,
-    --   new_task = <function 13>,
-    --   on_setup = <function 14>,
-    --   open = <function 15>,
-    --   preload_task_cache = <function 16>,
-    --   register_template = <function 17>,
-    --   remove_template_hook = <function 18>,
-    --   run_action = <function 19>,
-    --   run_template = <function 20>,
-    --   save_task_bundle = <function 21>,
-    --   setup = <function 22>,
-    --   toggle = <function 23>,
-    --   wrap_template = <function 24>,
-    --   <metatable> = {
-    --     __index = <function 25>
-    --   }
-    -- }
-
-    -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
-    -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
-    -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
-    -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
-
-    -- buildSuccessful = DotnetBuild(path, "debug", true, true)
-    -- else
-    require("dap").continue()
-    -- GetDotnetDllPath(askForChanges)
-    -- buildSuccessful = true
-    -- overseer
-    -- if buildSuccessful == true then
-    -- oCmds._close()
-    -- end
-  else
-    -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
-    -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
-    -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
-    -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
-
     buildSuccessful = DotnetBuild(path, "debug", true, true)
-    -- local dllpath = GetDotnetDllPath(askForChanges)
-    require("dap").continue()
   end
+
+  -- if hasOverSeer == true then
+  --   vim.notify("Overseer present, handing build off to that")
+  --   -- local path = get_proj()
+  --   --
+  --   -- local overseer = require("overseer")
+  --   -- overseer
+  --
+  --   -- local thiswin = vim.api.nvim_get_current_win()
+  --
+  --   -- local dllpath = GetDotnetDllPath(askForChanges, bufferThatStarted)
+  --   local oCmds = require("overseer.commands")
+  --   oCmds._open({ bang = true })
+  --   -- vim.api.nvim_set_option_value("wrap", true, { win = vim.api.nvim_get_current_win() })
+  --   -- vim.api.nvim_set_current_win(thiswin)
+  --
+  --   -- {
+  --   --   _start_tasks = <function 1>,
+  --   --   add_template_hook = <function 2>,
+  --   --   clear_task_cache = <function 3>,
+  --   --   close = <function 4>,
+  --   --   debug_parser = <function 5>,
+  --   --   delete_task_bundle = <function 6>,
+  --   --   get_all_commands = <function 7>,
+  --   --   get_all_highlights = <function 8>,
+  --   --   list_task_bundles = <function 9>,
+  --   --   list_tasks = <function 10>,
+  --   --   load_task_bundle = <function 11>,
+  --   --   load_template = <function 12>,
+  --   --   new_task = <function 13>,
+  --   --   on_setup = <function 14>,
+  --   --   open = <function 15>,
+  --   --   preload_task_cache = <function 16>,
+  --   --   register_template = <function 17>,
+  --   --   remove_template_hook = <function 18>,
+  --   --   run_action = <function 19>,
+  --   --   run_template = <function 20>,
+  --   --   save_task_bundle = <function 21>,
+  --   --   setup = <function 22>,
+  --   --   toggle = <function 23>,
+  --   --   wrap_template = <function 24>,
+  --   --   <metatable> = {
+  --   --     __index = <function 25>
+  --   --   }
+  --   -- }
+  --
+  --   -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
+  --   -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
+  --   -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
+  --   -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
+  --
+  --   -- buildSuccessful = DotnetBuild(path, "debug", true, true)
+  --   -- else
+  --   require("dap").continue()
+  --   -- GetDotnetDllPath(askForChanges)
+  --   -- buildSuccessful = true
+  --   -- overseer
+  --   -- if buildSuccessful == true then
+  --   -- oCmds._close()
+  --   -- end
+  -- else
+  -- local bin = vim.g["DotnetStartupProjectRootPath"] .. "bin/"
+  -- local obj = vim.g["DotnetStartupProjectRootPath"] .. "obj/"
+  -- os.execute("rm -path " .. obj .. "-Recurse -Force -Confirm:$false")
+  -- os.execute("rm -path " .. bin .. "-Recurse -Force -Confirm:$false")
+
+  -- buildSuccessful = DotnetBuild(path, "debug", true, true)
+  -- local dllpath = GetDotnetDllPath(askForChanges)
+  require("dap").continue()
+  -- end
   return buildSuccessful or true
 end
 
@@ -1103,20 +1105,19 @@ end, {
 
 local dotnetDapConfig = {
   -- {
-  --   type = "coreclr",
-  --   name = "NetCoreDbg",
-  --   preLaunchTask = "build",
-  --   request = "launch",
-  --   console = "internalConsole",
-  --   cwd = "${fileDirname}",
-  --   program = get_dll,
+  type = "coreclr",
+  name = "NetCoreDbg",
+  preLaunchTask = "build",
+  request = "launch",
+  console = "internalConsole",
+  cwd = "${fileDirname}",
+  program = get_dll,
   -- },
   -- {
-  type = "coreclr",
-  name = "attach - netcoredbg",
-  request = "attach",
-  -- processId = require("dap.utils").pick_process,
-  processId = pick_process,
+  --   type = "coreclr",
+  --   name = "attach - netcoredbg",
+  --   request = "attach",
+  --   processId = pick_process,
   -- },
 }
 -- {
@@ -1184,6 +1185,40 @@ local function get_first_string_value(t)
   end
 end
 
+local function lldbConfigs(lang)
+  dap.adapters.codelldb = {
+    name = "codelldb",
+    type = "server",
+    -- host = "127.0.0.1",
+    host = "localhost",
+    port = "${port}",
+    executable = {
+      command = require("mason-registry").get_package("codelldb"):get_install_path() .. "/extension/adapter/codelldb",
+      args = { "--port", "${port}" },
+    },
+    detatched = false,
+  }
+
+  dap.configurations[lang] = {
+    {
+      type = "codelldb",
+      request = "launch",
+      name = "Launch file",
+      program = function()
+        return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+      end,
+      cwd = "${workspaceFolder}",
+    },
+    {
+      type = "codelldb",
+      request = "attach",
+      name = "Attach to process",
+      processId = require("dap.utils").pick_process,
+      cwd = "${workspaceFolder}",
+    },
+  }
+end
+
 local function dapconfig(_, opts)
   local mason_nvim_dap = require("mason-nvim-dap")
 
@@ -1196,47 +1231,16 @@ local function dapconfig(_, opts)
         -- Keep original functionality of `automatic_init = true`
         require("mason-nvim-dap").default_setup(config)
       end,
-
-      ---comment
-      ---@param config
+      -- c = function(config)
+      --   -- lldbConfigs("c")
+      -- end,
+      -- cpp = function(config)
+      --   -- lldbConfigs("cpp")
+      -- end,
+      -- rust = function(config)
+      --   -- lldbConfigs("rust")
+      -- end,
       coreclr = function(config)
-        -- local dap = require("dap")
-        for _, lang in ipairs({ "c", "cpp", "rust" }) do
-          dap.configurations[lang] = {
-            {
-              type = "codelldb",
-              request = "launch",
-              name = "Launch file",
-              program = function()
-                return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
-              end,
-              cwd = "${workspaceFolder}",
-            },
-            {
-              type = "codelldb",
-              request = "attach",
-              name = "Attach to process",
-              processId = require("dap.utils").pick_process,
-              cwd = "${workspaceFolder}",
-            },
-          }
-        end
-        dap.configurations.cs = { dotnetDapConfig }
-        dap.configurations.fsharp = { dotnetDapConfig }
-        dap.adapters.codelldb = {
-          name = "codelldb",
-          type = "server",
-          -- host = "127.0.0.1",
-          host = "localhost",
-          port = "${port}",
-          executable = {
-            command = require("mason-registry").get_package("codelldb"):get_install_path()
-              .. "/extension/adapter/codelldb",
-            args = { "--port", "${port}" },
-          },
-          detatched = false,
-        }
-
         dap.adapters["coreclr"] = {
           name = "netCoreDbg",
           type = "executable",
@@ -1252,6 +1256,8 @@ local function dapconfig(_, opts)
           -- command = "C:/.local/share/nvim-data/mason/bin/netcoredbg.cmd",
           args = { "--interpreter=vscode" },
         }
+        dap.configurations.cs = { dotnetDapConfig }
+        dap.configurations.fsharp = { dotnetDapConfig }
       end,
 
       python = function(config)
