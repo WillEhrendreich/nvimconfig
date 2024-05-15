@@ -315,7 +315,7 @@ return {
     local configs = require("lspconfig.configs")
 
     if not configs["razorLsp"] then
-      vim.notify("creating entry in lspconfig configs for razorLsp ")
+      -- vim.notify("creating entry in lspconfig configs for razorLsp ")
       configs["razorLsp"] = {
         default_config = {
 
