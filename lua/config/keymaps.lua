@@ -1,6 +1,8 @@
 -- Keymaps are automatically loaded on the VeryLazy event
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
--- Add any additional keymaps here
+
+-- below is a way to test the lazyvim util has name
+-- vim.notify(vim.inspect(require("lazyvim.util").has("nvim-luadev")))
 
 local LazyVimUtil = require("lazyvim.util")
 local lazyutil = require("lazy.util")
@@ -20,7 +22,7 @@ local function map(mode, lhs, rhs, opts)
     vim.keymap.set(mode, lhs, rhs, opts)
   end
 end
--- within config/keymaps.lua
+-- must delete these or strange things occur
 vim.api.nvim_del_keymap("n", "<leader>ww")
 vim.api.nvim_del_keymap("n", "<leader>wd")
 vim.api.nvim_del_keymap("n", "<leader>w-")
@@ -28,7 +30,9 @@ vim.api.nvim_del_keymap("n", "<leader>w|")
 
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
-map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
+if LazyVimUtil.has("neo-tree.nvim") then
+  map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
+end
 
 if LazyVimUtil.has("lsplinks.nvim") then
   map("n", "gx", function()
@@ -100,25 +104,31 @@ map({ "v" }, "gx", function()
   end
 end, "open selection if possible")
 
-map("n", "<leader>/", 'v:lua.MiniComment.operator() . "_"', { expr = true, desc = "Comment line" })
-map(
-  "x",
-  "<leader>/",
-  -- Using `:<c-u>` instead of `<cmd>` as latter results into executing before
-  -- proper update of `'<` and `'>` marks which is needed to work correctly.
-  [[:<c-u>lua MiniComment.operator('visual')<cr>]],
-  { desc = "Comment selection" }
-)
-map("o", "<leader>/", "<cmd>lua MiniComment.textobject()<cr>", { desc = "Comment textobject" })
+if LazyVimUtil.has("mini.comment") then
+  map("n", "<leader>/", 'v:lua.MiniComment.operator() . "_"', { expr = true, desc = "Comment line" })
+  map(
+    "x",
+    "<leader>/",
+    -- Using `:<c-u>` instead of `<cmd>` as latter results into executing before
+    -- proper update of `'<` and `'>` marks which is needed to work correctly.
+    [[:<c-u>lua MiniComment.operator('visual')<cr>]],
+    { desc = "Comment selection" }
+  )
+  map("o", "<leader>/", "<cmd>lua MiniComment.textobject()<cr>", { desc = "Comment textobject" })
+end
 
 map({ "v", "x" }, "<M-CR>", function()
-  local lua_ls = vim.lsp.get_active_clients({ name = "lua_ls" })[1]
-  ---@type lsp.Client
-  local ionide = vim.lsp.get_active_clients({ name = "ionide" })[1]
+  ---@type vim.lsp.Client
+  local lua_ls = vim.lsp.get_clients({ name = "lua_ls" })[1]
+
   if lua_ls then
-    local text = vim.fn.join(require("config.util").GetVisualSelection(), "\n")
-    require("luadev").exec(text)
+    if LazyVimUtil.has("nvim-luadev") then
+      local text = vim.fn.join(require("config.util").GetVisualSelection(), "\n")
+      require("luadev").exec(text)
+    end
+  ---@type vim.lsp.Client
   else
+    local ionide = vim.lsp.get_clients({ name = "ionide" })[1]
     if ionide then
       local sendFunc = require("ionide").SendSelectionToFsi
       if sendFunc then
@@ -129,42 +139,20 @@ map({ "v", "x" }, "<M-CR>", function()
 end, "Send Lines to Repl")
 
 map("n", "<M-CR>", function()
-  local lua_ls = vim.lsp.get_active_clients({ name = "lua_ls" })[1]
+  ---@type vim.lsp.Client
+  local lua_ls = vim.lsp.get_clients({ name = "lua_ls" })[1]
   if lua_ls then
-    -- vim.notify("ive got lua ls as a client ")
-    -- local b = vim.api.nvim_buf_get_name(0)
-    -- if not root_dir then
-    -- 	root_dir = util.path.dirname(api.nvim_buf_get_name(0)) or ""
-    -- end
-    -- if not root_dir or root_dir == "" then
-    -- 	root_dir = vim.fn.getcwd()
-    -- end
-    -- root_dir = string.gsub(root_dir, "\\", "
-    -- vim.notify(b)
-    -- local luaDev = (function()
-    --   if string.find(b, "[" .. "nvim" .. "-" .. "lua" .. "]", 0, true) then
-    --     return true
-    --   else
-    --     return false
-    --   end
-    -- end)()
-    -- vim.notify(vim.inspect(luaDev))
-
-    -- if luaDev then
-    require("luadev").exec(vim.api.nvim_get_current_line())
-    -- require("luadev").exec()
-    -- vim.notify("luadev here too ")
-    -- end
+    if LazyVimUtil.has("nvim-luadev") then
+      require("luadev").exec(vim.api.nvim_get_current_line())
+    end
   end
-  ---@type lsp.Client
-  local ionide = vim.lsp.get_active_clients({ name = "ionide" })[1]
+  ---@type vim.lsp.Client
+  local ionide = vim.lsp.get_clients({ name = "ionide" })[1]
   if ionide then
     local sendFunc = require("ionide").SendLineToFsi
     if sendFunc then
       sendFunc()
     end
-
-    -- vim.notify("ive got ionide  as a client ")
   end
 end, "Send to Repl")
 
@@ -288,8 +276,7 @@ map("x", "<leader>/", function()
   -- local mc = require("mini.comment").MiniComment
   local s, e = GetVisualStartAndEndLineNumbers(false, true, false)
   if LazyVimUtil.has("mini.comment") then
-    -- local mc = require("mini.comment")
-    MiniComment.toggle_lines(s, e)
+    require("mini.comment").toggle_lines(s, e)
   else
     vim.notify("no mini.comment found, please install it or change this mapping to point to something else")
   end
@@ -298,9 +285,6 @@ end)
 -- fold
 map("n", "zz", "za", { desc = "Toggle Fold Under Cursor" })
 
--- map("n", "<leader>c", "", { desc = "Code" })
--- map("n", "<leader>cm", , { desc = "Code" })
--- save file
 map({ "i" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save file" })
 map({ "n", "v", "s" }, "<leader>w", "<cmd>w<cr><esc>", { desc = "Save file" })
 
@@ -367,6 +351,9 @@ map("n", "<leader>gwd", "<C-W>c", "Delete window")
 map("n", "<leader>-", "<C-W>s", "Split window below")
 map("n", "<leader>|", "<C-W>v", "Split window right")
 
+map("n", "<C-Right>", "<C-W>5>", "Window Size right")
+map("n", "<C-Left>", "<C-W>5<", "Window Size left")
+
 map("n", "<leader>.", function()
   local here = vim.fn.expand("%:p:h")
   vim.cmd("cd " .. here)
@@ -386,7 +373,6 @@ end, "invert under cursor")
 
 map("n", "<leader>l", "", { desc = "LSP" })
 map("n", "<leader>llog", "<cmd>LspLog<cr>", "LspLog")
--- map("n", "<leader>lI", "<cmd>LspRestart<cr>", "Lsp Reinit")
 map("n", "<leader>lI", "<cmd>LspRestart<cr>", "Lsp Reinit")
 map("n", "<leader>li", function()
   require("lspconfig.ui.lspinfo")()

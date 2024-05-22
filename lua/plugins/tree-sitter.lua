@@ -1,16 +1,8 @@
-local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
--- parser_config.fsharp = {
---   install_info = {
---     url = "https://github.com/Nsidorenco/tree-sitter-fsharp",
---     branch = "develop",
---     files = { "src/scanner.cc", "src/parser.c" },
---     generate_requires_npm = true,
---     requires_generate_from_grammar = true,
---   },
---   filetype = "fsharp",
--- }
+-- return {}
+-- vim.notify(vim.inspect(require("nvim-treesitter.parsers")))
 local utils = require("config.util")
 if utils.hasRepoWithName("tree-sitter-fsharp") then
+  local parser_config = require("nvim-treesitter.parsers")
   parser_config.fsharp = {
     install_info = {
       url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/ionide/tree-sitter-fsharp"),
@@ -19,6 +11,7 @@ if utils.hasRepoWithName("tree-sitter-fsharp") then
     filetype = "fsharp",
   }
 else
+  local parser_config = require("nvim-treesitter.parsers")
   parser_config.fsharp = {
     install_info = {
       url = "https://github.com/ionide/tree-sitter-fsharp",
@@ -32,6 +25,7 @@ else
 end
 
 if utils.hasRepoWithName("tree-sitter-odin") then
+  local parser_config = require("nvim-treesitter.parsers")
   parser_config.odin = {
     install_info = {
       branch = "main",
@@ -41,6 +35,7 @@ if utils.hasRepoWithName("tree-sitter-odin") then
     filetype = "odin",
   }
 else
+  local parser_config = require("nvim-treesitter.parsers")
   parser_config.odin = {
     install_info = {
       branch = "main",
@@ -52,6 +47,7 @@ else
 end
 
 if utils.hasRepoWithName("tree-sitter-jsonc") then
+  local parser_config = require("nvim-treesitter.parsers")
   parser_config.jsonc = {
     install_info = {
       branch = "main",
@@ -61,6 +57,7 @@ if utils.hasRepoWithName("tree-sitter-jsonc") then
     filetype = "json",
   }
 else
+  local parser_config = require("nvim-treesitter.parsers")
   parser_config.jsonc = {
     install_info = {
       branch = "main",
@@ -70,36 +67,61 @@ else
     filetype = "json",
   }
 end
+
+if utils.hasRepoWithName("tree-sitter-razor") then
+  local parser_config = require("nvim-treesitter.parsers")
+  parser_config.razor = {
+    install_info = {
+      url = utils.getRepoWithNameOrDefault("tree-sitter-razor", "https://github.com/moreiraio/tree-sitter-razor"),
+      -- files = { "src/scanner.c", "src/parser.c" },
+      files = { "src/parser.c" },
+    },
+    filetype = "razor",
+  }
+else
+  local parser_config = require("nvim-treesitter.parsers")
+  parser_config.razor = {
+    install_info = {
+      url = "https://github.com/moreiraio/tree-sitter-razor",
+      branch = "main",
+      files = { "src/parser.c" },
+      -- generate_requires_npm = true,
+      -- requires_generate_from_grammar = true,
+    },
+    filetype = "razor",
+  }
+end
+
 return {
 
   "nvim-treesitter/nvim-treesitter",
   version = false, -- last release is way too old and doesn't work on Windows
   build = ":TSUpdate",
   event = { "BufReadPost", "BufNewFile" },
-  dependencies = {
-    "LiadOz/nvim-dap-repl-highlights",
+  -- dependencies = {
+  -- "LiadOz/nvim-dap-repl-highlights",
 
-    {
-      "nvim-treesitter/nvim-treesitter-textobjects",
-      -- init = function()
-      --   -- PERF: no need to load the plugin, if we only need its queries for mini.ai
-      --   local plugin = require("lazy.core.config").spec.plugins["nvim-treesitter"]
-      --   local opts = require("lazy.core.plugin").values(plugin, "opts", false)
-      --   local enabled = false
-      --   if opts.textobjects then
-      --     for _, mod in ipairs({ "move", "select", "swap", "lsp_interop" }) do
-      --       if opts.textobjects[mod] and opts.textobjects[mod].enable then
-      --         enabled = true
-      --         break
-      --       end
-      --     end
-      --   end
-      --   if not enabled then
-      --     require("lazy.core.loader").disable_rtp_plugin("nvim-treesitter-textobjects")
-      --   end
-      -- end,
-    },
-  },
+  -- {
+  -- "nvim-treesitter/nvim-treesitter-textobjects",
+  -- init = function()
+  --   -- PERF: no need to load the plugin, if we only need its queries for mini.ai
+  --   local plugin = require("lazy.core.config").spec.plugins["nvim-treesitter"]
+  --   local opts = require("lazy.core.plugin").values(plugin, "opts", false)
+  --   local enabled = false
+  --   if opts.textobjects then
+  --     for _, mod in ipairs({ "move", "select", "swap", "lsp_interop" }) do
+  --       if opts.textobjects[mod] and opts.textobjects[mod].enable then
+  --         enabled = true
+  --         break
+  --       end
+  --     end
+  --   end
+  --   if not enabled then
+  --     require("lazy.core.loader").disable_rtp_plugin("nvim-treesitter-textobjects")
+  --   end
+  -- end,
+  -- },
+  -- },
   keys = {
     { "<space>vi", desc = "Increment selection", mode = "x" },
     { "<bs>", desc = "Decrement selection", mode = "x" },
@@ -164,7 +186,7 @@ return {
     --    use_virtual_text = true,
     --    lint_events = { "BufWrite", "CursorHold" },
     --  },
-    compilers = { "zig", "clang", "gcc", "llvm", "cc" },
+    compilers = { "zig", "gcc", "clang", "llvm", "cc" },
     incremental_selection = {
       enable = true,
       keymaps = {

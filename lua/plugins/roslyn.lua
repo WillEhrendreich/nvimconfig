@@ -86,6 +86,9 @@ return {
         },
       })
     end,
+    dependencies = {
+      "neovim/nvim-lspconfig",
+    },
   },
   { "adamclerk/vim-razor" },
   -- require("roslyn").setup({

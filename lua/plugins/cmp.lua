@@ -11,7 +11,7 @@ return {
   -- first: disable default <tab> and <s-tab> behavior in LuaSnip
   {
     "L3MON4D3/LuaSnip",
-
+    build = "make install_jsregexp",
     config = function()
       -- re "configs.luasnip"
       local ls = require("luasnip")
@@ -34,9 +34,18 @@ return {
         snip.nodes[1] = iNode.I(1)
       end
 
-      ls.add_snippets("all", {
-        ls.parser.parse_snippet("func", "function ${1}(${2}) \n{\n\t${3}\n}"),
+      ls.add_snippets("lua", {
+        ls.parser.parse_snippet("func", "function ${1}(${2}) \n\n\t${3}\nend"),
       })
+
+      ls.add_snippets("cs", {
+        ls.parser.parse_snippet("func", "public  ${1} ${2} (${3})\n{\n\t${4}\n}"),
+      })
+
+      ls.add_snippets("razor", {
+        ls.parser.parse_snippet("tag", "<${1}>\n\t${2}\n</${1}>"),
+      })
+
       ls.config.setup({
         history = false,
         update_events = "InsertLeave",
@@ -319,6 +328,22 @@ return {
         },
         preselect = cmp.PreselectMode.Item,
         mapping = cmp.mapping({
+          -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
+          -- they way you will only jump inside the snippet region
+          ["<C-j>"] = cmp.mapping({
+            i = function()
+              if require("luasnip").expand_or_jumpable() then
+                require("luasnip").expand_or_jump()
+              end
+            end,
+          }),
+          ["<C-k>"] = cmp.mapping({
+            i = function()
+              if require("luasnip").expand_or_jumpable(-1) then
+                require("luasnip").expand_or_jump(-1)
+              end
+            end,
+          }),
           ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
           ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
           ["<C-b>"] = cmp.mapping.scroll_docs(-4),
@@ -373,22 +398,22 @@ return {
                 fallback()
               end
             end,
-            s = function(fallback)
-              if cmp.visible() then
-                cmp.select_next_item()
-                -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
-                -- they way you will only jump inside the snippet region
-              elseif require("luasnip").expand_or_jumpable() then
-                require("luasnip").expand_or_jump()
-              elseif has_words_before() then
-                cmp.complete()
-                cmp.select_next_item()
-                --     cmp.select_prev_item()
-                -- completeAndInsertFirstMatch()
-              else
-                fallback()
-              end
-            end,
+            -- s = function(fallback)
+            --   if cmp.visible() then
+            --     cmp.select_next_item()
+            --     -- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
+            --     -- they way you will only jump inside the snippet region
+            --   elseif require("luasnip").expand_or_jumpable() then
+            --     require("luasnip").expand_or_jump()
+            --   elseif has_words_before() then
+            --     cmp.complete()
+            --     cmp.select_next_item()
+            --     --     cmp.select_prev_item()
+            --     -- completeAndInsertFirstMatch()
+            --   else
+            --     fallback()
+            --   end
+            -- end,
           }),
 
           -- ["<Tab>"] = cmp.mapping(function(fallback)

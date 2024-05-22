@@ -52,6 +52,12 @@ function M.getEnvVariableOrEmptyString(name)
   return ""
 end
 
+function M.tbl_flatten()
+  return vim.fn.has("nvim-0.10") == 1 and function(x)
+    return vim.iter(x):flatten(math.huge):totable()
+  end or vim.tbl_flatten
+end
+
 function M.hasEnvironmentVariableSet(name)
   local EnvVar = M.getEnvVariableOrEmptyString(name)
   if EnvVar then
@@ -184,21 +190,6 @@ vim.api.nvim_create_user_command("WatchCurrentFile", function()
   -- end
 end, { desc = "watches current file " })
 
----@return string
-function M.norm(path)
-  if path:sub(1, 1) == "~" then
-    local home = vim.loop.os_homedir()
-    if home then
-      if home:sub(-1) == "\\" or home:sub(-1) == "/" then
-        home = home:sub(1, -2)
-      end
-      path = home .. path:sub(2)
-    end
-  end
-  path = path:gsub("\\", "/"):gsub("/+", "/")
-  return path:sub(-1) == "/" and path:sub(1, -2) or path
-end
-
 function M.file_exists(file)
   return vim.loop.fs_stat(file) ~= nil
 end
@@ -206,10 +197,6 @@ end
 ---@param opts? LazyFloatOptions
 function M.float(opts)
   return require("lazy.view.float")(opts)
-end
-
-function M.setup(opts)
-  -- print("now Setup for NeovimUtils called with opts : \n" .. vim.inspect(opts))
 end
 
 ---@param msg string|string[]
@@ -284,7 +271,7 @@ function M.GetVisualSelection(keepSelectionIfNotInBlockMode, advanceCursorOneLin
     line_start, line_end = line_end, line_start
     if debugNotify == true then
       vim.notify(
-        "switching line start and end, \nWas "
+        "switch.ing line start and end, \nWas "
           .. line_end
           .. ","
           .. line_start
@@ -496,36 +483,6 @@ function M.write_file(file, contents)
   local fd = assert(io.open(file, "w+"))
   fd:write(contents)
   fd:close()
-end
-
----@generic F: fun()
----@param ms number
----@param fn F
----@return F
-function M.throttle(ms, fn)
-  local timer = vim.loop.new_timer()
-  local running = false
-  local first = true
-
-  return function(...)
-    local args = { ... }
-    local wrapped = function()
-      fn(unpack(args))
-    end
-    if not running then
-      if first then
-        wrapped()
-        first = false
-      end
-
-      timer:start(ms, 0, function()
-        running = false
-        vim.schedule(wrapped)
-      end)
-
-      running = true
-    end
-  end
 end
 
 ---@class LazyCmdOptions: LazyFloatOptions
@@ -804,29 +761,6 @@ function M.noautocmd(fn)
       error(ret)
     end
     return ret
-  end
-end
-
---- @generic F: function
---- @param fn F
---- @param ms? number
---- @return F
-function M.throttle(fn, ms)
-  ms = ms or 200
-  local timer = assert(vim.loop.new_timer())
-  local waiting = 0
-  return function()
-    if timer:is_active() then
-      waiting = waiting + 1
-      return
-    end
-    waiting = 0
-    fn() -- first call, execute immediately
-    timer:start(ms, 0, function()
-      if waiting > 1 then
-        vim.schedule(fn) -- only execute if there are calls waiting
-      end
-    end)
   end
 end
 

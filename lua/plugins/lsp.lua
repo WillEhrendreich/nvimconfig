@@ -123,7 +123,7 @@ vim.api.nvim_create_user_command("LspShutdownAllOnCurrentBuffer", function()
 end, {})
 
 OnAttach =
-  ---@param client lsp.Client
+  ---@param client vim.lsp.Client
   ---@param buffer integer
   function(client, buffer)
     -- vim.notify(client.name .. " is running OnAttach")
@@ -138,9 +138,15 @@ OnAttach =
     -- -- local on_attach_override = user_plugin_opts("lsp.on_attach", nil, false)
     -- -- conditional_func(on_attach_override, true, client, bufnr)
     -- -- local capabilities = client.server_capabilities
-    -- -- vim.notify(client.name .. " is running on_attach")
+    -- -- vim.notify(client.name ..  is running on_attach")
     -- if not tc(ignored, client.name) then
-    --   -- if client.name ~= "null-ls" and client.name ~= "stylua" and client.name ~= "lemminx" then
+    if client.name == "lemminx" then
+      local ft = vim.api.nvim_buf_get_option(0, "filetype")
+      local isDotnet = ft == "cs" or ft == "fsharp" or ft == "fsharp_project" or ft == "cs_project" or ft == "razor"
+      if isDotnet then
+        vim.diagnostic.enable(false)
+      end
+    end
     --   -- local root = FindRoot(ignored, bufnr)
     --   local root = FindRoot(ignored, client, buffer)
     --   -- v.notify("lsp root should have found root of : " .. root)
@@ -218,9 +224,19 @@ OnAttach =
 
       vim.bo[buffer].commentstring = "// %s"
     end
-    if client.name == "csharp_ls" then
+    if client.name == "csharp_ls" or client.name == "roslyn" then
       -- client.server_capabilities.documentFormattingProvider = false
-
+      if client.supports_method(require("vim.lsp.protocol").Methods.textDocument_diagnostic) then
+        vim.api.nvim_create_autocmd("BufEnter", {
+          buffer = buffer,
+          callback = function()
+            require("vim.lsp.util")._refresh(
+              require("vim.lsp.protocol").Methods.textDocument_diagnostic,
+              { only_visible = true, client_id = client.id }
+            )
+          end,
+        })
+      end
       vim.bo[buffer].commentstring = "// %s"
     end
     if client.name == "jsonls" then
@@ -526,10 +542,13 @@ return {
   end,
   opts = {
     inlay_hints = { enabled = true },
+    codelens = {
+      enabled = true,
+    },
     capabilities = {
       textDocument = {
         foldingRange = {
-          dynamicRegistration = false,
+          -- dynamicRegistration = false,
           lineFoldingOnly = true,
         },
       },
@@ -574,183 +593,185 @@ return {
         },
       },
     },
-  },
-  -- },
+    -- },
 
-  -- LSP Server Settings
-  --      ---@type lspconfig.options
-  -- servers = {
-  -- {
-  --         ---@type IonideOptions
-  --           ionide = {
-  --
-  --             IonideNvimSettings = {
-  --               LspRecommendedColorScheme = true,
-  --               EnableFsiStdOutTeeToFile = true,
-  --               FsiStdOutFileName = "./FsiOutput.txt",
-  --             },
-  --             cmd = {
-  --               util.getMasonBinCommandIfExists("fsautocomplete"),
-  --               -- "-l",
-  --               -- ".fsautocomplete.log",
-  --               -- "-v",
-  --               -- '--wait-for-debugger',
-  --               -- "--project-graph-enabled",
-  --             },
-  --             settings = {
-  --               FSharp = {
-  --                 enableMSBuildProjectGraph = true,
-  --                 -- enableTreeView = true,
-  --                 fsiExtraParameters = {
-  --                   "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
-  --                 },
-  --               },
-  --             },
-  --           },
-  --         },
-  --         -- you can do any additional lsp server setup here
-  --         -- return true if you don't want this server to be setup with lspconfig
-  --         ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
-  --         setup = {
-  --           ionide = function(_, opts)
-  --             print("setup ionide")
-  --             require("ionide").setup(opts)
-  --           end,
-  --           -- NOTE: returning true will make sure fsautocomplete is not setup with neovim, which is what we want if we're using Ionide-nvim
-  --           fsautocomplete = function(_, _)
-  --             return true
-  --           end,
-  --         },
-  --       },
-  -- {
-  -- Syntax highlighting
-  --
-
-  -- LspConfig
-
-  -- purescriptls will be automatically installed with mason and loaded with lspconfig
-  servers = {
-
-    -- ---@type IonideOptions
-    -- ionide = {
+    -- LSP Server Settings
+    --      ---@type lspconfig.options
+    -- servers = {
+    -- {
+    --         ---@type IonideOptions
+    --           ionide = {
     --
-    --   IonideNvimSettings = {
-    --     LspRecommendedColorScheme = true,
-    --     EnableFsiStdOutTeeToFile = true,
-    --     FsiStdOutFileName = "./FsiOutput.txt",
-    --   },
-    --   cmd = {
-    --     util.getMasonBinCommandIfExists("fsautocomplete"),
-    --     -- "-l",
-    --     -- ".fsautocomplete.log",
-    --     -- "-v",
-    --     -- '--wait-for-debugger',
-    --     -- "--project-graph-enabled",
-    --   },
-    --   settings = {
-    --     FSharp = {
-    --       enableMSBuildProjectGraph = true,
-    --       -- enableTreeView = true,
-    --       fsiExtraParameters = {
-    --         "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
+    --             IonideNvimSettings = {
+    --               LspRecommendedColorScheme = true,
+    --               EnableFsiStdOutTeeToFile = true,
+    --               FsiStdOutFileName = "./FsiOutput.txt",
+    --             },
+    --             cmd = {
+    --               util.getMasonBinCommandIfExists("fsautocomplete"),
+    --               -- "-l",
+    --               -- ".fsautocomplete.log",
+    --               -- "-v",
+    --               -- '--wait-for-debugger',
+    --               -- "--project-graph-enabled",
+    --             },
+    --             settings = {
+    --               FSharp = {
+    --                 enableMSBuildProjectGraph = true,
+    --                 -- enableTreeView = true,
+    --                 fsiExtraParameters = {
+    --                   "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
+    --                 },
+    --               },
+    --             },
+    --           },
+    --         },
+    --         -- you can do any additional lsp server setup here
+    --         -- return true if you don't want this server to be setup with lspconfig
+    --         ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
+    --         setup = {
+    --           ionide = function(_, opts)
+    --             print("setup ionide")
+    --             require("ionide").setup(opts)
+    --           end,
+    --           -- NOTE: returning true will make sure fsautocomplete is not setup with neovim, which is what we want if we're using Ionide-nvim
+    --           fsautocomplete = function(_, _)
+    --             return true
+    --           end,
+    --         },
     --       },
-    --     },
-    --   },
-    -- },
+    -- {
+    -- Syntax highlighting
+    --
 
-    -- razorLsp = {
-    --   cmd = {
-    --     "c:/Users/ehrwi/.vscode/extensions/ms-dotnettools.csharp-2.18.16-win32-x64/.razor/rzls.exe",
-    --     "--logLevel",
-    --     "2",
-    --     "--projectConfigurationFileName",
-    --     "project.razor.vscode.bin",
-    --     "--DelegateToCSharpOnDiagnosticPublish",
-    --     "true",
-    --     "--UpdateBuffersForClosedDocuments",
-    --     "true",
-    --     "--telemetryLevel",
-    --     "none",
-    --   },
-    --   filetypes = { "razor", "cshtml" },
-    --   on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
-    --   -- cmd = "",
-    --   capabilities = require("lazyvim.util").lsp.capabilities,
-    --   settings = {
-    --     DefaultCSharpVirtualDocumentSuffix = ".ide.g.cs",
-    --     DefaultHtmlVirtualDocumentSuffix = "__virtual.html",
-    --
-    --     SupportsFileManipulation = true,
-    --
-    --     ProjectConfigurationFileName = "project.razor.bin",
-    --
-    --     CSharpVirtualDocumentSuffix = ".ide.g.cs",
-    --
-    --     HtmlVirtualDocumentSuffix = "__virtual.html",
-    --
-    --     SingleServerCompletionSupport = false,
-    --
-    --     SingleServerSupport = false,
-    --
-    --     DelegateToCSharpOnDiagnosticPublish = false,
-    --
-    --     UpdateBuffersForClosedDocuments = false,
-    --
-    --     --// Code action and rename paths in Windows VS Code need to be prefixed with '/':
-    --     -- // https://github.com/dotnet/razor/issues/8131
-    --     ReturnCodeActionAndRenamePathsWithPrefixedSlash = true,
-    --
-    --     ShowAllCSharpCodeActions = false,
-    --
-    --     IncludeProjectKeyInGeneratedFilePath = false,
-    --
-    --     UsePreciseSemanticTokenRanges = false,
-    --
-    --     MonitorWorkspaceFolderForConfigurationFiles = true,
-    --
-    --     UseRazorCohostServer = false,
-    --
-    --     DisableRazorLanguageServer = false,
-    --   },
-    -- },
+    -- LspConfig
 
-    roslyn = {
-      on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
-    },
+    -- purescriptls will be automatically installed with mason and loaded with lspconfig
+    servers = {
 
-    purescriptls = {
-      settings = {
-        purescript = {
-          formatter = "purs-tidy",
+      -- ---@type IonideOptions
+      -- ionide = {
+      --
+      --   IonideNvimSettings = {
+      --     LspRecommendedColorScheme = true,
+      --     EnableFsiStdOutTeeToFile = true,
+      --     FsiStdOutFileName = "./FsiOutput.txt",
+      --   },
+      --   cmd = {
+      --     util.getMasonBinCommandIfExists("fsautocomplete"),
+      --     -- "-l",
+      --     -- ".fsautocomplete.log",
+      --     -- "-v",
+      --     -- '--wait-for-debugger',
+      --     -- "--project-graph-enabled",
+      --   },
+      --   settings = {
+      --     FSharp = {
+      --       enableMSBuildProjectGraph = true,
+      --       -- enableTreeView = true,
+      --       fsiExtraParameters = {
+      --         "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
+      --       },
+      --     },
+      --   },
+      -- },
+
+      -- razorLsp = {
+      --   cmd = {
+      --     "c:/Users/ehrwi/.vscode/extensions/ms-dotnettools.csharp-2.18.16-win32-x64/.razor/rzls.exe",
+      --     "--logLevel",
+      --     "2",
+      --     "--projectConfigurationFileName",
+      --     "project.razor.vscode.bin",
+      --     "--DelegateToCSharpOnDiagnosticPublish",
+      --     "true",
+      --     "--UpdateBuffersForClosedDocuments",
+      --     "true",
+      --     "--telemetryLevel",
+      --     "none",
+      --   },
+      --   filetypes = { "razor", "cshtml" },
+      --   on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
+      --   -- cmd = "",
+      --   capabilities = require("lazyvim.util").lsp.capabilities,
+      --   settings = {
+      --     DefaultCSharpVirtualDocumentSuffix = ".ide.g.cs",
+      --     DefaultHtmlVirtualDocumentSuffix = "__virtual.html",
+      --
+      --     SupportsFileManipulation = true,
+      --
+      --     ProjectConfigurationFileName = "project.razor.bin",
+      --
+      --     CSharpVirtualDocumentSuffix = ".ide.g.cs",
+      --
+      --     HtmlVirtualDocumentSuffix = "__virtual.html",
+      --
+      --     SingleServerCompletionSupport = false,
+      --
+      --     SingleServerSupport = false,
+      --
+      --     DelegateToCSharpOnDiagnosticPublish = false,
+      --
+      --     UpdateBuffersForClosedDocuments = false,
+      --
+      --     --// Code action and rename paths in Windows VS Code need to be prefixed with '/':
+      --     -- // https://github.com/dotnet/razor/issues/8131
+      --     ReturnCodeActionAndRenamePathsWithPrefixedSlash = true,
+      --
+      --     ShowAllCSharpCodeActions = false,
+      --
+      --     IncludeProjectKeyInGeneratedFilePath = false,
+      --
+      --     UsePreciseSemanticTokenRanges = false,
+      --
+      --     MonitorWorkspaceFolderForConfigurationFiles = true,
+      --
+      --     UseRazorCohostServer = false,
+      --
+      --     DisableRazorLanguageServer = false,
+      --   },
+      -- },
+
+      roslyn = {
+        -- on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
+      },
+      bashls = {
+        mason = false,
+      },
+      purescriptls = {
+        settings = {
+          purescript = {
+            formatter = "purs-tidy",
+          },
         },
       },
     },
-  },
-  setup = {
-    -- ionide = function(_, opts)
-    --   -- print("setup ionide")
-    --   require("ionide").setup(opts)
-    -- end,
-    -- -- NOTE: returning true will make sure fsautocomplete is not setup with neovim, which is what we want if we're using Ionide-nvim
-    -- fsautocomplete = function(_, _)
-    --   return true
-    -- end,
+    setup = {
+      -- ionide = function(_, opts)
+      --   -- print("setup ionide")
+      --   require("ionide").setup(opts)
+      -- end,
+      -- -- NOTE: returning true will make sure fsautocomplete is not setup with neovim, which is what we want if we're using Ionide-nvim
+      -- fsautocomplete = function(_, _)
+      --   return true
+      -- end,
 
-    -- razorLsp = function(_, opts) -- code
-    --   require("razorLsp").setup(opts)
-    -- end,
+      -- razorLsp = function(_, opts) -- code
+      --   require("razorLsp").setup(opts)
+      -- end,
 
-    purescriptls = function(_, opts)
-      opts.root_dir = function(path)
-        local lspConfigUtil = require("lspconfig.util")
-        -- if path:match("/.spago/") then
-        --   return nil
-        -- end
-        return lspConfigUtil.root_pattern("bower.json", "psc-package.json", "spago.dhall", "flake.nix", "shell.nix")(
-          path
-        )
-      end
-    end,
+      purescriptls = function(_, opts)
+        opts.root_dir = function(path)
+          local lspConfigUtil = require("lspconfig.util")
+          -- if path:match("/.spago/") then
+          --   return nil
+          -- end
+          return lspConfigUtil.root_pattern("bower.json", "psc-package.json", "spago.dhall", "flake.nix", "shell.nix")(
+            path
+          )
+        end
+      end,
+    },
   },
   on_attach = require("lazyvim.util").lsp.on_attach(OnAttach),
 }

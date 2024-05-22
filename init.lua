@@ -1,3 +1,4 @@
+vim.opt.runtimepath:append("c:/.local/share/nvim-data/site/")
 local function fileExists(filePath)
   local file = io.open(filePath, "r")
   if file then

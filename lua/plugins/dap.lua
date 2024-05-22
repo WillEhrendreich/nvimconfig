@@ -1380,10 +1380,10 @@ return {
         },
       },
     },
-    {
-      "LiadOz/nvim-dap-repl-highlights",
-      config = true,
-    },
+    -- {
+    -- "LiadOz/nvim-dap-repl-highlights",
+    -- config = true,
+    -- },
 
     {
       "Weissle/persistent-breakpoints.nvim",

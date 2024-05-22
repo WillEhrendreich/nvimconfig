@@ -1,5 +1,5 @@
 ---custom on attach
----@param client lsp.Client
+---@param client vim.lsp.Client
 ---@param bufnr integer
 local customOnAttach = function(client, bufnr)
   if client.name == "lemminx" then
@@ -58,11 +58,11 @@ end
 return {
   {
     "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, {
-        "xml",
-      })
-    end,
+    -- opts = function(_, opts)
+    --   vim.list_extend(opts.ensure_installed, {
+    --     "xml",
+    --   })
+    -- end,
   },
   {
     "neovim/nvim-lspconfig",
@@ -70,8 +70,11 @@ return {
     opts = {
       servers = {
         lemminx = {
-          cmd = { vim.fs.normalize(vim.fn.stdpath("data") or "c:/.local/share/nvim-data") .. "/mason/bin/lemminx.cmd" },
-          filetypes = { "xml", "fsharp_project" },
+
+          cmd = {
+            vim.fs.normalize((vim.fn.stdpath("data") or "c:/.local/share/nvim-data") .. "/mason/bin/lemminx.cmd"),
+          },
+          filetypes = { "xml", "fsharp_project", "cs_project" },
           -- on_attach = customOnAttach,
           settings = {
             xml = {
@@ -161,7 +164,58 @@ return {
                 splitAttributes = false,
               },
               completion = {
-                autoCloseTags = false,
+                autoCloseTags = true,
+              },
+
+              --   semanticTokens = true,
+            },
+            cs_project = {
+              -- codeLens = { enabled = true },
+              -- preferences.showSchemaDocumentationType: Specifies the source of the XML schema documentation displayed on hover and completion. Default is all.
+              preferences = { showSchemaDocumentationType = "all" },
+              -- validation.enabled: Enable/disable all validation. Default is true.
+              validation = {
+                enabled = false,
+                -- validation.schema.enabled: Enable/disable schema based validation. Default is always. Ignored if xml.validation.enabled is set to false.
+                schema = {
+                  enabled = false,
+                },
+                -- validation.noGrammar: The message severity when a document has no associated grammar. Defaults to hint.
+                noGrammar = "none",
+              },
+              -- validation.namespaces.enabled: Enable/disable namespaces validation. Default is always. Ignored if xml.validation.enabled is set to false.
+              -- validation.disallowDocTypeDecl: Enable/disable if a fatal error is thrown if the incoming document contains a DOCTYPE declaration. Default is false.
+              -- validation.resolveExternalEntities: Enable/disable resolve of external entities. Default is false. Disabled in untrusted workspace.
+              -- validation.filters: Allows XML validation filter to be associated to file name patterns.
+              symbols = {
+                -- symbols.enabled: Enable/disable document symbols (Outline). Default is true.
+
+                -- symbols.excluded: Disable document symbols (Outline) for the given file name patterns.
+                -- Updating file name patterns does not automatically reload the Outline view for the relevant file(s).
+                -- Each file must either be reopened or changed, in order to trigger an Outline view reload.
+                excluded = {},
+
+                -- symbols.maxItemsComputed: The maximum number of outline symbols and folding regions computed (limited for performance reasons). Default is 5000.
+                -- symbols.showReferencedGrammars: Show referenced grammars in the Outline. Default is true.
+                -- symbols.filters: Allows XML symbols filter to be associated to file name patterns.
+              },
+              files = {
+                -- files.trimTrailingWhitespace: Now affects XML formatting. Enable/disable trailing whitespace trimming when formatting an XML document. Default is false.
+                trimTrailingWhitespace = true,
+              },
+              -- See Formatting settings for a detailed list of the formatting settings.
+              trace = {
+                server = "verbose",
+              },
+              logs = {
+                client = true,
+              },
+              format = {
+                enabled = false,
+                splitAttributes = true,
+              },
+              completion = {
+                autoCloseTags = true,
               },
 
               --   semanticTokens = true,

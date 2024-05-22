@@ -8,7 +8,22 @@
 Install requires Neovim 0.10+. Always review the code before installing a configuration.
 It is required to have a C compiler for treesitter to work properly.
 I recommend the Zig one, it's fantastic.
-If you don't have it in your path, and don't have it as the CC environment variable, it will not work to install treesitter grammars at all.
+
+If you don't have it in your path, don't have it as the CC environment variable, and don't account for the modified calling convention of "zig cc <args here>",
+it will not work to install or build treesitter grammars at all.
+##Important if you're going to use zig, in new versions of treesitter, it will only call "treesitter build" for everything in when neovim runs TSUpdate.
+You will need to have some sort of alias or something to call it correctly.
+I recommend the following function in your powershell profile:
+
+```pwsh
+function zig
+{
+  zig cc $args
+}
+```
+
+If you don't do this, you will have no luck getting treesitter to build with zig. You've been warned.
+
 clang also works, but it's not as good.
 
 It's recommend heavily to not install nvim itself with anything but [BOB](https://github.com/MordechaiHadad/bob).
