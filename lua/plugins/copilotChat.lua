@@ -94,8 +94,8 @@ local noChatOpts = {
       insert = "<C-c>",
     },
     reset = {
-      normal = "<C-r>",
-      insert = "<C-r>",
+      normal = "<M-r>",
+      insert = "<M-r>",
     },
     submit_prompt = {
       normal = "<CR>",

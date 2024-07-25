@@ -293,7 +293,7 @@ return {
       },
       "onsails/lspkind.nvim",
       -- {
-      -- "rafamadriz/friendly-snippets",
+      "rafamadriz/friendly-snippets",
       -- config = function()
       --   require("luasnip.loaders.from_vscode").lazy_load()
       -- end,
@@ -507,6 +507,7 @@ return {
             ellipsis_char = "",
             menu = {
               codeium = "[Cdim]",
+              copilot = "[Copt]",
               jupyter = "[Jup]",
               buffer = "[Buf]",
               nuget = "[Ngt]",

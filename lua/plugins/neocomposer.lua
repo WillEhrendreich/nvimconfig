@@ -61,6 +61,5 @@ local result = {
   --     },
   --   },
 }
-
 -- require("telescope").load_extension("macros")
 return result

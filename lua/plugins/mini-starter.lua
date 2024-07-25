@@ -1,26 +1,16 @@
 return {
   "echasnovski/mini.starter",
 
-  opts = function(_, o)
-    local logo = [[
-     ...     ..      ..                           ...                                                 .                
-  x*8888x.:*8888: -"888:     ..               xH88"`~ .x8X                                 oec :    @88>              
- X   48888X `8888H  8888    @L              :8888   .f"8888Hf        u.      u.    u.     @88888    %8P               
-X8x.  8888X  8888X  !888>  9888i   .dL     :8888>  X8L  ^""`   ...ue888b   x@88k u@88c.   8"*88%     .         uL     
-X8888 X8888  88888   "*8%- `Y888k:*888.    X8888  X888h        888R Y888r ^"8888""8888"   8b.      .@88u   .ue888Nc.. 
-'*888!X8888> X8888  xH8>     888E  888I    88888  !88888.      888R I888>   8888  888R   u888888> ''888E` d88E`"888E` 
-  `?8 `8888  X888X X888>     888E  888I    88888   %88888      888R I888>   8888  888R    8888R     888E  888E  888E  
-  -^  '888"  X888  8888>     888E  888I    88888 '> `8888>     888R I888>   8888  888R    8888P     888E  888E  888E  
-   dx '88~x. !88~  8888>     888E  888I    `8888L %  ?888   ! u8888cJ888    8888  888R    *888>     888E  888E  888E  
- .8888Xf.888x:!    X888X.:  x888N><888'     `8888  `-*""   /   "*888*P"    "*88*" 8888"   4888      888&  888& .888E  
-:""888":~"888"     `888*"    "88"  888        "888.      :"      'Y"         ""   'Y"     '888      R888" *888" 888&  
-    "~'    "~        ""            88F          `""***~"`                                  88R       ""    `"   "888E 
-                                  98"                                                      88>            .dWi   `88E 
-                                ./"                                                        48             4888~  J8%  
-                               ~`                                                          '8              ^"===*"`     
-
-
-]]
+  -- opts = function(_, o)
+  opts = function()
+    local logo = table.concat({
+      "            ██╗      █████╗ ███████╗██╗   ██╗██╗   ██╗██╗███╗   ███╗          Z",
+      "            ██║     ██╔══██╗╚══███╔╝╚██╗ ██╔╝██║   ██║██║████╗ ████║      Z    ",
+      "            ██║     ███████║  ███╔╝  ╚████╔╝ ██║   ██║██║██╔████╔██║   z       ",
+      "            ██║     ██╔══██║ ███╔╝    ╚██╔╝  ╚██╗ ██╔╝██║██║╚██╔╝██║ z         ",
+      "            ███████╗██║  ██║███████╗   ██║    ╚████╔╝ ██║██║ ╚═╝ ██║           ",
+      "            ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝     ╚═══╝  ╚═╝╚═╝     ╚═╝           ",
+    }, "\n")
     local nvimlogo = [[
       █████ █     ██                                                         
    ██████  ██    ████ █                                 █                    
@@ -42,8 +32,33 @@ X8888 X8888  88888   "*8%- `Y888k:*888.    X8888  X888h        888R Y888r ^"8888
    ██                                                                        
                                                                              
 ]]
-    o.header = nvimlogo
-    return o
+    local pad = string.rep(" ", 22)
+    local new_section = function(name, action, section)
+      return { name = name, action = action, section = pad .. section }
+    end
+
+    local starter = require("mini.starter")
+  --stylua: ignore
+  local config = {
+    evaluate_single = true,
+    header = nvimlogo,
+    items = {
+      new_section("Find file",       LazyVim.pick(),                        "Telescope"),
+      new_section("New file",        "ene | startinsert",                   "Built-in"),
+      new_section("Recent files",    LazyVim.pick("oldfiles"),              "Telescope"),
+      new_section("Text search",     LazyVim.pick("live_grep"),             "Telescope"),
+      new_section("Config",          LazyVim.pick.config_files(),           "Config"),
+      new_section("Session",         [[lua require("persistence").load()]], "Session"),
+      new_section("Extras For Lazy", "LazyExtras",                          "Config"),
+      new_section("Lazy",            "Lazy",                                "Config"),
+      new_section("Quit",            "qa",                                  "Built-in"),
+    },
+    content_hooks = {
+      starter.gen_hook.adding_bullet(pad .. "💠 ", false),
+      starter.gen_hook.aligning("center", "center"),
+    },
+  }
+    return config
   end,
   config = true,
 }

@@ -3,6 +3,7 @@
 
 -- below is a way to test the lazyvim util has name
 -- vim.notify(vim.inspect(require("lazyvim.util").has("nvim-luadev")))
+--
 
 local LazyVimUtil = require("lazyvim.util")
 local lazyutil = require("lazy.util")
@@ -23,22 +24,23 @@ local function map(mode, lhs, rhs, opts)
   end
 end
 -- must delete these or strange things occur
-vim.api.nvim_del_keymap("n", "<leader>ww")
-vim.api.nvim_del_keymap("n", "<leader>wd")
-vim.api.nvim_del_keymap("n", "<leader>w-")
-vim.api.nvim_del_keymap("n", "<leader>w|")
+-- vim.api.nvim_del_keymap("n", "<leader>w")
+--vim.api.nvim_del_keymap("n", "<leader>ww")
+--vim.api.nvim_del_keymap("n", "<leader>wd")
+-- vim.api.nvim_del_keymap("n", "<leader>w-")
+-- vim.api.nvim_del_keymap("n", "<leader>w|")
+vim.api.nvim_del_keymap("n", "grn")
+vim.api.nvim_del_keymap("n", "gra")
+vim.api.nvim_del_keymap("n", "grr")
+
+if LazyHas("text-case.nvim") then
+  map("v", "<leader>`", "<cmd>TextCaseOpenTelescope<CR>", "Neotree Toggle")
+end
 
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 if LazyVimUtil.has("neo-tree.nvim") then
   map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
-end
-
-if LazyVimUtil.has("lsplinks.nvim") then
-  map("n", "gx", function()
-    vim.notify("I have lsplinks")
-    require("lsplinks").gx()
-  end, "LspLinksGx")
 end
 
 if require("lazyvim.util").has("nvim-dbee") then
@@ -85,12 +87,27 @@ if LazyVimUtil.has("NeoComposer.nvim") then
 end
 
 map({ "n" }, "gx", function()
-  local currentWord = vim.fn.expand("<cWORD>")
+  local function removeComma(str)
+    return string.gsub(str, ",", "")
+  end
+  local currentWord = removeComma(vim.fn.expand("<cWORD>"))
   if currentWord then
-    -- if not string.match(currentWord, "") then
-    vim.notify("trying to open " .. currentWord)
-    lazyutil.open(currentWord)
-    -- end
+    if vim.api.nvim_buf_get_option(0, "filetype") == "lua" then
+      vim.notify("trying to open " .. currentWord)
+      lazyutil.open(currentWord)
+    else
+      if LazyVimUtil.has("lsplinks.nvim") then
+        map("n", "gx", function()
+          vim.notify("I have lsplinks")
+          require("lsplinks").gx()
+        end, "LspLinksGx")
+      else
+        -- if not string.match(currentWord, "") then
+        vim.notify("trying to open " .. currentWord)
+        lazyutil.open(currentWord)
+        -- end
+      end
+    end
   end
 end, "open WORD under cursor")
 

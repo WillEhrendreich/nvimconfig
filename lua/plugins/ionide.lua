@@ -13,7 +13,6 @@ return {
       },
       {
         "neovim/nvim-lspconfig",
-        version = false, -- last release is way too old
         opts = {
           servers = {
 
@@ -21,25 +20,21 @@ return {
             ionide = {
 
               IonideNvimSettings = {
-                LspRecommendedColorScheme = true,
+                -- LspRecommendedColorScheme = true,
                 EnableFsiStdOutTeeToFile = true,
+                ShowSignatureOnCursorMove = false,
                 FsiStdOutFileName = "./FsiOutput.txt",
               },
               cmd = {
                 util.getMasonBinCommandIfExists("fsautocomplete"),
-                -- "-l",
-                -- ".fsautocomplete.log",
-                -- "-v",
-                -- '--wait-for-debugger',
-                -- "--project-graph-enabled",
               },
               settings = {
                 FSharp = {
                   enableMSBuildProjectGraph = true,
                   -- enableTreeView = true,
-                  fsiExtraParameters = {
-                    "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
-                  },
+                  -- fsiExtraParameters = {
+                  --   "--compilertool:C:/Users/Will.ehrendreich/.dotnet/tools/.store/depman-fsproj/0.2.6/depman-fsproj/0.2.6/tools/net7.0/any",
+                  -- },
                 },
               },
             },

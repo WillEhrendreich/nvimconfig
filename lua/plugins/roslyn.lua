@@ -2,12 +2,30 @@ local util = require("lspconfig.util")
 return {
   { "Hoffs/omnisharp-extended-lsp.nvim", lazy = true },
   {
-    "jmederosalvarado/roslyn.nvim",
-    lazy = false,
+    "seblj/roslyn.nvim",
+    opts = {
+      on_attach = function(client, bufnr)
+        OnAttach(client, bufnr)
+      end,
+      handlers = {
+        ["textDocument/definition"] = function(...)
+          return require("omnisharp_extended").handler(...)
+        end,
+      },
+      keys = {
+        {
+          "gd",
+          function()
+            require("omnisharp_extended").telescope_lsp_definitions()
+          end,
+          desc = "Goto Definition",
+        },
+      },
+    },
+
     config = function(_, opts)
       local configs = require("lspconfig.configs")
       require("roslyn").setup(opts)
-      -- vim.notify("creating entry in lspconfig configs for roslyn ")
       configs["roslyn"] = {
         default_config = opts,
       }
@@ -21,8 +39,6 @@ return {
                 vim.bo[bufnr].syn = "xml"
                 vim.bo[bufnr].ro = false
                 vim.b[bufnr].readonly = false
-                vim.bo[bufnr].commentstring = "<!--%s-->"
-                -- vim.bo[bufnr].comments = "<!--,e:-->"
                 vim.opt_local.foldlevelstart = 99
                 vim.w.fdm = "syntax"
               end
@@ -37,11 +53,7 @@ return {
               function(bufnr)
                 -- comment settings
                 vim.bo[bufnr].formatoptions = "croql"
-                -- vim.bo[bufnr].commentstring = "(*%s*)"
-                vim.bo[bufnr].commentstring = "<!--%s-->"
                 vim.bo[bufnr].syntax = "xml"
-                -- vim.bo[bufnr].commentstring = "//%s"
-                -- vim.bo[bufnr].comments = [[s0:*\ -,m0:*\ \ ,ex0:*),s1:(*,mb:*,ex:*),:\/\/\/,:\/\/]]
               end
           end,
           cshtml = function(path, bufnr)
@@ -50,9 +62,7 @@ return {
                 vim.w.fdm = "syntax"
                 -- comment settings
                 vim.bo[bufnr].formatoptions = "croql"
-                -- vim.bo[bufnr].commentstring = "(*%s*)"
                 vim.bo[bufnr].commentstring = "<!--%s-->"
-                -- vim.bo[bufnr].comments = [[s0:*\ -,m0:*\ \ ,ex0:*),s1:(*,mb:*,ex:*),:\/\/\/,:\/\/]]
               end
           end,
           cs = function(path, bufnr)
@@ -67,41 +77,30 @@ return {
                 vim.w.fdm = "syntax"
                 -- comment settings
                 vim.bo[bufnr].formatoptions = "croql"
-                -- vim.bo[bufnr].commentstring = "(*%s*)"
-                vim.bo[bufnr].commentstring = "//%s"
-                -- vim.bo[bufnr].comments = [[s0:*\ -,m0:*\ \ ,ex0:*),s1:(*,mb:*,ex:*),:\/\/\/,:\/\/]]
+                -- vim.bo[bufnr].commentstring = "//%s"
               end
           end,
           csx = function(path, bufnr)
             return "cs",
               function(bufnr)
                 vim.w.fdm = "syntax"
-                -- comment settings
                 vim.bo[bufnr].formatoptions = "croql"
-                vim.bo[bufnr].commentstring = "//%s"
-                -- vim.bo[bufnr].commentstring = "(*%s*)"
-                -- vim.bo[bufnr].comments = [[s0:*\ -,m0:*\ \ ,ex0:*),s1:(*,mb:*,ex:*),:\/\/\/,:\/\/]]
               end
           end,
         },
       })
     end,
-    dependencies = {
-      "neovim/nvim-lspconfig",
+  },
+  {
+    "neovim/nvim-lspconfig",
+    servers = {
+      roslyn = {},
+    },
+    setup = {
+      roslyn = function(_, opts) -- code
+        require("roslyn").setup(opts)
+      end,
     },
   },
   { "adamclerk/vim-razor" },
-  -- require("roslyn").setup({
-  --   on_attach = require("lazyvim.util.lsp").on_attach,
-  -- }),
-
-  --
-  -- opts = {
-  --   dotnet_cmd = "dotnet",
-  -- },
-  -- config= function (opts)
-  --   dotnet_cmd ="dotnet",
-  --
-  --
-  -- end
 }

@@ -5,6 +5,14 @@ function Reload(m)
   vim.notify("assuming reload was successful, you should now have the current version of " .. m, vim.log.levels.INFO)
 end
 
+function LazyHas(name)
+  return require("lazyvim.util").has(name)
+end
+
+function LazyHasI(name)
+  vim.notify(vim.inspect(LazyHas(name)))
+end
+
 uc("Reload", function()
   vim.cmd.w()
   Reload(vim.api.nvim_buf_get_name(0))
@@ -271,7 +279,7 @@ function M.GetVisualSelection(keepSelectionIfNotInBlockMode, advanceCursorOneLin
     line_start, line_end = line_end, line_start
     if debugNotify == true then
       vim.notify(
-        "switch.ing line start and end, \nWas "
+        "switching line start and end, \nWas "
           .. line_end
           .. ","
           .. line_start

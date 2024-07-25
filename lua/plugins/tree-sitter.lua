@@ -2,7 +2,8 @@
 -- vim.notify(vim.inspect(require("nvim-treesitter.parsers")))
 local utils = require("config.util")
 if utils.hasRepoWithName("tree-sitter-fsharp") then
-  local parser_config = require("nvim-treesitter.parsers")
+  vim.notify("tree-sitter-fsharp repo found")
+  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
   parser_config.fsharp = {
     install_info = {
       url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/ionide/tree-sitter-fsharp"),
@@ -12,20 +13,19 @@ if utils.hasRepoWithName("tree-sitter-fsharp") then
   }
 else
   local parser_config = require("nvim-treesitter.parsers")
+  vim.notify("tree-sitter-fsharp Non Repo")
   parser_config.fsharp = {
     install_info = {
       url = "https://github.com/ionide/tree-sitter-fsharp",
       branch = "main",
       files = { "src/scanner.c", "src/parser.c" },
-      -- generate_requires_npm = true,
-      -- requires_generate_from_grammar = true,
     },
     filetype = "fsharp",
   }
 end
 
 if utils.hasRepoWithName("tree-sitter-odin") then
-  local parser_config = require("nvim-treesitter.parsers")
+  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
   parser_config.odin = {
     install_info = {
       branch = "main",
@@ -35,7 +35,7 @@ if utils.hasRepoWithName("tree-sitter-odin") then
     filetype = "odin",
   }
 else
-  local parser_config = require("nvim-treesitter.parsers")
+  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
   parser_config.odin = {
     install_info = {
       branch = "main",
@@ -47,7 +47,7 @@ else
 end
 
 if utils.hasRepoWithName("tree-sitter-jsonc") then
-  local parser_config = require("nvim-treesitter.parsers")
+  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
   parser_config.jsonc = {
     install_info = {
       branch = "main",
@@ -57,7 +57,7 @@ if utils.hasRepoWithName("tree-sitter-jsonc") then
     filetype = "json",
   }
 else
-  local parser_config = require("nvim-treesitter.parsers")
+  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
   parser_config.jsonc = {
     install_info = {
       branch = "main",
@@ -69,7 +69,7 @@ else
 end
 
 if utils.hasRepoWithName("tree-sitter-razor") then
-  local parser_config = require("nvim-treesitter.parsers")
+  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
   parser_config.razor = {
     install_info = {
       url = utils.getRepoWithNameOrDefault("tree-sitter-razor", "https://github.com/moreiraio/tree-sitter-razor"),
@@ -79,7 +79,7 @@ if utils.hasRepoWithName("tree-sitter-razor") then
     filetype = "razor",
   }
 else
-  local parser_config = require("nvim-treesitter.parsers")
+  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
   parser_config.razor = {
     install_info = {
       url = "https://github.com/moreiraio/tree-sitter-razor",
@@ -127,20 +127,20 @@ return {
     { "<bs>", desc = "Decrement selection", mode = "x" },
   },
   opts = {
-    auto_install = true,
+    auto_install = false,
     -- highlight = { enable = true, disable = { "fsharp" } },
     highlight = {
       enable = true,
       -- Disable slow treesitter highlight for large files
       disable = function(lang, buf)
         local max_filesize = 100 * 1024 -- 100 KB
-        local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
+        local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(buf))
         if ok and stats and stats.size > max_filesize then
           return true
         end
-        if lang == "fsharp" then
-          return true
-        end
+        -- if lang == "fsharp" then
+        --   return true
+        -- end
         -- if lang == "odin" then
         --   return true
         -- end
@@ -159,21 +159,21 @@ return {
     ensure_installed = {
       -- "bash",
       "c",
-      "cpp",
-      "fsharp",
+      -- "cpp",
+      -- "fsharp",
       "c_sharp",
       "html",
-      "dap_repl",
+      -- "dap_repl",
       "javascript",
-      "json",
-      -- "jsonc",
+      -- "json",
+      "jsonc",
       "lua",
       -- "luap",
       "markdown",
-      "ocaml",
+      -- "ocaml",
       "odin",
       "markdown_inline",
-      "python",
+      -- "python",
       "query",
       "regex",
       "tsx",

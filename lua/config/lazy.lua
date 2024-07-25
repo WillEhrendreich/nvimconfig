@@ -1,3 +1,4 @@
+local util = require("config.util")
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   -- bootstrap lazy.nvim
@@ -81,7 +82,13 @@ require("lazy").setup({
   },
   dev = {
     -- directory where you store your local plugin projects
-    path = "~/source/repos/",
+    path = (function()
+      if util.hasReposEnvironmentVarSet() then
+        return util.getReposVariableIfSet()
+      else
+        return "c:/code/repos"
+      end
+    end)(),
     ---@type string[] plugins that match these patterns will use your local versions instead of being fetched from GitHub
     patterns = {}, -- For example {"folke"}
     fallback = true, -- Fallback to git when local plugin doesn't exist
@@ -94,7 +101,8 @@ require("lazy").setup({
     lazy = false,
     -- It's recommended to leave version=false for now, since a lot the plugin that support versioning,
     -- have outdated releases, which may break your Neovim install.
-    version = false, -- always use the latest git commit
+    -- version = false, -- always use the latest git commit
+    version = nil, -- always use the latest git commit
     -- version = "*", -- try installing the latest stable version for plugins that support semver
   },
   install = { colorscheme = { "kanagawa" } },
