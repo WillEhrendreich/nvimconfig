@@ -1,6 +1,6 @@
 local util = require("config.util")
 return {
-  "L3MON4D3/LuaSnip",
+  --   "L3MON4D3/LuaSnip",
   -- config = function(opts)
   -- vim.notify(vim.inspect(opts))
   -- require("luasnip").setup(opts)

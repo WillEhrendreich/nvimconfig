@@ -1,0 +1,30 @@
+noremap <SPACE> <Nop>
+" nnoremap <_> <Nop>
+noremap <SPACE>/ :vsc Edit.ToggleComment<cr>
+noremap <SPACE>w :w<cr>
+
+noremap <S-K> :vsc Edit.QuickInfo<cr>
+let mapleader=" "
+" nnoremap <SPACE-_> :echo "hit it"<cr>
+
+set ignorecase
+set smartcase
+set incsearch
+set tabstop=4
+set shiftwidth=4
+set backspace=eol,start,indent
+set nostartofline
+set hlsearch
+set autoindent
+set expandtab
+set ttimeout
+set ttimeoutlen=50
+nnoremap <SPACE>laa :vsc EditorContextMenus.CodeWindow.QuickActionsForPosition<cr>
+nnoremap gr :vsc View.ShowReferences<cr>
+ 
+nnoremap <SPACE>db :vsc Debug.ToggleBreakpoint<cr>
+nnoremap <SPACE>dc :vsc Debug.Start<cr>
+nnoremap <SPACE>dn :vsc Debug.StepInto<cr>
+nnoremap <SPACE>do :vsc Debug.StepOver<cr>
+nnoremap <SPACE>dO :vsc Debug.StepOut<cr>
+nnoremap <SPACE>dq :vsc Debug.StopDebugging<cr>

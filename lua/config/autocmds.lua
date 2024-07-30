@@ -5,18 +5,18 @@
 local grp = vim.api.nvim_create_augroup
 local autocmd = vim.api.nvim_create_autocmd
 
-autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
-  pattern = { "cs" },
-  group = grp("csFTAutocommand", { clear = true }),
-  callback = function(event)
-    -- vim.notify("I opened a cs file ")
-
-    vim.cmd("set filetype=cs")
-    vim.cmd("set syntax=cs")
-    vim.cmd("set commentstring=//%s")
-  end,
-  desc = "",
-})
+-- autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+--   pattern = { "cs" },
+--   group = grp("csFTAutocommand", { clear = true }),
+--   callback = function(event)
+--     -- vim.notify("I opened a cs file ")
+--
+--     vim.cmd("set filetype=cs")
+--     vim.cmd("set syntax=cs")
+--     vim.cmd("set commentstring=//%s")
+--   end,
+--   desc = "",
+-- })
 
 -- autocmd({ "LspAttach" }, {
 --   desc = "csharp clear code lens on attach ",
@@ -78,18 +78,31 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   end,
 })
 
-autocmd({ "FileType" }, {
-  pattern = { "cs_project", "fsharp_project" },
+autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+  pattern = { "csproj", "*.fsproj", "cs_project", "fsharp_project" },
   group = grp("ProjAutocommand", { clear = true }),
   callback = function()
     vim.cmd("set commentstring=<!--%s-->")
     -- vim.cmd("set filetype=html")
-    vim.bo.syntax = "xml"
+    -- vim.bo.syntax = "xml"
+    vim.cmd("set syntax=xml")
     -- M.init_buf_targets(opt.buf)
     -- M.attach_or_spawn(opt.buf)
   end,
   desc = "",
 })
+-- autocmd({ "FileType" }, {
+--   pattern = { "cs_project", "fsharp_project" },
+--   group = grp("ProjAutocommand", { clear = true }),
+--   callback = function()
+--     vim.cmd("set commentstring=<!--%s-->")
+--     -- vim.cmd("set filetype=html")
+--     vim.bo.syntax = "xml"
+--     -- M.init_buf_targets(opt.buf)
+--     -- M.attach_or_spawn(opt.buf)
+--   end,
+--   desc = "",
+-- })
 
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   pattern = { "*.razor" },

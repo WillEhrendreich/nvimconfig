@@ -31,20 +31,22 @@ return {
       }
 
       --- ftplugin section ---
-      vim.filetype.add({
-        extension = {
-          csproj = function(_, _)
-            return "cs_project",
-              function(bufnr)
-                vim.bo[bufnr].syn = "xml"
-                vim.bo[bufnr].ro = false
-                vim.b[bufnr].readonly = false
-                vim.opt_local.foldlevelstart = 99
-                vim.w.fdm = "syntax"
-              end
-          end,
-        },
-      })
+      -- vim.filetype.add({
+      --   extension = {
+      --     csproj = function(path, bufnr)
+      --       return "cs_project",
+      --         function(buf)
+      --           -- vim.bo[buf].syn = "xml"
+      --           -- vim.cmd("set syntax= xml")
+      --           vim.bo[buf].syntax = "xml"
+      --           vim.bo[buf].ro = false
+      --           vim.b[buf].readonly = false
+      --           vim.opt_local.foldlevelstart = 99
+      --           vim.w.fdm = "syntax"
+      --         end
+      --     end,
+      --   },
+      -- })
 
       vim.filetype.add({
         extension = {

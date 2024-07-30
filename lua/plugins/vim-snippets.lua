@@ -1,1 +1,2 @@
-return { "honza/vim-snippets" }
+return {}
+-- return { "honza/vim-snippets" }

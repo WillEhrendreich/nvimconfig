@@ -41,10 +41,10 @@ return {
       -- when dbee starts
       default_connection = nil,
       -- loads connections from files and environment variables
-      sources = {
-        -- require("dbee.sources").EnvSource:new("DBEE_CONNECTIONS"),
-        -- require("dbee.sources").FileSource:new(vim.fn.stdpath("state") .. "/dbee/persistence.json"),
-      },
+      -- sources = {
+      -- require("dbee.sources").EnvSource:new("DBEE_CONNECTIONS"),
+      -- require("dbee.sources").FileSource:new(vim.fn.stdpath("state") .. "/dbee/persistence.json"),
+      -- },
       -- extra table helpers per connection type
       -- every helper value is a go-template with values set for
       -- "Table", "Schema" and "Materialization"
@@ -83,7 +83,7 @@ return {
           -- these are self-explanatory:
           -- { key = "c", mode = "n", action = "collapse" },
           -- { key = "e", mode = "n", action = "expand" },
-          { key = "o", mode = "n", action = "toggle" },
+          { key = "l", mode = "n", action = "toggle" },
           -- mappings for menu popups:
           { key = "<CR>", mode = "n", action = "menu_confirm" },
           { key = "y", mode = "n", action = "menu_yank" },
@@ -221,7 +221,7 @@ return {
         buffer_options = {},
 
         -- directory where to store the scratchpads.
-        --directory = "path/to/scratchpad/dir",
+        directory = "C:/Code/dbee",
 
         -- mappings for the buffer
         mappings = {
@@ -303,5 +303,8 @@ return {
     --    "curl", "wget", "bitsadmin", "go"
     require("dbee").install("go")
   end,
-  config = true,
+  config = function(opts)
+    -- vim.notify("Configuring dbee\n\n" .. vim.inspect(opts))
+    require("dbee").setup(opts)
+  end,
 }

@@ -37,6 +37,15 @@ if LazyHas("text-case.nvim") then
   map("v", "<leader>`", "<cmd>TextCaseOpenTelescope<CR>", "Neotree Toggle")
 end
 
+if LazyHas("dotnet.nvim") then
+  map("v", "<leader>na", "<cmd>:DotnetUI new_item<CR>", ".NET new item")
+  map("v", "<leader>nb", "<cmd>:DotnetUI file bootstrap<CR>", ".NET bootstrap class")
+  map("v", "<leader>nra", "<cmd>:DotnetUI project reference add<CR>", ".NET add project reference")
+  map("v", "<leader>nrr", "<cmd>:DotnetUI project reference remove<CR>", ".NET remove project reference")
+  map("v", "<leader>npa", "<cmd>:DotnetUI project package add<CR>", ".NET ada project package")
+  map("v", "<leader>npj", "<cmd>:DotnetUI project package remove<CR>", ".NET remove project package")
+end
+
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 if LazyVimUtil.has("neo-tree.nvim") then
