@@ -208,6 +208,17 @@ autocmd({ "BufReadPost", "FileType" }, {
   end,
 })
 
+autocmd({ "BufReadPost", "FileType" }, {
+  group = grp("workspace-diagnostics", { clear = true }),
+  pattern = { "*" },
+  desc = "Populate workspace diagnostics",
+  callback = function()
+    if LazyHas("workspace_diagnostics") then
+      require("workspace-diagnostics").populate_workspace_diagnostic()
+    end
+  end,
+})
+
 grp("CppCommands", { clear = true })
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   desc = "changes comment string for cpp and similar files ",

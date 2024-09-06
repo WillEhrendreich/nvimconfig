@@ -1,6 +1,59 @@
 local vim = vim
 local util = require("config.util")
 
+---@return ConnectionParams[]
+local function LoadSqlPersistenceJsonFile(path)
+  ---@type ConnectionParams[]
+  local conns = {}
+
+  if not vim.uv.fs_stat(path) then
+    return {}
+  end
+  local lines = {}
+  for line in io.lines(path) do
+    if not vim.startswith(vim.trim(line), "//") then
+      table.insert(lines, line)
+    end
+  end
+
+  local contents = table.concat(lines, "\n")
+  local ok, data = pcall(vim.fn.json_decode, contents)
+  if not ok then
+    error('Could not parse json file: "' .. path .. '".')
+    return {}
+  end
+
+  for _, conn in pairs(data) do
+    if type(conn) == "table" then
+      table.insert(conns, conn)
+    end
+  end
+
+  return conns
+end
+
+local function LoadSqlPersistenceAndSetSqlLanguageServerConnectionSettings()
+  local conns = LoadSqlPersistenceJsonFile(vim.fn.stdpath("state") .. "/dbee/persistence.json")
+  if #conns == 0 then
+    return
+  end
+  local mapFromDbeeTypeToDriverNameForSqlLanguageServer = {
+    sqlserver = "mssql",
+    mysql = "mysql",
+    pgsql = "postgressql",
+    sqlite = "sqlite3",
+  }
+  local function lookupDriverName(dbeeType)
+    return mapFromDbeeTypeToDriverNameForSqlLanguageServer[dbeeType] or dbeeType
+  end
+  local connections = {}
+  for _, conn in pairs(conns) do
+    table.insert(connections, { alias = conn.name, driver = lookupDriverName(conn.type), dataSourceName = conn.url })
+  end
+
+  return connections
+end
+
 vim.api.nvim_create_user_command("LspShutdownAll", function()
   vim.lsp.stop_client(vim.lsp.get_active_clients(), true)
 end, {})
@@ -16,7 +69,9 @@ OnAttach =
     if client.name == "ionide" then
       client.server_capabilities.documentFormattingProvider = false
     end
-
+    if client.name == "sqls" then
+      require("sqls").on_attach(client, buffer)
+    end
     if client.name == "csharp_ls" or client.name == "roslyn" then
       if client.supports_method(require("vim.lsp.protocol").Methods.textDocument_diagnostic) then
         vim.api.nvim_create_autocmd("BufEnter", {
@@ -210,6 +265,18 @@ return {
     servers = {
       bashls = {
         mason = false,
+      },
+      sqls = {
+        cmd = { "sqls" },
+
+        on_attach = function(client, bufnr)
+          OnAttach(client, bufnr)
+        end,
+        settings = {
+          sqls = {
+            connections = LoadSqlPersistenceAndSetSqlLanguageServerConnectionSettings(),
+          },
+        },
       },
     },
     -- you can do any additional lsp server setup here

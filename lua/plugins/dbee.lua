@@ -221,7 +221,7 @@ return {
         buffer_options = {},
 
         -- directory where to store the scratchpads.
-        directory = "C:/Code/dbee",
+        -- directory = "C:/Code/dbee",
 
         -- mappings for the buffer
         mappings = {

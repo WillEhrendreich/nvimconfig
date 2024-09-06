@@ -37,13 +37,13 @@ if LazyHas("text-case.nvim") then
   map("v", "<leader>`", "<cmd>TextCaseOpenTelescope<CR>", "Neotree Toggle")
 end
 
-if LazyHas("dotnet.nvim") then
-  map("v", "<leader>na", "<cmd>:DotnetUI new_item<CR>", ".NET new item")
-  map("v", "<leader>nb", "<cmd>:DotnetUI file bootstrap<CR>", ".NET bootstrap class")
-  map("v", "<leader>nra", "<cmd>:DotnetUI project reference add<CR>", ".NET add project reference")
-  map("v", "<leader>nrr", "<cmd>:DotnetUI project reference remove<CR>", ".NET remove project reference")
-  map("v", "<leader>npa", "<cmd>:DotnetUI project package add<CR>", ".NET ada project package")
-  map("v", "<leader>npj", "<cmd>:DotnetUI project package remove<CR>", ".NET remove project package")
+if require("lazyvim.util").has("dotnet.nvim") then
+  map("n", "<leader>na", "<cmd>:DotnetUI new_item<CR>", ".NET new item")
+  map("n", "<leader>nb", "<cmd>:DotnetUI file bootstrap<CR>", ".NET bootstrap class")
+  map("n", "<leader>nra", "<cmd>:DotnetUI project reference add<CR>", ".NET add project reference")
+  map("n", "<leader>nrr", "<cmd>:DotnetUI project reference remove<CR>", ".NET remove project reference")
+  map("n", "<leader>npa", "<cmd>:DotnetUI project package add<CR>", ".NET ada project package")
+  map("n", "<leader>npj", "<cmd>:DotnetUI project package remove<CR>", ".NET remove project package")
 end
 
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
@@ -526,7 +526,8 @@ if LazyVimUtil.has("toggleterm.nvim") then
   map("t", "<C-k>", "<c-\\><c-n><c-w>k", "Terminal up window navigation")
   map("t", "<C-l>", "<c-\\><c-n><c-w>l", "Terminal right window navigation")
   map("t", "<C-q>", "<C-\\><C-n>", "Terminal normal mode")
-  map("t", "<esc><esc>", "<C-\\><C-n>:q<cr>", "Terminal quit")
+  -- map("t", "<esc><esc>", "<C-\\><C-n>:q<cr>", "Terminal quit")
+  -- map("t", "q", "<C-\\><C-n>:q<cr>", "Terminal quit")
   --["<C-'>","<F7>"],
   map(
     "n",
@@ -578,8 +579,8 @@ if require("lazyvim.util").has("harpoon") then
   local harpoon = require("harpoon")
   map("n", "<leader>h", "", "Harpoon")
   map("n", "<leader>ha", function()
-    harpoon:list():append()
-  end, "Harpoon Append")
+    harpoon:list():add()
+  end, "Harpoon Add")
   map("n", "<leader>hn", function()
     harpoon:list():next()
   end, "Harpoon Next")
