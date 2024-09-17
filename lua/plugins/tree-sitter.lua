@@ -8,6 +8,7 @@ if utils.hasRepoWithName("tree-sitter-fsharp") then
     install_info = {
       url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/ionide/tree-sitter-fsharp"),
       files = { "src/scanner.c", "src/parser.c" },
+      location = "fsharp",
     },
     filetype = "fsharp",
   }
@@ -19,7 +20,9 @@ else
       url = "https://github.com/ionide/tree-sitter-fsharp",
       branch = "main",
       files = { "src/scanner.c", "src/parser.c" },
+      location = "fsharp",
     },
+    requires_generate_from_grammar = false,
     filetype = "fsharp",
   }
 end
@@ -91,7 +94,7 @@ else
     filetype = "razor",
   }
 end
-
+require("nvim-treesitter.install").prefer_git = true
 return {
 
   "nvim-treesitter/nvim-treesitter",
