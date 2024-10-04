@@ -38,13 +38,15 @@ vim.o.fillchars = [[eob: ,fold:,foldopen:,foldsep:│,foldclose:]]
 -- vim.o.listchars = [[ tab = "│→", extends = "⟩", precedes = "⟨", trail = "·", nbsp = "␣" ]]
 -- opt.completeopt = { "menu", "menuone", "preview" }
 opt.kp = ""
-opt.shell = "pwsh"
-opt.shellcmdflag =
-  "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;"
-opt.shellredir = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
-opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
-opt.shellquote = ""
-opt.shellxquote = ""
+if vim.uv.os_uname().sysname ~= "Linux" then
+  opt.shell = "pwsh"
+  opt.shellcmdflag =
+    "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;"
+  opt.shellredir = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
+  opt.shellpipe = "2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode"
+  opt.shellquote = ""
+  opt.shellxquote = ""
+end
 vim.o.pumblend = 0
 -- vim.o.lazyredraw = false
 -- vim.cmd("hi Normal guibg=NONE ctermbg=NONE")

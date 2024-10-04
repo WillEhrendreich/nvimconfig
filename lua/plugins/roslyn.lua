@@ -96,7 +96,9 @@ return {
   {
     "neovim/nvim-lspconfig",
     servers = {
-      roslyn = {},
+      roslyn = {
+        ft = "cs",
+      },
     },
     setup = {
       roslyn = function(_, opts) -- code

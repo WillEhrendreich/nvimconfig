@@ -14,16 +14,17 @@ return {
       ]]
 
     local dap_hydra = Hydra({
+
       hint = hint,
-      config = {
-        color = "pink",
-        invoke_on_body = true,
-        hint = {
-          type = "statusline",
-          position = "bottom",
-          border = "rounded",
-        },
-      },
+      -- config = {
+      --   color = "pink",
+      --   invoke_on_body = true,
+      --   hint = {
+      --     type = "statusline",
+      --     position = "bottom",
+      --     border = "rounded",
+      --   },
+      -- },
       name = "dap",
       mode = { "n", "x" },
       body = "<leader>dh",

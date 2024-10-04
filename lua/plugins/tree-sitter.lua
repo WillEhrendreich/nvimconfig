@@ -1,31 +1,32 @@
 -- return {}
 -- vim.notify(vim.inspect(require("nvim-treesitter.parsers")))
 local utils = require("config.util")
-if utils.hasRepoWithName("tree-sitter-fsharp") then
-  vim.notify("tree-sitter-fsharp repo found")
-  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-  parser_config.fsharp = {
-    install_info = {
-      url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/ionide/tree-sitter-fsharp"),
-      files = { "src/scanner.c", "src/parser.c" },
-      location = "fsharp",
-    },
-    filetype = "fsharp",
-  }
-else
-  local parser_config = require("nvim-treesitter.parsers")
-  vim.notify("tree-sitter-fsharp Non Repo")
-  parser_config.fsharp = {
-    install_info = {
-      url = "https://github.com/ionide/tree-sitter-fsharp",
-      branch = "main",
-      files = { "src/scanner.c", "src/parser.c" },
-      location = "fsharp",
-    },
-    requires_generate_from_grammar = false,
-    filetype = "fsharp",
-  }
-end
+-- if utils.hasRepoWithName("tree-sitter-fsharp") then
+--   vim.notify("tree-sitter-fsharp repo found")
+--   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+--   parser_config.fsharp = {
+--     install_info = {
+--       url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/ionide/tree-sitter-fsharp"),
+--       files = { "src/scanner.c", "src/parser.c" },
+--       location = "fsharp",
+--     },
+--     filetype = "fsharp",
+--   }
+-- else
+-- local parser_config = require("nvim-treesitter.parsers")
+local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+vim.notify("tree-sitter-fsharp Non Repo")
+parser_config.fsharp = {
+  install_info = {
+    url = "https://github.com/ionide/tree-sitter-fsharp",
+    branch = "main",
+    files = { "src/scanner.c", "src/parser.c" },
+    location = "fsharp",
+  },
+  requires_generate_from_grammar = false,
+  filetype = "fsharp",
+}
+-- end
 
 if utils.hasRepoWithName("tree-sitter-odin") then
   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
@@ -130,7 +131,7 @@ return {
     { "<bs>", desc = "Decrement selection", mode = "x" },
   },
   opts = {
-    auto_install = false,
+    auto_install = true,
     -- highlight = { enable = true, disable = { "fsharp" } },
     highlight = {
       enable = true,
@@ -154,6 +155,7 @@ return {
       -- Using this option may slow down your editor, and you may see some duplicate highlights.
       -- Instead of true it can also be a list of languages
       -- additional_vim_regex_highlighting = { "odin" },
+      additional_vim_regex_highlighting = { "fsharp" },
     },
 
     indent = { enable = true, disable = { "python", "odin" } },
@@ -162,16 +164,15 @@ return {
     ensure_installed = {
       -- "bash",
       "c",
-      -- "cpp",
-      -- "fsharp",
+      --      "cpp",
+      "fsharp",
       "c_sharp",
       "html",
-      -- "dap_repl",
       "javascript",
-      -- "json",
+      "json",
       "jsonc",
       "lua",
-      -- "luap",
+      "luap",
       "markdown",
       -- "ocaml",
       "odin",
@@ -182,6 +183,7 @@ return {
       "tsx",
       "typescript",
       "vim",
+      "vimdoc",
       "yaml",
     },
     -- query_linter = {
@@ -189,7 +191,7 @@ return {
     --    use_virtual_text = true,
     --    lint_events = { "BufWrite", "CursorHold" },
     --  },
-    compilers = { "zig", "gcc", "clang", "llvm", "cc" },
+    compilers = { "clang", "zig", "gcc", "llvm", "cc" },
     incremental_selection = {
       enable = true,
       keymaps = {
