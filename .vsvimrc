@@ -1,26 +1,41 @@
 noremap <SPACE> <Nop>
-" nnoremap <_> <Nop>
 noremap <SPACE>/ :vsc Edit.ToggleComment<cr>
 noremap <SPACE>w :w<cr>
 
 noremap <S-K> :vsc Edit.QuickInfo<cr>
 let mapleader=" "
-" nnoremap <SPACE-_> :echo "hit it"<cr>
 
-set ignorecase
-set smartcase
-set incsearch
-set tabstop=4
-set shiftwidth=4
-set backspace=eol,start,indent
-set nostartofline
-set hlsearch
 set autoindent
+set backspace='eol,start,indent'
+set clipboard='unnamed'
 set expandtab
+set ignorecase
+set incsearch
+set list
+set novisualbell
+set hlsearch
+set nostartofline
+" set shiftround
+set shiftwidth=4
+set showcmd
+set scrolloff=8
+set smartcase
+set tabstop=4
 set ttimeout
 set ttimeoutlen=50
+" set vb t_vb=
+set vsvimcaret=50
+
+nmap j gj
+nmap k gk
+
+" search
+vnoremap * "/y/<C-r>/<CR>
+vnoremap # "/y?<C-r>/<CR>
+
 nnoremap <SPACE>laa :vsc EditorContextMenus.CodeWindow.QuickActionsForPosition<cr>
-nnoremap gr :vsc View.ShowReferences<cr>
+nnoremap <SPACE>lr :vsc Refactor.Rename<cr>
+" nnoremap gr :vsc View.ShowReferences<cr>
  
 nnoremap <SPACE>db :vsc Debug.ToggleBreakpoint<cr>
 nnoremap <SPACE>dc :vsc Debug.Start<cr>
@@ -28,3 +43,45 @@ nnoremap <SPACE>dn :vsc Debug.StepInto<cr>
 nnoremap <SPACE>do :vsc Debug.StepOver<cr>
 nnoremap <SPACE>dO :vsc Debug.StepOut<cr>
 nnoremap <SPACE>dq :vsc Debug.StopDebugging<cr>
+
+nmap <C-o> :vsc View.NavigateBackward<CR>
+nmap <C-i> :vsc View.NavigateForward<CR>
+nnoremap gwo :vsc FullScreen<cr>
+nnoremap gws :vsc Window.Split<cr>
+nnoremap gwc :vsc Window.Split<cr>
+nnoremap d<tab> :vsc Window.CloseDocumentWindow<cr>
+nnoremap gwC :vsc Window.CloseDocumentWindow<cr>
+nnoremap H :vsc Window.PreviousTab<cr>
+nnoremap L :vsc Window.NextTab<cr>
+nnoremap gwS :vsc Window.NewHorizontalTabGroup<cr>
+nnoremap gwv :vsc Window.NewVerticalTabGroup<cr>
+nnoremap gwT :vsc Window.Float<cr>
+nnoremap gwj :vsc Window.NextSplitPane<cr>
+nnoremap gwk :vsc Window.PreviousSplitPane<cr>
+
+map gi :vsc Edit.GoToImplementation<CR>
+map gr :vsc Edit.FindAllReferences<CR>
+map gp :vsc Edit.PeekDefinition<CR>
+
+nnoremap <C-r> :vsc Redo<CR>
+
+" jump between compilation errors
+nnoremap ]e :vsc View.NextError<cr>
+nnoremap [e :vsc View.PreviousError<cr>
+
+" evaluate F#
+xnoremap <enter>  :vsc EditorContextMenus.CodeWindow.ExecuteInInteractive<cr>
+nnoremap yxx      ggVG:vsc EditorContextMenus.CodeWindow.ExecuteInInteractive<cr>
+nnoremap <enter>  :vsc EditorContextMenus.CodeWindow.ExecuteLineInInteractive<cr>
+
+nnoremap ]q :vsc Edit.GoToNextLocation<cr>
+nnoremap [q :vsc Edit.GoToPrevLocation<cr>
+nnoremap ]l  :vsc Edit.NextHighlightedReference<cr>
+nnoremap [l  :vsc Edit.PreviousHighlightedReference<cr>
+" toggle 'Track Active Item in Solution Explorer' option
+nnoremap cos :vsc View.TrackActivityinSolutionExplorer<cr>
+nnoremap <space>e :vsc View.SolutionExplorer<cr>
+" highlight active file in Solution Explorer (VS 2012+)
+nnoremap ^ :vsc SolutionExplorer.SyncWithActiveDocument<cr>
+" 'omnibox'
+nnoremap <space>fq :vsc Window.QuickLaunch<cr>
