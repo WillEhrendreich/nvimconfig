@@ -385,6 +385,16 @@ map("n", "<leader>.", function()
   vim.cmd("cd " .. here)
   vim.notify("CWD set to: " .. here)
 end, "Set CWD to here")
+
+if LazyVimUtil.has("nvim-treesitter") then
+  map("n", "<leader><leader>l", function()
+    vim.cmd("TSTextobjectSwapNext @parameter.inner")
+  end, "swap param next")
+  map("n", "<leader><leader>h", function()
+    vim.cmd("TSTextobjectSwapPrevious @parameter.inner")
+  end, "swap param next")
+end
+
 map("n", "<leader><leader>x", function()
   vim.cmd("w")
   vim.cmd("source %")

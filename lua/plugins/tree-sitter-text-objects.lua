@@ -1,8 +1,22 @@
 return {
   "nvim-treesitter/nvim-treesitter-textobjects",
-  enabled = false,
-
+  -- enabled = true,
   -- lazy = true,
+
+  opts = {
+
+    textobjects = {
+      swap = {
+        enable = true,
+        swap_next = {
+          ["<leader><leader>l"] = "@parameter.inner",
+        },
+        swap_previous = {
+          ["<leader><leader>h"] = "@parameter.inner",
+        },
+      },
+    },
+  },
   -- config = function()
   --   -- When in diff mode, we want to use the default
   --   -- vim text objects c & C instead of the treesitter ones.
