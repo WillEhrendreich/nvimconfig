@@ -23,10 +23,12 @@ return {
         "ldelossa/litee.nvim",
         event = "VeryLazy",
         opts = {
-          notify = { enabled = false },
+          -- icons={}
+          -- notify = { enabled = false },
+          notify = { enabled = true },
           panel = {
-            orientation = "bottom",
-            panel_size = 10,
+            orientation = "left",
+            panel_size = 30,
           },
         },
         config = function(_, opts)
