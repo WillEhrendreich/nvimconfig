@@ -1,21 +1,6 @@
--- return {}
--- vim.notify(vim.inspect(require("nvim-treesitter.parsers")))
 local utils = require("config.util")
--- if utils.hasRepoWithName("tree-sitter-fsharp") then
---   vim.notify("tree-sitter-fsharp repo found")
---   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
---   parser_config.fsharp = {
---     install_info = {
---       url = utils.getRepoWithNameOrDefault("tree-sitter-fsharp", "https://github.com/ionide/tree-sitter-fsharp"),
---       files = { "src/scanner.c", "src/parser.c" },
---       location = "fsharp",
---     },
---     filetype = "fsharp",
---   }
--- else
--- local parser_config = require("nvim-treesitter.parsers")
 local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-vim.notify("tree-sitter-fsharp Non Repo")
+-- vim.notify("tree-sitter-fsharp Non Repo")
 parser_config.fsharp = {
   install_info = {
     url = "https://github.com/ionide/tree-sitter-fsharp",
@@ -26,7 +11,6 @@ parser_config.fsharp = {
   requires_generate_from_grammar = false,
   filetype = "fsharp",
 }
--- end
 
 if utils.hasRepoWithName("tree-sitter-odin") then
   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
@@ -102,37 +86,12 @@ return {
   version = false, -- last release is way too old and doesn't work on Windows
   build = ":TSUpdate",
   event = { "BufReadPost", "BufNewFile" },
-  -- dependencies = {
-  -- "LiadOz/nvim-dap-repl-highlights",
-
-  -- {
-  -- "nvim-treesitter/nvim-treesitter-textobjects",
-  -- init = function()
-  --   -- PERF: no need to load the plugin, if we only need its queries for mini.ai
-  --   local plugin = require("lazy.core.config").spec.plugins["nvim-treesitter"]
-  --   local opts = require("lazy.core.plugin").values(plugin, "opts", false)
-  --   local enabled = false
-  --   if opts.textobjects then
-  --     for _, mod in ipairs({ "move", "select", "swap", "lsp_interop" }) do
-  --       if opts.textobjects[mod] and opts.textobjects[mod].enable then
-  --         enabled = true
-  --         break
-  --       end
-  --     end
-  --   end
-  --   if not enabled then
-  --     require("lazy.core.loader").disable_rtp_plugin("nvim-treesitter-textobjects")
-  --   end
-  -- end,
-  -- },
-  -- },
   keys = {
     { "<space>vi", desc = "Increment selection", mode = "x" },
     { "<bs>", desc = "Decrement selection", mode = "x" },
   },
   opts = {
     auto_install = true,
-    -- highlight = { enable = true, disable = { "fsharp" } },
     highlight = {
       enable = true,
       -- Disable slow treesitter highlight for large files
@@ -160,11 +119,8 @@ return {
 
     indent = { enable = true, disable = { "python", "odin" } },
     context_commentstring = { enable = true, disable = { "fsharp", "odin" }, enable_autocmd = true },
-    -- context_commentstring = { enable = true, disable = { "odin" }, enable_autocmd = false },
     ensure_installed = {
-      -- "bash",
       "c",
-      --      "cpp",
       "fsharp",
       "c_sharp",
       "html",
@@ -174,10 +130,8 @@ return {
       "lua",
       "luap",
       "markdown",
-      -- "ocaml",
       "odin",
       "markdown_inline",
-      -- "python",
       "query",
       "regex",
       "tsx",
