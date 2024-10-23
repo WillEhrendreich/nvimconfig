@@ -79,7 +79,7 @@ return {
                 vim.w.fdm = "syntax"
                 -- comment settings
                 vim.bo[bufnr].formatoptions = "croql"
-                -- vim.bo[bufnr].commentstring = "//%s"
+                vim.bo[bufnr].commentstring = "// %s"
               end
           end,
           csx = function(path, bufnr)
