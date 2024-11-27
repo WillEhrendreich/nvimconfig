@@ -56,29 +56,29 @@ else
   }
 end
 
-if utils.hasRepoWithName("tree-sitter-razor") then
-  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-  parser_config.razor = {
-    install_info = {
-      url = utils.getRepoWithNameOrDefault("tree-sitter-razor", "https://github.com/moreiraio/tree-sitter-razor"),
-      -- files = { "src/scanner.c", "src/parser.c" },
-      files = { "src/parser.c" },
-    },
-    filetype = "razor",
-  }
-else
-  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-  parser_config.razor = {
-    install_info = {
-      url = "https://github.com/moreiraio/tree-sitter-razor",
-      branch = "main",
-      files = { "src/parser.c" },
-      -- generate_requires_npm = true,
-      -- requires_generate_from_grammar = true,
-    },
-    filetype = "razor",
-  }
-end
+-- if utils.hasRepoWithName("tree-sitter-razor") then
+--   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+--   parser_config.razor = {
+--     install_info = {
+--       url = utils.getRepoWithNameOrDefault("tree-sitter-razor", "https://github.com/moreiraio/tree-sitter-razor"),
+--       -- files = { "src/scanner.c", "src/parser.c" },
+--       files = { "src/parser.c" },
+--     },
+--     filetype = "razor",
+--   }
+-- else
+--   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+--   parser_config.razor = {
+--     install_info = {
+--       url = "https://github.com/moreiraio/tree-sitter-razor",
+--       branch = "main",
+--       files = { "src/parser.c" },
+--       -- generate_requires_npm = true,
+--       -- requires_generate_from_grammar = true,
+--     },
+--     filetype = "razor",
+--   }
+-- end
 require("nvim-treesitter.install").prefer_git = true
 return {
 

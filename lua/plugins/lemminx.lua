@@ -2,8 +2,17 @@
 ---@param bufnr integer
 local customOnAttach = function(client, bufnr)
   if client.name == "lemminx" then
-    local ft = vim.api.nvim_buf_get_option(0, "filetype")
-    local isDotnet = ft == "cs" or ft == "fsharp" or ft == "fsharp_project" or ft == "cs_project" or ft == "razor"
+    local ft = vim.bo[bufnr].filetype
+    local isDotnet = ft == "csx"
+      or ft == "cs"
+      or ft == "csproj"
+      or ft == "cs_project"
+      or ft == "razor"
+      or ft == "cshtml"
+      or ft == "vb"
+      or ft == "cs"
+      or ft == "fsharp"
+      or ft == "fsharp_project"
     if isDotnet then
       vim.diagnostic.enable(false)
     end

@@ -3,15 +3,39 @@ return {
   { "Hoffs/omnisharp-extended-lsp.nvim", lazy = true },
   {
     "seblj/roslyn.nvim",
+    args = {
+      "--logLevel=Information",
+      "--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
+      "--razorSourceGenerator=" .. vim.fs.joinpath(
+        vim.fn.stdpath("data") --[[@as string]],
+        "mason",
+        "packages",
+        "roslyn",
+        "libexec",
+        "Microsoft.CodeAnalysis.Razor.Compiler.dll"
+      ),
+      "--razorDesignTimePath=" .. vim.fs.joinpath(
+        vim.fn.stdpath("data") --[[@as string]],
+        "mason",
+        "packages",
+        "rzls",
+        "libexec",
+        "Targets",
+        "Microsoft.NET.Sdk.Razor.DesignTime.targets"
+      ),
+    },
+    dependancies = {
+      "tris203/rzls.nvim",
+    },
     opts = {
       on_attach = function(client, bufnr)
         OnAttach(client, bufnr)
       end,
-      handlers = {
+      handlers = vim.tbl_deep_extend("force", {}, require("rzls.roslyn_handlers"), {
         ["textDocument/definition"] = function(...)
           return require("omnisharp_extended").handler(...)
         end,
-      },
+      }),
       keys = {
         {
           "gd",
@@ -50,14 +74,14 @@ return {
 
       vim.filetype.add({
         extension = {
-          razor = function(path, bufnr)
-            return "razor",
-              function(bufnr)
-                -- comment settings
-                vim.bo[bufnr].formatoptions = "croql"
-                vim.bo[bufnr].syntax = "xml"
-              end
-          end,
+          -- razor = function(path, bufnr)
+          --   return "razor",
+          --     function(bufnr)
+          --       -- comment settings
+          --       vim.bo[bufnr].formatoptions = "croql"
+          --       vim.bo[bufnr].syntax = "xml"
+          --     end
+          -- end,
           cshtml = function(path, bufnr)
             return "cshtml",
               function(bufnr)
@@ -106,5 +130,5 @@ return {
       end,
     },
   },
-  { "adamclerk/vim-razor" },
+  -- { "adamclerk/vim-razor" },
 }

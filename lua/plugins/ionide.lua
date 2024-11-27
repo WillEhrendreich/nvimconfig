@@ -1,4 +1,22 @@
 local util = require("config.util")
+---@class _.lspconfig.options
+---@field root_dir fun(filename, bufnr): string|nil
+---@field name string
+---@field filetypes string[] | nil
+---@field autostart boolean
+---@field single_file_support boolean
+---@field on_new_config fun(new_config, new_root_dir)
+---@field capabilities table
+---@field cmd string[]
+---@field handlers table<string, fun()>
+---@field init_options table
+---@field on_attach fun(client, bufnr)
+---
+
+---@class lspconfig.options.fsautocomplete: _.lspconfig.options
+---@field settings lspconfig.settings.fsautocomplete
+---
+
 return {
   "WillEhrendreich/Ionide-nvim",
   dev = util.hasRepoWithName("Ionide-nvim"),

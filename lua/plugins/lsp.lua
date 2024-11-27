@@ -55,17 +55,29 @@ local function LoadSqlPersistenceAndSetSqlLanguageServerConnectionSettings()
 end
 
 vim.api.nvim_create_user_command("LspShutdownAll", function()
-  vim.lsp.stop_client(vim.lsp.get_active_clients(), true)
+  if vim.lsp.get_clients then
+    vim.lsp.stop_client(vim.lsp.get_clients(), true)
+  else
+    vim.lsp.stop_client(vim.lsp.get_active_clients(), true)
+  end
 end, {})
 
 vim.api.nvim_create_user_command("LspShutdownAllOnCurrentBuffer", function()
-  vim.lsp.stop_client(vim.lsp.get_active_clients({ buffer = 0 }), true)
+  if vim.lsp.get_clients then
+    vim.lsp.stop_client(vim.lsp.get_clients({ bufnr = 0 }), true)
+  else
+    vim.lsp.stop_client(vim.lsp.get_active_clients({ buffer = 0 }), true)
+  end
 end, {})
 
 OnAttach =
   ---@param client vim.lsp.Client
   ---@param buffer integer
   function(client, buffer)
+    if client.name == "rzls" then
+      client.server_capabilities.foldingRangeProvider = false
+    end
+
     if client.name == "ionide" then
       client.server_capabilities.documentFormattingProvider = false
     end

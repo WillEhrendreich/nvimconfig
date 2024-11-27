@@ -33,6 +33,9 @@ end
 --vim.api.nvim_del_keymap("n", "gra")
 -- vim.api.nvim_del_keymap("n", "grr")
 
+map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
+map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
+
 if LazyHas("text-case.nvim") then
   map("v", "<leader>`", "<cmd>TextCaseOpenTelescope<CR>", "Neotree Toggle")
 end
@@ -46,8 +49,6 @@ if require("lazyvim.util").has("dotnet.nvim") then
   map("n", "<leader>npj", "<cmd>:DotnetUI project package remove<CR>", ".NET remove project package")
 end
 
-map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
-map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 if LazyVimUtil.has("neo-tree.nvim") then
   map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
 end
@@ -467,8 +468,14 @@ if LazyVimUtil.has("neotest") then
 
   map("n", "<leader>tR", function()
     local thisFile = vim.fs.normalize(vim.fn.expand("%:p"))
+    ---@type neotest.run.RunArgs
+    local runArgs = {
+      thisFile,
+      strategy = "dap",
+      suite = false,
+    }
     vim.notify("running tests in file: " .. thisFile)
-    require("neotest").run.run(thisFile)
+    require("neotest").run.run(runArgs)
   end, "Run the current file")
 
   map("n", "<leader>ts", function()
@@ -484,7 +491,12 @@ if LazyVimUtil.has("neotest") then
   end, "open output window")
 
   map("n", "<leader>td", function()
-    require("neotest").run.run({ strategy = "dap" })
+    ---@type neotest.run.RunArgs
+    local runArgs = {
+      strategy = "dap",
+      suite = false,
+    }
+    require("neotest").run.run(runArgs)
   end, "run the test in debug mode.")
 end
 
@@ -720,8 +732,9 @@ if require("lazyvim.util").has("nvim-dap") then
   if LazyVimUtil.has("hydra.nvim") then
     map("n", "<leader>dh", function()
       -- if vim.cmd.PreDebugTask() then
+      ---@type Hydra
       local hydra = require("hydra")
-      hydra.spawn("dap-hydra")
+      -- hydra.activate("dap-hydra")
       -- if vim.cmd.PreDebugTask() then
       --   -- require("dap").continue()
       -- else
