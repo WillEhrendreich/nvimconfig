@@ -25,7 +25,6 @@ return {
         [">="] = "<=",
         ["=="] = "!=",
         ["++"] = "--",
-        ["+"] = "-",
         ["yes"] = "no",
         ["Yes"] = "No",
         ["Some"] = "None",
@@ -35,6 +34,7 @@ return {
         ["Ok"] = "Error",
         ["public"] = "private",
         ["/"] = "\\",
+        ["- [ ]"] = "- [x]",
       },
       remove_default_keybinds = true,
     })

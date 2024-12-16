@@ -7,6 +7,7 @@ end
 
 function LazyHas(name)
   return require("lazyvim.util").has(name)
+  -- require("lazyvim.util").has("easy-dotnet")
 end
 
 function LazyHasI(name)

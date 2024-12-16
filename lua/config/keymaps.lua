@@ -33,6 +33,69 @@ end
 --vim.api.nvim_del_keymap("n", "gra")
 -- vim.api.nvim_del_keymap("n", "grr")
 
+local function InDotnetBuffer(bufnr)
+  local easy = require("easy-dotnet")
+  return easy.is_dotnet_project()
+  -- local ft = vim.bo[bufnr].filetype
+  -- local isDotnet = ft == "csx"
+  --
+  --   or ft == "cs"
+  --   or ft == "csproj"
+  --   or ft == "cs_project"
+  --   or ft == "razor"
+  --   or ft == "cshtml"
+  --   or ft == "vb"
+  --   or ft == "cs"
+  --   or ft == "fsharp"
+  --   or ft == "fsharp_project"
+end
+
+local function compare_paths(path1, path2)
+  return vim.fs.normalize(path1):lower() == vim.fs.normalize(path2):lower()
+end
+
+-- if LazyHas("easy-dotnet") then
+map("n", "<leader>dt", "<cmd>Dotnet testrunner<cr>", "Open testrunner")
+-- end
+if LazyHas("neotest") then
+  map("n", "<leader>tr", function()
+    require("neotest").run.run()
+  end, "Run the nearest test")
+
+  map("n", "<leader>tR", function()
+    local thisFile = vim.fs.normalize(vim.fn.expand("%:p"))
+    ---@type neotest.run.RunArgs
+    local runArgs = {
+      thisFile,
+      strategy = "dap",
+      suite = false,
+    }
+    vim.notify("running tests in file: " .. thisFile)
+    require("neotest").run.run(runArgs)
+  end, "Run the current file")
+
+  map("n", "<leader>ts", function()
+    require("neotest").run.stop()
+  end, "stop the nearest test")
+
+  map("n", "<leader>ta", function()
+    require("neotest").run.attach()
+  end, "attach to the nearest test")
+
+  map("n", "<leader>th", function()
+    require("neotest").output.open({ enter = true })
+  end, "open output window")
+
+  map("n", "<leader>td", function()
+    ---@type neotest.run.RunArgs
+    local runArgs = {
+      strategy = "dap",
+      suite = false,
+    }
+    require("neotest").run.run(runArgs)
+  end, "run the test in debug mode.")
+end
+
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 
@@ -459,45 +522,6 @@ if LazyVimUtil.has("telescope.nvim") then -- setup telescope mappings if availab
   map("n", "<leader>lG", function()
     require("telescope.builtin").lsp_workspace_symbols()
   end, "Telescope lsp workspace symbols")
-end
-
-if LazyVimUtil.has("neotest") then
-  map("n", "<leader>tr", function()
-    require("neotest").run.run()
-  end, "Run the nearest test")
-
-  map("n", "<leader>tR", function()
-    local thisFile = vim.fs.normalize(vim.fn.expand("%:p"))
-    ---@type neotest.run.RunArgs
-    local runArgs = {
-      thisFile,
-      strategy = "dap",
-      suite = false,
-    }
-    vim.notify("running tests in file: " .. thisFile)
-    require("neotest").run.run(runArgs)
-  end, "Run the current file")
-
-  map("n", "<leader>ts", function()
-    require("neotest").run.stop()
-  end, "stop the nearest test")
-
-  map("n", "<leader>ta", function()
-    require("neotest").run.attach()
-  end, "attach to the nearest test")
-
-  map("n", "<leader>th", function()
-    require("neotest").output.open({ enter = true })
-  end, "open output window")
-
-  map("n", "<leader>td", function()
-    ---@type neotest.run.RunArgs
-    local runArgs = {
-      strategy = "dap",
-      suite = false,
-    }
-    require("neotest").run.run(runArgs)
-  end, "run the test in debug mode.")
 end
 
 if LazyVimUtil.has("definition-or-references.nvim") then
