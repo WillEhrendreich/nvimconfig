@@ -74,14 +74,20 @@ OnAttach =
   ---@param client vim.lsp.Client
   ---@param buffer integer
   function(client, buffer)
+    if client.name == "msbuild_project_tools_server" then
+      client.server_capabilities.completionProvider = {
+        triggerCharacters = { "<", '"' },
+      }
+    end
+
     if client.name == "rzls" then
       client.server_capabilities.foldingRangeProvider = false
     end
-
     if client.name == "ionide" then
       client.server_capabilities.documentFormattingProvider = false
     end
     if client.name == "sqls" then
+      client.server_capabilities.documentFormattingProvider = false
       require("sqls").on_attach(client, buffer)
     end
     if client.name == "csharp_ls" or client.name == "roslyn" then
@@ -102,6 +108,44 @@ OnAttach =
 return {
   "neovim/nvim-lspconfig",
   init = function()
+    -- vim.filetype.add({
+    --   extension = {
+    --     props = "msbuild",
+    --     tasks = "msbuild",
+    --     targets = "msbuild",
+    --   },
+    --   pattern = {
+    --     [ [[.*\..*proj]] ] = "msbuild",
+    --   },
+    -- })
+
+    vim.treesitter.language.register("xml", { "fsharp_project" })
+
+    local lspconfig = require("lspconfig")
+    local configs = require("lspconfig.configs")
+
+    -- local msBuildConfig = {
+    --
+    --   cmd = {
+    --     "dotnet",
+    --     "C:/.local/share/language-servers/msbuild/MSBuildProjectTools.LanguageServer.Host.dll",
+    --   },
+    --   filetypes = { "" },
+    --   settings = {},
+    -- }
+    -- -- Check if the config is already defined (useful when reloading this file)
+    -- if not configs["msbuild_project_tools_server"] then
+    --   -- M.notify("creating entry in lspconfig configs for ionide ")
+    --   configs["msbuild_project_tools_server"] = {
+    --     default_config = msBuildConfig,
+    --     docs = {
+    --       description = "insert description here",
+    --     },
+    --   }
+    -- end
+    --
+    -- lspconfig.msbuild_project_tools_server.setup(msBuildConfig)
+
     local keys = require("lazyvim.plugins.lsp.keymaps").get()
     keys[#keys + 1] = {
       "K",
@@ -273,8 +317,27 @@ return {
       timeout_ms = 1000,
     },
 
+    config = function(_, opts)
+      local lspconfig = require("lspconfig")
+      for server, config in pairs(opts.servers) do
+        -- passing config.capabilities to blink.cmp merges with the capabilities in your
+        -- `opts[server].capabilities, if you've defined it
+        config.capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
+        lspconfig[server].setup(config)
+      end
+    end,
+
     ---@type lspconfig.options
     servers = {
+      msbuild_project_tools_server = {
+        ft = { "csproj", "fsharp_project" },
+        cmd = { "dotnet", "c:/.local/share/language-servers/msbuild/MSBuildProjectTools.LanguageServer.Host.dll" },
+        on_attach = function(client, bufnr)
+          vim.notify("msbuild_project_tools_server attached")
+          vim.notify(vim.inspect(client.server_capabilities))
+          OnAttach(client, bufnr)
+        end,
+      },
       bashls = {
         mason = false,
       },

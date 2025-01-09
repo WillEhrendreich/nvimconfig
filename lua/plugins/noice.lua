@@ -214,8 +214,8 @@ return {
       cmdline = {
         enabled = true, -- enables the Noice cmdline UI
         -- enabled = false, -- enables the Noice cmdline UI
-        view = "cmdline_popup", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
-        -- view = "cmdline", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
+        -- view = "cmdline_popup", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
+        view = "cmdline", -- view for rendering the cmdline. Change to `cmdline` to get a classic cmdline at the bottom
         opts = {}, -- global options for the cmdline. See section on views
         ---@type table<string, CmdlineFormat>
         format = {
@@ -263,8 +263,7 @@ return {
       popupmenu = {
         enabled = true, -- enables the Noice popupmenu UI
         ---@type 'nui'|'cmp'
-        backend = "cmp", -- backend to use to show regular cmdline completions
-        -- backend = "nui", -- backend to use to show regular cmdline completions
+        backend = "nui", -- backend to use to show regular cmdline completions
         ---@type NoicePopupmenuItemKind|false
         -- Icons for completion item kinds (see defaults at noice.config.icons.kinds)
         kind_icons = {}, -- set to `false` to disable icons
@@ -346,7 +345,7 @@ return {
           -- override the lsp markdown formatter with Noice
           ["vim.lsp.util.stylize_markdown"] = true,
           -- override cmp documentation with Noice (needs the other options to work)
-          ["cmp.entry.get_documentation"] = true,
+          -- ["cmp.entry.get_documentation"] = true,
         },
         hover = {
           enabled = true,

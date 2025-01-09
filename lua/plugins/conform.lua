@@ -3,6 +3,7 @@ return {
   opts = {
     formatters_by_ft = {
       -- cs = { "csharpier" },
+      sql = { "sqlfluff" },
       ["markdown"] = { "prettier", "markdown-toc" },
     },
     formatters = {
@@ -14,6 +15,9 @@ return {
         --   return #diag > 0
         -- end,
         condition = false,
+      },
+      sqlfluff = {
+        args = { "format", "--dialect=tsql", "-" },
       },
       -- csharpier = {
       --   command = "dotnet-csharpier",
