@@ -11,6 +11,20 @@ return {
   },
   {
     "saghen/blink.cmp",
+    -- config = function(opts)
+    --   local cmp = require("blink.cmp")
+    --
+    --   cmp.setup(opts)
+    --
+    --   local list = require("blink.cmp.completion.list")
+    --   local oldhide = require("blink.cmp.completion.list.hide")
+    --   local newHide = function()
+    --     list.select(nil, opts)
+    --     oldhide()
+    --   end
+    --   list["hide"] = newHide
+    -- end,
+    --
     dependencies = {
 
       -- add source
@@ -20,11 +34,32 @@ return {
         opts = {}, -- needed
       },
     },
+
+    ---@module 'blink.cmp'
+    ---@type blink.cmp.Config
     opts = {
 
       snippets = {
-        expand = function(snippet, _)
-          return LazyVim.cmp.expand(snippet)
+        preset = "luasnip",
+
+        -- expand = function(snippet, _)
+        --   return LazyVim.cmp.expand(snippet)
+        -- end,
+
+        -- This comes from the luasnip extra, if you don't add it, won't be able to
+        -- jump forward or backward in luasnip snippets
+        -- https://www.lazyvim.org/extras/coding/luasnip#blinkcmp-optional
+        expand = function(snippet)
+          require("luasnip").lsp_expand(snippet)
+        end,
+        active = function(filter)
+          if filter and filter.direction then
+            return require("luasnip").jumpable(filter.direction)
+          end
+          return require("luasnip").in_snippet()
+        end,
+        jump = function(direction)
+          require("luasnip").jump(direction)
         end,
       },
       appearance = {
@@ -35,6 +70,9 @@ return {
         -- set to 'mono' for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
         -- adjusts spacing to ensure icons are aligned
         nerd_font_variant = "mono",
+        kind_icons = vim.tbl_extend("keep", {
+          Color = "██", -- Use block instead of icon for color items to make swatches more usable
+        }, LazyVim.config.icons.kinds),
       },
       completion = {
         accept = {
@@ -55,6 +93,12 @@ return {
         ghost_text = {
           enabled = vim.g.ai_cmp,
         },
+        list = {
+          selection = {
+            preselect = false,
+            auto_insert = true,
+          },
+        },
       },
 
       -- experimental signature help support
@@ -64,9 +108,14 @@ return {
         -- adding any nvim-cmp sources here will enable them
         -- with blink.compat
         compat = { "nuget" },
-        default = { "lsp", "path", "snippets", "buffer", "nuget" },
+        default = { "lsp", "path", "snippets", "lazydev", "buffer", "nuget" },
         cmdline = {},
         providers = {
+          lazydev = {
+            name = "LazyDev",
+            module = "lazydev.integrations.blink",
+            score_offset = 100, -- show at a higher priority than lsp
+          },
           -- create provider
           nuget = {
             name = "nuget", -- IMPORTANT: use the same name as you would for nvim-cmp
@@ -86,21 +135,45 @@ return {
 
       keymap = {
         preset = "default",
+
+        ["<esc>"] = { "cancel", "fallback" },
+        ["<Tab>"] = { "snippet_forward", "fallback" },
+        ["<S-Tab>"] = { "snippet_backward", "fallback" },
+
+        ["<S-n>"] = { "scroll_documentation_up", "fallback" },
+        ["<S-p>"] = { "scroll_documentation_down", "fallback" },
+
         ["<C-y>"] = { "select_and_accept" },
         ["<Down>"] = {
-          "select_next",
+          function(cmp)
+            if cmp.is_visible() then
+              cmp.select_next()
+              return true
+            else
+              return false
+            end
+          end,
+          "fallback",
         },
         ["<C-n>"] = {
           function(cmp)
             if not cmp.is_visible() then
               cmp.show()
-              return true
+              return true -- doesn't run the next command
             end -- runs the next command
           end,
           "select_next",
         },
         ["<Up>"] = {
-          "select_prev",
+          function(cmp)
+            if cmp.is_visible() then
+              cmp.select_prev()
+              return true -- doesn't run the next command
+            else
+              return false
+            end
+          end,
+          "fallback",
         },
         ["<C-p>"] = {
           function(cmp)
