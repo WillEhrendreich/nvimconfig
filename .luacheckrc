@@ -1,8 +1,5 @@
 -- Global objects
 globals = {
-  -- "PACKER_BOOTSTRAP",
-  "vimsharp",
-  "vimsharp_installation",
   "vim",
   "bit",
   "C",
