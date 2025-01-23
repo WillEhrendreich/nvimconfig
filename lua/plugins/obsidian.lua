@@ -17,14 +17,22 @@ return {
     -- see below for full list of optional dependencies 👇
   },
   opts = {
+    -- Optional, by default when you use `:ObsidianFollowLink` on a link to an external
+    -- URL it will be ignored but you can customize this behavior here.
+    ---@param url string
+    follow_url_func = function(url)
+      -- Open the URL in the default web browser.
+      vim.notify("trying to open " .. url)
+      vim.ui.open(url) -- need Neovim 0.10.0+
+    end,
     workspaces = {
+      {
+        name = "work",
+        path = "~/OneDrive - Roehl Transport Inc/work",
+      },
       {
         name = "personal",
         path = "~/vaults/personal",
-      },
-      {
-        name = "work",
-        path = "~/vaults/work",
       },
     },
 

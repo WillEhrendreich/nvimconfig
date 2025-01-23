@@ -136,7 +136,15 @@ return {
       keymap = {
         preset = "default",
 
-        ["<esc>"] = { "cancel", "fallback" },
+        ["<esc>"] = {
+          function(cmp)
+            if cmp.is_visible() then
+              cmp.cancel()
+              return false
+            end -- runs the next command
+          end,
+          "fallback",
+        },
         ["<Tab>"] = { "snippet_forward", "fallback" },
         ["<S-Tab>"] = { "snippet_backward", "fallback" },
 

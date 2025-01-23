@@ -3,8 +3,12 @@ return {
   opts = {
     formatters_by_ft = {
       -- cs = { "csharpier" },
-      sql = { "sqlfluff" },
+      sql = { "sql_formatter" },
+      ["*"] = { "injected" }, -- enables injected-lang formatting for all filetypes
       ["markdown"] = { "prettier", "markdown-toc" },
+    },
+    default_format_opts = {
+      lsp_format = "fallback",
     },
     formatters = {
       ["markdownlint-cli2"] = {
@@ -16,9 +20,14 @@ return {
         -- end,
         condition = false,
       },
-      sqlfluff = {
-        args = { "format", "--dialect=tsql", "-" },
+      sql_formatter = {
+        command = "sql-formatter",
+        args = { "-l", "transactsql" },
       },
+
+      -- sqlfluff = {
+      --   args = { "format", "--dialect=tsql", "-" },
+      -- },
       -- csharpier = {
       --   command = "dotnet-csharpier",
       --   args = { "--write-stdout" },

@@ -160,14 +160,40 @@ if LazyVimUtil.has("NeoComposer.nvim") then
 end
 
 map({ "n" }, "gx", function()
+  local function removeQuotes(str)
+    return string.gsub(str, '"', "")
+  end
   local function removeComma(str)
     return string.gsub(str, ",", "")
   end
   local currentWord = removeComma(vim.fn.expand("<cWORD>"))
   if currentWord then
-    if vim.api.nvim_buf_get_option(0, "filetype") == "lua" then
-      vim.notify("trying to open " .. currentWord)
-      lazyutil.open(currentWord)
+    if vim.bo.filetype == "lua" then
+      local stringToOpen = ""
+      local function is_valid_github_url(word)
+        -- Simple pattern to match GitHub short URLs (e.g., "user/repo")
+        local filepattern = "[%w]:/[%S]+"
+        local pattern = "[%w^/]+/[%S^/]+"
+        local match = nil
+
+        match = word:match(filepattern)
+        -- word = "willehrendreich/ionide.nvim"
+        if match then
+          return false
+        end
+
+        match = word:match(pattern)
+        -- vim.notify("match: " .. (match or "nil"))
+        return match ~= nil
+      end
+      if is_valid_github_url(currentWord) then
+        -- If the current word is a valid GitHub URL, open it in the browser
+        stringToOpen = "https://github.com/" .. removeQuotes(currentWord) .. ".git"
+      else
+        stringToOpen = currentWord
+      end
+      vim.notify("trying to open " .. stringToOpen)
+      lazyutil.open(stringToOpen)
     else
       if LazyVimUtil.has("lsplinks.nvim") then
         map("n", "gx", function()
@@ -193,6 +219,15 @@ map({ "v" }, "gx", function()
     -- end
   end
 end, "open selection if possible")
+
+if LazyVimUtil.has("snacks.nvim") then
+  map("n", "<leader>ST", function()
+    Snacks.scratch()
+  end, "toggle snack scratch buffer")
+  map("n", "<leader>SS", function()
+    Snacks.scratch.select()
+  end, "select snack scratch buffer")
+end
 
 if LazyVimUtil.has("mini.comment") then
   map("n", "<leader>/", 'v:lua.MiniComment.operator() . "_"', { expr = true, desc = "Comment line" })
@@ -496,6 +531,14 @@ map("n", "<K>", function()
       if hover_win and api.nvim_win_is_valid(hover_win) then
         api.nvim_set_current_win(hover_win)
       else
+        -- ---@type Hover.Options
+        -- local hoverOpts= {
+        --   bufnr= 0,
+        --   pos= api.nvim_win_get_cursor(0)
+        -- }
+        -- require("hover").hover(hoverOpts)
+
+        ---@type Hover.Options
         require("hover").hover()
       end
       -- if not hover_is_open then
@@ -671,8 +714,27 @@ if require("lazyvim.util").has("harpoon") then
     harpoon:list():select(4)
   end, "Harpoon select 4")
 end
+if vim.opt.diff:get() == true then
+  map("n", "<leader>dc", function()
+    vim.defer_fn(function()
+      vim.cmd.diffput()
+      vim.cmd["wall"]()
+      -- vim.cmd["qall"]()
+    end, 100)
 
-if require("lazyvim.util").has("nvim-dap") then
+    -- vim.defer_fn(function()
+    --   vim.cmd["qall"]()
+    -- end, 100)
+  end, "diffput")
+  map("n", "<leader>dg", function()
+    vim.defer_fn(function()
+      vim.cmd.diffget()
+      vim.cmd["wall"]()
+      vim.cmd["qall"]()
+    end, 100)
+  end, "diffget")
+end
+if require("lazyvim.util").has("nvim-dap") and vim.opt.diff:get() == false then
   -- map("n", "<F5>", function()
 
   map("n", "<leader>ds", function()
