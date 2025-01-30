@@ -17,7 +17,18 @@ autocmd({ "BufNewFile", "BufReadPost", "FileType" }, {
     vim.opt.commentstring = "// %s"
     vim.bo.commentstring = "// %s"
   end,
-  desc = "",
+  desc = "sets commentstring for cs files",
+})
+
+autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
+  pattern = { "markdown" },
+  group = grp("mdAutoCommand", { clear = true }),
+  callback = function(event)
+    vim.notify("I opened a markdown file and the autocommand saw it")
+    -- vim.g.autoformat = false -- globally
+    vim.b.autoformat = false -- buffer-local
+  end,
+  desc = "stops autoformat for md buffers",
 })
 
 -- autocmd({ "LspAttach" }, {

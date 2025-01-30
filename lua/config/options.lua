@@ -38,5 +38,6 @@ vim.o.pumblend = 0
 
 if vim.opt.diff:get() == true then
   opt.wrap = true
-  vim.cmd.colorscheme("gruvbox")
+  vim.cmd.colorscheme("tokyonight-night")
+  vim.cmd("tokyonight-night")
 end
