@@ -108,9 +108,32 @@ return {
         -- adding any nvim-cmp sources here will enable them
         -- with blink.compat
         compat = { "nuget" },
-        default = { "lsp", "path", "snippets", "lazydev", "buffer", "nuget" },
+        default = {
+          "lsp",
+          "path",
+          "snippets",
+          "lazydev",
+          "buffer",
+          "nuget",
+          "obsidian",
+          "obsidian_new",
+          "obsidian_tags",
+        },
         cmdline = {},
         providers = {
+
+          obsidian = {
+            name = "obsidian",
+            module = "blink.compat.source",
+          },
+          obsidian_new = {
+            name = "obsidian_new",
+            module = "blink.compat.source",
+          },
+          obsidian_tags = {
+            name = "obsidian_tags",
+            module = "blink.compat.source",
+          },
           lazydev = {
             name = "LazyDev",
             module = "lazydev.integrations.blink",

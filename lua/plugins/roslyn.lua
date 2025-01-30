@@ -105,7 +105,7 @@ return {
           --     end
           -- end,
           cshtml = function(path, bufnr)
-            return "cshtml",
+            return "razor",
               function(bufnr)
                 vim.w.fdm = "syntax"
                 -- comment settings

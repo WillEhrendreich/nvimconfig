@@ -717,9 +717,9 @@ end
 if vim.opt.diff:get() == true then
   map("n", "<leader>dc", function()
     vim.defer_fn(function()
-      vim.cmd.diffput()
+      vim.cmd("1,$ diffput")
       vim.cmd["wall"]()
-      -- vim.cmd["qall"]()
+      vim.cmd["qall"]()
     end, 100)
 
     -- vim.defer_fn(function()
@@ -728,7 +728,7 @@ if vim.opt.diff:get() == true then
   end, "diffput")
   map("n", "<leader>dg", function()
     vim.defer_fn(function()
-      vim.cmd.diffget()
+      vim.cmd("1,$ diffGet")
       vim.cmd["wall"]()
       vim.cmd["qall"]()
     end, 100)

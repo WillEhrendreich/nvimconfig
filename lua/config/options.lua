@@ -35,3 +35,8 @@ if vim.uv.os_uname().sysname ~= "Linux" then
   opt.shellxquote = ""
 end
 vim.o.pumblend = 0
+
+if vim.opt.diff:get() == true then
+  opt.wrap = true
+  vim.cmd.colorscheme("gruvbox")
+end
