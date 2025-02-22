@@ -33,6 +33,7 @@ return {
         ft = { "cs_project", "fsharp_project" }, -- optional but good to have
         opts = {}, -- needed
       },
+      { "L3MON4D3/LuaSnip", version = "v2.*" },
     },
 
     ---@module 'blink.cmp'
@@ -104,6 +105,10 @@ return {
       -- experimental signature help support
       signature = { enabled = true },
 
+      cmdline = {
+        sources = {},
+      },
+
       sources = {
         -- adding any nvim-cmp sources here will enable them
         -- with blink.compat
@@ -119,7 +124,6 @@ return {
           "obsidian_new",
           "obsidian_tags",
         },
-        cmdline = {},
         providers = {
 
           obsidian = {
