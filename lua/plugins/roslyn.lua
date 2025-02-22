@@ -6,6 +6,7 @@ return {
     args = {
       "--logLevel=Information",
       "--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
+      "--stdio",
       "--razorSourceGenerator=" .. vim.fs.joinpath(
         vim.fn.stdpath("data") --[[@as string]],
         "mason",
@@ -31,6 +32,8 @@ return {
       on_attach = function(client, bufnr)
         OnAttach(client, bufnr)
       end,
+
+      capabilities = vim.lsp.protocol.make_client_capabilities(),
       handlers = vim.tbl_deep_extend("force", {}, require("rzls.roslyn_handlers"), {
         ["textDocument/definition"] = function(...)
           return require("omnisharp_extended").handler(...)
@@ -69,41 +72,11 @@ return {
       },
     },
 
-    config = function(_, opts)
-      local configs = require("lspconfig.configs")
-      require("roslyn").setup(opts)
-      configs["roslyn"] = {
-        default_config = opts,
-      }
-
-      --- ftplugin section ---
-      -- vim.filetype.add({
-      --   extension = {
-      --     csproj = function(path, bufnr)
-      --       return "cs_project",
-      --         function(buf)
-      --           -- vim.bo[buf].syn = "xml"
-      --           -- vim.cmd("set syntax= xml")
-      --           vim.bo[buf].syntax = "xml"
-      --           vim.bo[buf].ro = false
-      --           vim.b[buf].readonly = false
-      --           vim.opt_local.foldlevelstart = 99
-      --           vim.w.fdm = "syntax"
-      --         end
-      --     end,
-      --   },
-      -- })
-
+    init = function()
+      -- we add the razor filetypes before the plugin loads
       vim.filetype.add({
         extension = {
-          -- razor = function(path, bufnr)
-          --   return "razor",
-          --     function(bufnr)
-          --       -- comment settings
-          --       vim.bo[bufnr].formatoptions = "croql"
-          --       vim.bo[bufnr].syntax = "xml"
-          --     end
-          -- end,
+          razor = "razor",
           cshtml = function(path, bufnr)
             return "razor",
               function(bufnr)
@@ -135,15 +108,28 @@ return {
                 vim.bo[bufnr].formatoptions = "croql"
               end
           end,
+          --     csproj = function(path, bufnr)
+          --       return "cs_project",
+          --         function(buf)
+          --           -- vim.bo[buf].syn = "xml"
+          --           -- vim.cmd("set syntax= xml")
+          --           vim.bo[buf].syntax = "xml"
+          --           vim.bo[buf].ro = false
+          --           vim.b[buf].readonly = false
+          --           vim.opt_local.foldlevelstart = 99
+          --           vim.w.fdm = "syntax"
+          --         end
+          --     end,
         },
       })
     end,
+    config = true,
   },
   {
     "neovim/nvim-lspconfig",
     servers = {
       roslyn = {
-        ft = "cs",
+        ft = { "cs", "razor" },
       },
     },
     setup = {
