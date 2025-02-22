@@ -120,6 +120,11 @@ if require("lazyvim.util").has("nvim-dbee") then
   map("n", "<leader>sq", function()
     require("dbee").toggle()
   end, "Dbee Toggle")
+  map("n", "yaC", function()
+    if require("dbee").is_open() then
+      require("dbee").store("table", "yank")
+    end
+  end, "Dbee Yank All As Table")
 end
 
 if LazyVimUtil.has("NeoComposer.nvim") then
