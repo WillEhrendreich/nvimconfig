@@ -9,11 +9,6 @@ autocmd({ "BufNewFile", "BufReadPost", "FileType" }, {
   pattern = { "cs" },
   group = grp("csFTAutocommand", { clear = true }),
   callback = function(event)
-    -- vim.notify("I opened a cs file ")
-
-    -- vim.cmd("set filetype=cs")
-    -- vim.cmd("set syntax=cs")
-    -- vim.cmd("set commentstring=// %s")
     vim.opt.commentstring = "// %s"
     vim.bo.commentstring = "// %s"
   end,
@@ -113,19 +108,19 @@ autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
 --   desc = "",
 -- })
 
-autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
-  pattern = { "razor" },
-  group = grp("razorFTAutocommand", { clear = true }),
-  callback = function()
-    -- vim.notify("I opened a razor page")
-
-    vim.bo.filetype = "razor"
-    vim.bo.syntax = "xml"
-
-    vim.bo.commentstring = "<!-- %s -->"
-  end,
-  desc = "",
-})
+-- autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+--   pattern = { "razor" },
+--   group = grp("razorFTAutocommand", { clear = true }),
+--   callback = function()
+--     -- vim.notify("I opened a razor page")
+--
+--     vim.bo.filetype = "razor"
+--     vim.bo.syntax = "xml"
+--
+--     vim.bo.commentstring = "<!-- %s -->"
+--   end,
+--   desc = "",
+-- })
 
 autocmd("FileType", {
   desc = "odin load overseer",
