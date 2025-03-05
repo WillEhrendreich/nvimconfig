@@ -30,10 +30,6 @@ return {
         name = "work",
         path = "~/OneDrive - Roehl Transport Inc/work",
       },
-      {
-        name = "personal",
-        path = "~/vaults/personal",
-      },
     },
 
     -- see below for full list of options 👇

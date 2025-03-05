@@ -15,5 +15,6 @@ return {
       -- easing = "inCirc",
       fps = 144, -- frames per second. Global setting for all animations
     },
+    image = {},
   },
 }

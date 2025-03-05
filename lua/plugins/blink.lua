@@ -11,20 +11,6 @@ return {
   },
   {
     "saghen/blink.cmp",
-    -- config = function(opts)
-    --   local cmp = require("blink.cmp")
-    --
-    --   cmp.setup(opts)
-    --
-    --   local list = require("blink.cmp.completion.list")
-    --   local oldhide = require("blink.cmp.completion.list.hide")
-    --   local newHide = function()
-    --     list.select(nil, opts)
-    --     oldhide()
-    --   end
-    --   list["hide"] = newHide
-    -- end,
-    --
     dependencies = {
 
       -- add source
@@ -39,7 +25,7 @@ return {
     ---@module 'blink.cmp'
     ---@type blink.cmp.Config
     opts = {
-
+      fuzzy = { implementation = "prefer_rust_with_warning" },
       snippets = {
         preset = "luasnip",
 
@@ -121,6 +107,7 @@ return {
           "buffer",
           "nuget",
           "obsidian",
+          "easy-dotnet",
           "obsidian_new",
           "obsidian_tags",
         },
@@ -142,6 +129,13 @@ return {
             name = "LazyDev",
             module = "lazydev.integrations.blink",
             score_offset = 100, -- show at a higher priority than lsp
+          },
+          ["easy-dotnet"] = {
+            name = "easy-dotnet",
+            enabled = true,
+            module = "easy-dotnet.completion.blink",
+            score_offset = 10000,
+            async = true,
           },
           -- create provider
           nuget = {

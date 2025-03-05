@@ -150,8 +150,9 @@ function UseChocoToInstallAllTheThings()
   -- end
 
   if vim.tbl_count(differences) > 0 then
-    -- vim.notify("Not included in current choco packages :" .. vim.inspect(differences))
+    vim.notify("Not included in current choco packages :" .. vim.inspect(differences))
   end
+
   local packageToExecutableName = {
 
     ["7zip"] = "7z",
@@ -246,11 +247,11 @@ function UseChocoToInstallAllTheThings()
     if installed then
       -- vim.notify("program: " .. p .. " is installed and executable. ")
     else
-      -- vim.notify(
-      --   "program named: {"
-      --     .. p
-      --     .. "} is not executable. If it's intalled, then it's possible that it's parent directory is simply not included in the PATH variable. Adding it to the list of things chocolatey will try to install."
-      -- )
+      vim.notify(
+        "program named: {"
+          .. p
+          .. "} is not executable. If it's intalled, then it's possible that it's parent directory is simply not included in the PATH variable. Adding it to the list of things chocolatey will try to install."
+      )
       table.insert(notInstalled, pack)
     end
   end
