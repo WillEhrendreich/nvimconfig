@@ -3,6 +3,7 @@ return {
   dependencies = {
     "nvim-neotest/neotest",
   },
+  ---@type overseer.Config
   opts = {
     dap = true,
     -- dap = false,
