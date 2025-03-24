@@ -1102,22 +1102,22 @@ end, {
 -- }
 
 local dotnetDapConfig = {
-  -- {
-  --   type = "coreclr",
-  --   name = "NetCoreDbg",
-  --   preLaunchTask = "build",
-  --   request = "launch",
-  --   console = "internalConsole",
-  --   cwd = "${fileDirname}",
-  --   program = get_dll,
-  -- },
-  -- {
-  type = "coreclr",
-  name = "attach - netcoredbg",
-  request = "attach",
-  -- processId = require("dap.utils").pick_process,
-  processId = pick_process,
-  -- },
+  {
+    type = "coreclr",
+    name = "NetCoreDbg",
+    preLaunchTask = "build",
+    request = "launch",
+    console = "internalConsole",
+    cwd = "${fileDirname}",
+    program = get_dll,
+  },
+  {
+    type = "coreclr",
+    name = "attach - netcoredbg",
+    request = "attach",
+    -- processId = require("dap.utils").pick_process,
+    processId = pick_process,
+  },
 }
 -- {
 --         type = "netcoredbg",
