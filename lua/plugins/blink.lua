@@ -25,7 +25,7 @@ return {
     ---@module 'blink.cmp'
     ---@type blink.cmp.Config
     opts = {
-      fuzzy = { implementation = "prefer_rust_with_warning" },
+      fuzzy = { implementation = "prefer_rust" },
       snippets = {
         preset = "luasnip",
 
@@ -75,7 +75,7 @@ return {
         },
         documentation = {
           auto_show = true,
-          auto_show_delay_ms = 200,
+          -- auto_show_delay_ms = 200,
         },
         ghost_text = {
           enabled = vim.g.ai_cmp,
@@ -83,7 +83,7 @@ return {
         list = {
           selection = {
             preselect = false,
-            auto_insert = true,
+            auto_insert = false,
           },
         },
       },
