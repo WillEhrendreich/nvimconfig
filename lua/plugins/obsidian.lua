@@ -17,6 +17,7 @@ return {
     -- see below for full list of optional dependencies 👇
   },
   opts = {
+    ui = { enable = false },
     -- Optional, by default when you use `:ObsidianFollowLink` on a link to an external
     -- URL it will be ignored but you can customize this behavior here.
     ---@param url string

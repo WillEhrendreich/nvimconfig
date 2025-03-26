@@ -1,5 +1,6 @@
 return {
   "MeanderingProgrammer/render-markdown.nvim",
+
   after = { "nvim-treesitter" },
   opts = { -- Whether Markdown should be rendered by default or not
     enabled = true,
@@ -76,12 +77,12 @@ return {
       -- Amount of empty lines below LaTeX blocks
       bottom_pad = 0,
     },
-    on = {
-      -- Called when plugin initially attaches to a buffer
-      attach = function() end,
-      -- Called after plugin renders a buffer
-      render = function() end,
-    },
+    -- on = {
+    --   -- Called when plugin initially attaches to a buffer
+    --   attach = function() end,
+    --   -- Called after plugin renders a buffer
+    --   render = function() end,
+    -- },
     heading = {
       -- Turn on / off heading icon & background rendering
       enabled = true,
@@ -265,9 +266,11 @@ return {
       -- If a list is provided we index into it using a cycle based on the level
       -- If the value at that level is also a list we further index into it using a clamp based on the index
       ordered_icons = function(level, index, value)
-        value = vim.trim(value)
-        local value_index = tonumber(value:sub(1, #value - 1))
-        return string.format("%d.", value_index > 1 and value_index or index)
+        if value then
+          value = vim.trim(value)
+          local value_index = tonumber(value:sub(1, #value - 1))
+          return string.format("%d.", value_index > 1 and value_index or index)
+        end
       end,
       -- Padding to add to the left of bullet point
       left_pad = 0,

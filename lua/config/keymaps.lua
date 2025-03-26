@@ -54,10 +54,15 @@ local function compare_paths(path1, path2)
   return vim.fs.normalize(path1):lower() == vim.fs.normalize(path2):lower()
 end
 
--- if LazyHas("easy-dotnet") then
-map("n", "<leader>dt", "<cmd>Dotnet testrunner<cr>", "Open testrunner")
--- end
-if LazyHas("neotest") then
+if require("lazyvim.util").has("csvToMdTable") then
+  map("v", "<leader><leader>csv", function()
+    require("csvToMdTable").convert()
+  end, "Convert selected csv to a markdown table")
+end
+if require("lazyvim.util").has("easy-dotnet") then
+  map("n", "<leader>dt", "<cmd>Dotnet testrunner<cr>", "Open testrunner")
+end
+if require("lazyvim.util").has("neotest") then
   map("n", "<leader>tr", function()
     require("neotest").run.run()
   end, "Run the nearest test")
