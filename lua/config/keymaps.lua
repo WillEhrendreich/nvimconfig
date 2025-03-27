@@ -56,7 +56,7 @@ end
 
 if require("lazyvim.util").has("csvToMdTable") then
   map("v", "<leader><leader>csv", function()
-    require("csvToMdTable").convert()
+    require("CsvToMdTable").convert()
   end, "Convert selected csv to a markdown table")
 end
 if require("lazyvim.util").has("easy-dotnet") then

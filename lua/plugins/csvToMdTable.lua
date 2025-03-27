@@ -1,6 +1,6 @@
 local util = require("config.util")
 return {
-  "WillEhrendreich/csvToMdTable",
-  dir = util.getRepoWithName("csvToMdTable"),
+  "WillEhrendreich/CsvToMdTable",
+  dir = util.getRepoWithName("CsvToMdTable"),
   name = "csvToMdTable",
 }
