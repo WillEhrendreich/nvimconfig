@@ -131,6 +131,13 @@ if require("lazyvim.util").has("nvim-dbee") then
   map("n", "<leader>sq", function()
     require("dbee").toggle()
   end, "Dbee Toggle")
+
+  map("n", "yaJ", function()
+    if require("dbee").is_open() then
+      require("dbee").store("json", "yank")
+    end
+  end, "Dbee Yank All As Json")
+
   map("n", "yaC", function()
     if require("dbee").is_open() then
       require("dbee").store("table", "yank")
