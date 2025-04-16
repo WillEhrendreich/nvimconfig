@@ -1,0 +1,25 @@
+{
+  "pbiTasks": {
+    "prefix": "pbiTasks",
+    "body": [
+      "- [ ] Create tasks in PBI, assigning yourself and estimating task effort",
+      "- [ ] Estimate full pbi effort",
+      "- [ ] Move task to Dev - Work in progress when starting work on it",
+      "- [ ] Set target date",
+      "- [ ] Set production release date",
+      "- [ ] Make pr",
+      "- [ ] Get pr reviewed",
+      "- [ ] Make changes to pr",
+      "- [ ] Make QA plan/tests",
+      "- [ ] Get QA review",
+      "- [ ] Make suggestion changes to pr given by QA",
+      "- [ ] Move task to ready for production after QA test and Pr Review have passed",
+      "- [ ] Squash and merge to main",
+      "- [ ] Make a deployment request",
+      "- [ ] Make release notes if needed",
+      "- [ ] Move task to production user testing after Deployment ",
+      "- [ ] Move task to done after user testing is done"
+    ]
+  }
+}
+
