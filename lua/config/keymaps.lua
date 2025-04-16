@@ -121,6 +121,12 @@ if LazyVimUtil.has("neo-tree.nvim") then
   map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
 end
 
+if require("lazyvim.util").has("treesj") then
+  map("n", "<leader><leader>t, require('treesj').toggle()", "Toggle Join/Unjoin")
+  map("n", "<leader><leader>j, require('treesj').join ()", "Join")
+  map("n", "<leader><leader>s, require('treesj').split()", "Split")
+end
+
 if require("lazyvim.util").has("nvim-dbee") then
   map("n", "<leader>sq", function()
     require("dbee").toggle()
