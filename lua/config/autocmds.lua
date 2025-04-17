@@ -19,56 +19,12 @@ autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
   pattern = { "markdown" },
   group = grp("mdAutoCommand", { clear = true }),
   callback = function(event)
-    vim.notify("I opened a markdown file and the autocommand saw it")
+    -- vim.notify("I opened a markdown file and the autocommand saw it")
     -- vim.g.autoformat = false -- globally
     vim.b.autoformat = false -- buffer-local
   end,
   desc = "stops autoformat for md buffers",
 })
-
--- autocmd({ "LspAttach" }, {
---   desc = "csharp clear code lens on attach ",
---   group = grp("csharp_ClearCodeLens", { clear = true }),
---   pattern = "*.cs, *.csx",
---   callback = function(args)
---     vim.defer_fn(function()
---       vim.lsp.codelens.clear()
---       vim.lsp.codelens.refresh()
---     end, 7000)
---   end,
--- })
-
--- autocmd({ "LspAttach" }, {
---   desc = "csharp enable inlayHint on attach ",
---   group = grp("csharp_enableInlayHint", { clear = true }),
---   pattern = "*.cs, *.csx",
---   callback = function(args)
---     vim.defer_fn(function()
---       -- M.notify("enabling lsp inlayHint")
---       if vim.lsp.inlay_hint then
---         vim.lsp.inlay_hint.enable(true)
---       elseif vim.lsp.buf.inlay_hint then
---         vim.lsp.buf.inlay_hint(args.buf, true)
---       else
---       end
---     end, 2000)
---     -- else
---     --   -- M.notify("lsp inlayHints are not enabled.")
---     -- end
---   end,
--- })
-
--- autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
---   desc = "csharp Auto refresh code lens ",
---   group = grp("CSharpAutomaticCodeLensRefresh", { clear = true }),
---   pattern = "*.cs, *.csx",
---   callback = function(arg)
---     vim.defer_fn(function()
---       vim.lsp.codelens.refresh()
---       -- M.notify("lsp codelens refreshing")
---     end, 2000)
---   end,
--- })
 
 autocmd({ "BufNewFile", "BufReadPost", "FileType" }, {
   desc = "changes comment style, folding for xaml",
@@ -95,18 +51,6 @@ autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
   end,
   desc = "",
 })
--- autocmd({ "FileType" }, {
---   pattern = { "cs_project", "fsharp_project" },
---   group = grp("ProjAutocommand", { clear = true }),
---   callback = function()
---     vim.cmd("set commentstring=<!--%s-->")
---     -- vim.cmd("set filetype=html")
---     vim.bo.syntax = "xml"
---     -- M.init_buf_targets(opt.buf)
---     -- M.attach_or_spawn(opt.buf)
---   end,
---   desc = "",
--- })
 
 -- autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
 --   pattern = { "razor" },
