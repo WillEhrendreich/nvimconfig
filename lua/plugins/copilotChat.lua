@@ -2,7 +2,7 @@ local util = require("config.util")
 local LazyVimUtil = require("lazyvim.util")
 local hasCopilotChat = LazyVimUtil.has("CopilotChat.nvim")
 if hasCopilotChat then
-  vim.notify("CopilotChat found")
+  -- vim.notify("CopilotChat found")
 else
   -- vim.notify("CopilotChat not found, skipping some config properties")
 end
@@ -31,7 +31,7 @@ local noChatOpts = {
 
   system_prompt = prompts.COPILOT_INSTRUCTIONS, -- System prompt to use
   -- model = "gpt-4", -- GPT model to use, 'gpt-3.5-turbo' or 'gpt-4'
-  model = "gpt-3.5-turbo", -- GPT model to use, 'gpt-3.5-turbo' or 'gpt-4'
+  model = "gpt-4o-2024-11-20",
   temperature = 0.1, -- GPT temperature
 
   question_header = "", -- Header to use for user questions
@@ -74,7 +74,7 @@ local noChatOpts = {
     -- Options below only apply to floating windows
     relative = "editor", -- 'editor', 'win', 'cursor', 'mouse'
     border = "single", -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
-    width = 0.8, -- fractional width of parent
+    width = 0.6, -- fractional width of parent
     height = 0.6, -- fractional height of parent
     row = nil, -- row position of the window, default is centered
     col = nil, -- column position of the window, default is centered
