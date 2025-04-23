@@ -127,24 +127,6 @@ if require("lazyvim.util").has("treesj") then
   map("n", "<leader><leader>s, require('treesj').split()", "Split")
 end
 
-if require("lazyvim.util").has("nvim-dbee") then
-  map("n", "<leader>sq", function()
-    require("dbee").toggle()
-  end, "Dbee Toggle")
-
-  map("n", "yaJ", function()
-    if require("dbee").is_open() then
-      require("dbee").store("json", "yank")
-    end
-  end, "Dbee Yank All As Json")
-
-  map("n", "yaC", function()
-    if require("dbee").is_open() then
-      require("dbee").store("table", "yank")
-    end
-  end, "Dbee Yank All As Table")
-end
-
 if LazyVimUtil.has("NeoComposer.nvim") then
   map("n", "<leader>me", function()
     require("NeoComposer.ui").edit_macros()
@@ -831,6 +813,28 @@ if require("lazyvim.util").has("nvim-dap") and vim.opt.diff:get() == false then
       -- print("predebug task was false, so assuming there was a problem and not debugging")
       -- end
     end, "Debugger: DapHydra")
+  end
+
+  if require("lazyvim.util").has("nvim-dbee") then
+    map("n", "BB", function()
+      require("dbee").run_file()
+    end, "Dbee Run file")
+
+    map("n", "<leader>sq", function()
+      require("dbee").toggle()
+    end, "Dbee Toggle")
+
+    map("n", "yaJ", function()
+      if require("dbee").is_open() then
+        require("dbee").store("json", "yank")
+      end
+    end, "Dbee Yank All As Json")
+
+    map("n", "yaC", function()
+      if require("dbee").is_open() then
+        require("dbee").store("table", "yank")
+      end
+    end, "Dbee Yank All As Table")
   end
 end
 

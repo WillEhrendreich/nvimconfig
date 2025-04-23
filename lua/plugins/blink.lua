@@ -86,7 +86,7 @@ return {
           "lazydev",
           "buffer",
           "nuget",
-          "obsidian",
+          -- "obsidian",
           "easy-dotnet",
           -- "obsidian_new",
           -- "obsidian_tags",
