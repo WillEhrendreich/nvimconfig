@@ -1223,19 +1223,32 @@ local function dapconfig(_, opts)
         end
         dap.configurations.cs = { dotnetDapConfig }
         dap.configurations.fsharp = { dotnetDapConfig }
-        dap.adapters.codelldb = {
+        dap.adapters.lldb = {
           name = "codelldb",
-          type = "server",
-          -- host = "127.0.0.1",
-          host = "localhost",
-          port = "${port}",
-          executable = {
-            command = require("mason-registry").get_package("codelldb"):get_install_path()
-              .. "/extension/adapter/codelldb",
-            args = { "--port", "${port}" },
-          },
-          detatched = false,
+          type = "executable",
+
+          -- command = vim.fs.normalize((vim.fs.find("codelldb.exe", { path = vim.fn.stdpath("data") }))[1]),
+          command = require("mason-registry").get_package("codelldb"):get_install_path()
+            .. "/extension/adapter/codelldb",
+
+          --   executable = {
+          --     command = ,
+          --     args = { "--port", "${port}" },
+          --   },
         }
+        -- dap.adapters.codelldb = {
+        --   name = "codelldb",
+        --   type = "server",
+        --   -- host = "127.0.0.1",
+        --   host = "localhost",
+        --   port = "${port}",
+        --   executable = {
+        --     command = require("mason-registry").get_package("codelldb"):get_install_path()
+        --       .. "/extension/adapter/codelldb",
+        --     args = { "--port", "${port}" },
+        --   },
+        --   detatched = false,
+        -- }
 
         dap.adapters["coreclr"] = {
           name = "netCoreDbg",

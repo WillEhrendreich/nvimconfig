@@ -1,7 +1,12 @@
 return {
-  "williamboman/mason.nvim",
+  -- "williamboman/mason.nvim",
+  -- Mason is pinned to version 1 for now: https://github.com/LazyVim/LazyVim/issues/6039
+  "mason-org/mason.nvim",
+  version = "^1.0.0",
   cmd = "Mason",
+  build = ":MasonUpdate",
   keys = { { "<leader>pm", "<cmd>Mason<cr>", desc = "Mason" } },
+  opts_extend = { "ensure_installed" },
   opts = {
     registries = {
       "github:mason-org/mason-registry",

@@ -156,7 +156,7 @@ return {
     workspaces = {
       {
         name = "work",
-        path = "~/OneDrive - Roehl Transport Inc/work",
+        path = "~/work",
       },
     },
 

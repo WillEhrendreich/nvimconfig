@@ -107,44 +107,14 @@ OnAttach =
 
 return {
   "neovim/nvim-lspconfig",
+
+  dependencies = {
+    -- Automatically install LSPs to stdpath for neovim
+    "mason-org/mason.nvim",
+    "mason-org/mason-lspconfig.nvim",
+  },
   init = function()
-    -- vim.filetype.add({
-    --   extension = {
-    --     props = "msbuild",
-    --     tasks = "msbuild",
-    --     targets = "msbuild",
-    --   },
-    --   pattern = {
-    --     [ [[.*\..*proj]] ] = "msbuild",
-    --   },
-    -- })
-
     vim.treesitter.language.register("xml", { "fsharp_project" })
-
-    local lspconfig = require("lspconfig")
-    local configs = require("lspconfig.configs")
-
-    -- local msBuildConfig = {
-    --
-    --   cmd = {
-    --     "dotnet",
-    --     "C:/.local/share/language-servers/msbuild/MSBuildProjectTools.LanguageServer.Host.dll",
-    --   },
-    --   filetypes = { "" },
-    --   settings = {},
-    -- }
-    -- -- Check if the config is already defined (useful when reloading this file)
-    -- if not configs["msbuild_project_tools_server"] then
-    --   -- M.notify("creating entry in lspconfig configs for ionide ")
-    --   configs["msbuild_project_tools_server"] = {
-    --     default_config = msBuildConfig,
-    --     docs = {
-    --       description = "insert description here",
-    --     },
-    --   }
-    -- end
-    --
-    -- lspconfig.msbuild_project_tools_server.setup(msBuildConfig)
 
     local keys = require("lazyvim.plugins.lsp.keymaps").get()
     keys[#keys + 1] = {
@@ -298,6 +268,12 @@ return {
       enabled = true,
     },
     capabilities = {
+      workspace = {
+        fileOperations = {
+          didRename = true,
+          willRename = true,
+        },
+      },
       textDocument = {
         foldingRange = {
           -- dynamicRegistration = false,

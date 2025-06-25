@@ -1,142 +1,295 @@
 local util = require("lspconfig.util")
+-- local mson_packages = vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "packages")
+-- local mason_registry = require("mason-registry")
+--
+-- --NOTE: should check the dir exists
+-- local roslyn_base_path = vim.fs.joinpath(mson_packages, "roslyn", "libexec")
+-- local rzls_base_path = vim.fs.joinpath(mson_packages, "rzls", "libexec")
+--
+-- ---@type string[]
+-- local cmd = {
+--   "dotnet",
+--   vim.fs.joinpath(roslyn_base_path, "Microsoft.CodeAnalysis.LanguageServer.dll"),
+--   "--stdio",
+--   "--logLevel=Information",
+--   "--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
+--   "--razorSourceGenerator=" .. vim.fs.joinpath(rzls_base_path, "Microsoft.CodeAnalysis.Razor.Compiler.dll"),
+--   "--razorDesignTimePath=" .. vim.fs.joinpath(rzls_base_path, "Targets", "Microsoft.NET.Sdk.Razor.DesignTime.targets"),
+-- }
+--
+-- --- @type RoslynNvimConfig
+-- local config = {
+--   ---@diagnostic disable-next-line: missing-fields
+--   config = {
+--     cmd = cmd,
+--     capabilities = require("lsp.common").capabilities,
+--     filetypes = { "cs" },
+--     handlers = require("rzls.roslyn_handlers"),
+--     settings = {
+--       ["csharp|background_analysis"] = {
+--         dotnet_analyzer_diagnostics_scope = "fullSolution",
+--         dotnet_compiler_diagnostics_scope = "fullSolution",
+--       },
+--       ["csharp|inlay_hints"] = {
+--         csharp_enable_inlay_hints_for_implicit_object_creation = true,
+--         csharp_enable_inlay_hints_for_implicit_variable_types = true,
+--
+--         csharp_enable_inlay_hints_for_lambda_parameter_types = true,
+--         csharp_enable_inlay_hints_for_types = true,
+--         dotnet_enable_inlay_hints_for_indexer_parameters = true,
+--         dotnet_enable_inlay_hints_for_literal_parameters = true,
+--         dotnet_enable_inlay_hints_for_object_creation_parameters = true,
+--         dotnet_enable_inlay_hints_for_other_parameters = true,
+--         dotnet_enable_inlay_hints_for_parameters = true,
+--         dotnet_suppress_inlay_hints_for_parameters_that_differ_only_by_suffix = false,
+--         dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = false,
+--         dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = false,
+--       },
+--       ["csharp|code_lens"] = {
+--         dotnet_enable_references_code_lens = true,
+--         dotnet_enable_tests_code_lens = true,
+--       },
+--     },
+--   },
+--   filewatching = "auto",
+-- }
+
 return {
-  { "Hoffs/omnisharp-extended-lsp.nvim", lazy = true },
+  -- { "Hoffs/omnisharp-extended-lsp.nvim", lazy = true },
   {
-    "seblj/roslyn.nvim",
-    args = {
-      "--logLevel=Information",
-      "--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
-      "--stdio",
-      "--razorSourceGenerator=" .. vim.fs.joinpath(
-        vim.fn.stdpath("data") --[[@as string]],
-        "mason",
-        "packages",
-        "roslyn",
-        "libexec",
-        "Microsoft.CodeAnalysis.Razor.Compiler.dll"
-      ),
-      "--razorDesignTimePath=" .. vim.fs.joinpath(
-        vim.fn.stdpath("data") --[[@as string]],
-        "mason",
-        "packages",
-        "rzls",
-        "libexec",
-        "Targets",
-        "Microsoft.NET.Sdk.Razor.DesignTime.targets"
-      ),
-    },
-    dependancies = {
-      "tris203/rzls.nvim",
+    "seblyng/roslyn.nvim",
+    ft = { "cs", "razor" },
+    dependencies = {
+      {
+        -- By loading as a dependencies, we ensure that we are available to set
+        -- the handlers for Roslyn.
+        "tris203/rzls.nvim",
+        -- config = true,
+      },
     },
     opts = {
-      on_attach = function(client, bufnr)
-        OnAttach(client, bufnr)
-      end,
+      -- "auto" | "roslyn" | "off"
+      --
+      -- - "auto": Does nothing for filewatching, leaving everything as default
+      -- - "roslyn": Turns off neovim filewatching which will make roslyn do the filewatching
+      -- - "off": Hack to turn off all filewatching. (Can be used if you notice performance issues)
+      filewatching = "auto",
 
-      capabilities = vim.lsp.protocol.make_client_capabilities(),
-      handlers = vim.tbl_deep_extend("force", {}, require("rzls.roslyn_handlers"), {
-        ["textDocument/definition"] = function(...)
-          return require("omnisharp_extended").handler(...)
-        end,
-      }),
-      keys = {
-        {
-          "gd",
-          function()
-            require("omnisharp_extended").telescope_lsp_definitions()
-          end,
-          desc = "Goto Definition",
-        },
-      },
-      settings = {
-        ["csharp|background_analysis"] = {
-          dotnet_compiler_diagnostics_scope = "fullSolution",
-        },
-        ["csharp|inlay_hints"] = {
-          csharp_enable_inlay_hints_for_implicit_object_creation = true,
-          csharp_enable_inlay_hints_for_implicit_variable_types = true,
-          csharp_enable_inlay_hints_for_lambda_parameter_types = true,
-          csharp_enable_inlay_hints_for_types = true,
-          dotnet_enable_inlay_hints_for_indexer_parameters = true,
-          dotnet_enable_inlay_hints_for_literal_parameters = true,
-          dotnet_enable_inlay_hints_for_object_creation_parameters = true,
-          dotnet_enable_inlay_hints_for_other_parameters = true,
-          dotnet_enable_inlay_hints_for_parameters = true,
-          dotnet_suppress_inlay_hints_for_parameters_that_differ_only_by_suffix = false,
-          dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = false,
-          dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = false,
-        },
-        ["csharp|code_lens"] = {
-          dotnet_enable_references_code_lens = true,
-        },
-      },
-    },
+      -- Optional function that takes an array of targets as the only argument. Return the target you
+      -- want to use. If it returns `nil`, then it falls back to guessing the target like normal
+      -- Example:
+      --
+      -- choose_target = function(target)
+      --     return vim.iter(target):find(function(item)
+      --         if string.match(item, "Foo.sln") then
+      --             return item
+      --         end
+      --     end)
+      -- end
+      choose_target = nil,
 
-    init = function()
-      -- we add the razor filetypes before the plugin loads
-      vim.filetype.add({
-        extension = {
-          razor = "razor",
-          cshtml = function(path, bufnr)
-            return "razor",
-              function(bufnr)
-                vim.w.fdm = "syntax"
-                -- comment settings
-                vim.bo[bufnr].formatoptions = "croql"
-                vim.bo[bufnr].commentstring = "<!--%s-->"
-              end
-          end,
-          cs = function(path, bufnr)
-            return "cs",
-              function(bufnr)
-                if not vim.g.filetype_cs then
-                  vim.g["filetype_cs"] = "cs"
-                end
-                if not vim.g.filetype_cs == "cs" then
-                  vim.g["filetype_cs"] = "cs"
-                end
-                vim.w.fdm = "syntax"
-                -- comment settings
-                vim.bo[bufnr].formatoptions = "croql"
-                vim.bo[bufnr].commentstring = "// %s"
-              end
-          end,
-          csx = function(path, bufnr)
-            return "cs",
-              function(bufnr)
-                vim.w.fdm = "syntax"
-                vim.bo[bufnr].formatoptions = "croql"
-              end
-          end,
-          --     csproj = function(path, bufnr)
-          --       return "cs_project",
-          --         function(buf)
-          --           -- vim.bo[buf].syn = "xml"
-          --           -- vim.cmd("set syntax= xml")
-          --           vim.bo[buf].syntax = "xml"
-          --           vim.bo[buf].ro = false
-          --           vim.b[buf].readonly = false
-          --           vim.opt_local.foldlevelstart = 99
-          --           vim.w.fdm = "syntax"
-          --         end
-          --     end,
-        },
-      })
-    end,
-    config = true,
-  },
-  {
-    "neovim/nvim-lspconfig",
-    servers = {
-      roslyn = {
-        ft = { "cs", "razor" },
-      },
+      -- Optional function that takes the selected target as the only argument.
+      -- Returns a boolean of whether it should be ignored to attach to or not
+      --
+      -- I am for example using this to disable a solution with a lot of .NET Framework code on mac
+      -- Example:
+      --
+      -- ignore_target = function(target)
+      --     return string.match(target, "Foo.sln") ~= nil
+      -- end
+      ignore_target = nil,
+
+      -- Whether or not to look for solution files in the child of the (root).
+      -- Set this to true if you have some projects that are not a child of the
+      -- directory with the solution file
+      broad_search = false,
+
+      -- Whether or not to lock the solution target after the first attach.
+      -- This will always attach to the target in `vim.g.roslyn_nvim_selected_solution`.
+      -- NOTE: You can use `:Roslyn target` to change the target
+      lock_target = false,
     },
-    setup = {
-      roslyn = function(_, opts) -- code
-        require("roslyn").setup(opts)
-      end,
-    },
+    -- config = function()
+    --   -- Use one of the methods in the Integration section to compose the command.
+    --   local cmd = {}
+    --
+    --   return {
+    --     cmd = cmd,
+    --
+    --     filewatching = "auto",
+    --     ---@diagnostic disable-next-line: missing-fields
+    --     --- @type RoslynNvimConfig
+    --     config = {
+    --       handlers = require("rzls.roslyn_handlers"),
+    --       settings = {
+    --         ["csharp|inlay_hints"] = {
+    --           csharp_enable_inlay_hints_for_implicit_object_creation = true,
+    --           csharp_enable_inlay_hints_for_implicit_variable_types = true,
+    --
+    --           csharp_enable_inlay_hints_for_lambda_parameter_types = true,
+    --           csharp_enable_inlay_hints_for_types = true,
+    --           dotnet_enable_inlay_hints_for_indexer_parameters = true,
+    --           dotnet_enable_inlay_hints_for_literal_parameters = true,
+    --           dotnet_enable_inlay_hints_for_object_creation_parameters = true,
+    --           dotnet_enable_inlay_hints_for_other_parameters = true,
+    --           dotnet_enable_inlay_hints_for_parameters = true,
+    --           dotnet_suppress_inlay_hints_for_parameters_that_differ_only_by_suffix = true,
+    --           dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = true,
+    --           dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = true,
+    --         },
+    --         ["csharp|code_lens"] = {
+    --           dotnet_enable_references_code_lens = true,
+    --         },
+    --       },
+    --     },
+    --   }
+    -- end,
+    -- init = function()
+    --   -- We add the Razor file types before the plugin loads.
+    --   vim.filetype.add({
+    --     extension = {
+    --       razor = "razor",
+    --       cshtml = "razor",
+    --     },
+    --   })
+    -- end,
   },
+  -- {
+  --   "seblj/roslyn.nvim",
+  --   args = {
+  --     "--logLevel=Information",
+  --     "--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
+  --     "--stdio",
+  --     "--razorSourceGenerator=" .. vim.fs.joinpath(
+  --       vim.fn.stdpath("data") --[[@as string]],
+  --       "mason",
+  --       "packages",
+  --       "roslyn",
+  --       "libexec",
+  --       "Microsoft.CodeAnalysis.Razor.Compiler.dll"
+  --     ),
+  --     "--razorDesignTimePath=" .. vim.fs.joinpath(
+  --       vim.fn.stdpath("data") --[[@as string]],
+  --       "mason",
+  --       "packages",
+  --       "rzls",
+  --       "libexec",
+  --       "Targets",
+  --       "Microsoft.NET.Sdk.Razor.DesignTime.targets"
+  --     ),
+  --   },
+  --   dependancies = {
+  --     "tris203/rzls.nvim",
+  --   },
+  --   opts = {
+  --     on_attach = function(client, bufnr)
+  --       OnAttach(client, bufnr)
+  --     end,
+  --
+  --     capabilities = vim.lsp.protocol.make_client_capabilities(),
+  --     handlers = vim.tbl_deep_extend("force", {}, require("rzls.roslyn_handlers"), {
+  --       ["textDocument/definition"] = function(...)
+  --         return require("omnisharp_extended").handler(...)
+  --       end,
+  --     }),
+  --     keys = {
+  --       {
+  --         "gd",
+  --         function()
+  --           require("omnisharp_extended").telescope_lsp_definitions()
+  --         end,
+  --         desc = "Goto Definition",
+  --       },
+  --     },
+  --     settings = {
+  --       ["csharp|background_analysis"] = {
+  --         dotnet_compiler_diagnostics_scope = "fullSolution",
+  --       },
+  --       ["csharp|inlay_hints"] = {
+  --         csharp_enable_inlay_hints_for_implicit_object_creation = true,
+  --         csharp_enable_inlay_hints_for_implicit_variable_types = true,
+  --         csharp_enable_inlay_hints_for_lambda_parameter_types = true,
+  --         csharp_enable_inlay_hints_for_types = true,
+  --         dotnet_enable_inlay_hints_for_indexer_parameters = true,
+  --         dotnet_enable_inlay_hints_for_literal_parameters = true,
+  --         dotnet_enable_inlay_hints_for_object_creation_parameters = true,
+  --         dotnet_enable_inlay_hints_for_other_parameters = true,
+  --         dotnet_enable_inlay_hints_for_parameters = true,
+  --         dotnet_suppress_inlay_hints_for_parameters_that_differ_only_by_suffix = false,
+  --         dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = false,
+  --         dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = false,
+  --       },
+  --       ["csharp|code_lens"] = {
+  --         dotnet_enable_references_code_lens = true,
+  --       },
+  --     },
+  --   },
+  --
+  --   init = function()
+  --     -- we add the razor filetypes before the plugin loads
+  --     vim.filetype.add({
+  --       extension = {
+  --         razor = "razor",
+  --         cshtml = function(path, bufnr)
+  --           return "razor",
+  --             function(bufnr)
+  --               vim.w.fdm = "syntax"
+  --               -- comment settings
+  --               vim.bo[bufnr].formatoptions = "croql"
+  --               vim.bo[bufnr].commentstring = "<!--%s-->"
+  --             end
+  --         end,
+  --         cs = function(path, bufnr)
+  --           return "cs",
+  --             function(bufnr)
+  --               if not vim.g.filetype_cs then
+  --                 vim.g["filetype_cs"] = "cs"
+  --               end
+  --               if not vim.g.filetype_cs == "cs" then
+  --                 vim.g["filetype_cs"] = "cs"
+  --               end
+  --               vim.w.fdm = "syntax"
+  --               -- comment settings
+  --               vim.bo[bufnr].formatoptions = "croql"
+  --               vim.bo[bufnr].commentstring = "// %s"
+  --             end
+  --         end,
+  --         csx = function(path, bufnr)
+  --           return "cs",
+  --             function(bufnr)
+  --               vim.w.fdm = "syntax"
+  --               vim.bo[bufnr].formatoptions = "croql"
+  --             end
+  --         end,
+  --         --     csproj = function(path, bufnr)
+  --         --       return "cs_project",
+  --         --         function(buf)
+  --         --           -- vim.bo[buf].syn = "xml"
+  --         --           -- vim.cmd("set syntax= xml")
+  --         --           vim.bo[buf].syntax = "xml"
+  --         --           vim.bo[buf].ro = false
+  --         --           vim.b[buf].readonly = false
+  --         --           vim.opt_local.foldlevelstart = 99
+  --         --           vim.w.fdm = "syntax"
+  --         --         end
+  --         --     end,
+  --       },
+  --     })
+  --   end,
+  --   config = true,
+  -- },
+  -- {
+  --   "neovim/nvim-lspconfig",
+  --   servers = {
+  --     roslyn = {
+  --       ft = { "cs", "razor" },
+  --     },
+  --   },
+  --   setup = {
+  --     roslyn = function(_, opts) -- code
+  --       require("roslyn").setup(opts)
+  --     end,
+  --   },
+  -- },
   -- { "adamclerk/vim-razor" },
 }

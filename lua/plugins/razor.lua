@@ -1,26 +1,27 @@
-return {
-  "tris203/rzls.nvim",
-  opts = {
-    on_attach = function(client, bufnr)
-      OnAttach(client, bufnr)
-    end,
-    capabilities = vim.lsp.protocol.make_client_capabilities(),
-    path = vim.fs.normalize((vim.fn.stdpath("data") or "c:/.local/share/nvim-data") .. "/mason/bin/rzls.cmd"),
-  },
-  dependencies = {
-    {
-      "neovim/nvim-lspconfig",
-      ---@type lspconfig.options
-      servers = {
-        rzls = {
-          setup = {
-            rzls = function(_, opts) -- code
-              -- vim.notify("rzls setup being called")
-              require("rzls").setup(opts)
-            end,
-          },
-        },
-      },
-    },
-  },
-}
+return {}
+-- return {
+--   "tris203/rzls.nvim",
+--   opts = {
+--     on_attach = function(client, bufnr)
+--       OnAttach(client, bufnr)
+--     end,
+--     capabilities = vim.lsp.protocol.make_client_capabilities(),
+--     path = vim.fs.normalize((vim.fn.stdpath("data") or "c:/.local/share/nvim-data") .. "/mason/bin/rzls.cmd"),
+--   },
+--   dependencies = {
+--     {
+--       "neovim/nvim-lspconfig",
+--       ---@type lspconfig.options
+--       servers = {
+--         rzls = {
+--           setup = {
+--             rzls = function(_, opts) -- code
+--               -- vim.notify("rzls setup being called")
+--               require("rzls").setup(opts)
+--             end,
+--           },
+--         },
+--       },
+--     },
+--   },
+-- }

@@ -12,27 +12,27 @@ parser_config.fsharp = {
   filetype = "fsharp",
 }
 
-if utils.hasRepoWithName("tree-sitter-odin") then
-  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-  parser_config.odin = {
-    install_info = {
-      branch = "main",
-      url = utils.getRepoWithNameOrDefault("tree-sitter-odin", "https://github.com/ap29600/tree-sitter-odin"),
-      files = { "src/parser.c" },
-    },
-    filetype = "odin",
-  }
-else
-  local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-  parser_config.odin = {
-    install_info = {
-      branch = "main",
-      url = "https://github.com/ap29600/tree-sitter-odin",
-      files = { "src/parser.c" },
-    },
-    filetype = "odin",
-  }
-end
+-- if utils.hasRepoWithName("tree-sitter-odin") then
+--   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+--   parser_config.odin = {
+--     install_info = {
+--       branch = "main",
+--       url = utils.getRepoWithNameOrDefault("tree-sitter-odin", "https://github.com/ap29600/tree-sitter-odin"),
+--       files = { "src/parser.c" },
+--     },
+--     filetype = "odin",
+--   }
+-- else
+--   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+--   parser_config.odin = {
+--     install_info = {
+--       branch = "main",
+--       url = "https://github.com/ap29600/tree-sitter-odin",
+--       files = { "src/parser.c" },
+--     },
+--     filetype = "odin",
+--   }
+-- end
 
 if utils.hasRepoWithName("tree-sitter-jsonc") then
   local parser_config = require("nvim-treesitter.parsers").get_parser_configs()

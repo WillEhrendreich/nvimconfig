@@ -12,7 +12,7 @@ return {
   {
     "saghen/blink.cmp",
     dependencies = {
-
+      "Kaiser-Yang/blink-cmp-avante",
       -- add source
       {
         "PasiBergman/cmp-nuget",
@@ -80,6 +80,7 @@ return {
         -- with blink.compat
         compat = { "nuget" },
         default = {
+          "avante",
           "lsp",
           "path",
           "snippets",
@@ -116,6 +117,13 @@ return {
             module = "easy-dotnet.completion.blink",
             score_offset = 10000,
             async = true,
+          },
+          avante = {
+            module = "blink-cmp-avante",
+            name = "Avante",
+            opts = {
+              -- options for blink-cmp-avante
+            },
           },
           -- create provider
           nuget = {
