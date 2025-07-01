@@ -1,37 +1,14 @@
 local util = require("config.util")
 local LazyVimUtil = require("lazyvim.util")
 local hasCopilotChat = LazyVimUtil.has("CopilotChat.nvim")
-if hasCopilotChat then
-  -- vim.notify("CopilotChat found")
-else
-  -- vim.notify("CopilotChat not found, skipping some config properties")
-end
-local prompts = {
-  -- Code related prompts
-  Explain = "Please explain how the following code works.",
-  Review = "Please review the following code and provide suggestions for improvement.",
-  Tests = "Please explain how the selected code works, then generate unit tests for it.",
-  Refactor = "Please refactor the following code to improve its clarity and readability.",
-  FixCode = "Please fix the following code to make it work as intended.",
-  FixError = "Please explain the error in the following text and provide a solution.",
-  BetterNamings = "Please provide better names for the following variables and functions.",
-  Documentation = "Please provide documentation for the following code.",
-  SwaggerApiDocs = "Please provide documentation for the following API using Swagger.",
-  SwaggerJsDocs = "Please write JSDoc for the following API using Swagger.",
-  -- Text related prompts
-  Summarize = "Please summarize the following text.",
-  Spelling = "Please correct any grammar and spelling errors in the following text.",
-  Wording = "Please improve the grammar and wording of the following text.",
-  Concise = "Please rewrite the following text to make it more concise.",
-}
+local funcLeaning =
+  "Always prefer Functional Programming paradigms, such as immutability, pure functions, and higher-order functions. Avoid side effects and mutable state where possible. Use recursion and higher-order functions to express complex logic in a clear and concise manner."
 local noChatOpts = {
   debug = false, -- Enable debug logging
   proxy = nil, -- [protocol://]host[:port] Use this proxy
   allow_insecure = true, -- Allow insecure server connections
 
-  system_prompt = prompts.COPILOT_INSTRUCTIONS, -- System prompt to use
-  -- model = "gpt-4", -- GPT model to use, 'gpt-3.5-turbo' or 'gpt-4'
-  model = "o3-mini", -- GPT model to use, 'gpt-3.5-turbo' or 'gpt-4'
+  model = "gpt-4.1", -- GPT model to use,
   temperature = 0.1, -- GPT temperature
 
   question_header = "", -- Header to use for user questions
@@ -51,21 +28,54 @@ local noChatOpts = {
 
   -- default prompts
   prompts = {
+
     Explain = {
-      prompt = "/COPILOT_EXPLAIN Write an explanation for the code above as paragraphs of text.",
+      prompt = funcLeaning
+        .. "Write an explanation for the code above as paragraphs of text. Explain like I'm a ten year old, who knows basic programming concepts and loves functional programming, but needs clear imagery to build a mental model from. ",
     },
     Tests = {
-      prompt = "/COPILOT_TESTS Write a set of detailed unit test functions for the code above.",
+      prompt = funcLeaning
+        .. "Write a set of detailed unit test functions for the code.  If the current language is a dotnet language, prefer writing fsharp tests using the Expecto library, and in the Expecto.Flip style where the result can be piped into the expect assertion. ",
     },
     Fix = {
-      prompt = "/COPILOT_FIX There is a problem in this code. Rewrite the code to show it with the bug fixed.",
+      prompt = funcLeaning .. "There is a problem in this code. Rewrite the code to show it with the bug fixed. ",
     },
     Optimize = {
-      prompt = "/COPILOT_REFACTOR Optimize the selected code to improve performance and readablilty.",
+      prompt = funcLeaning .. "Optimize the selected code to improve performance and readablilty.",
     },
     Docs = {
-      prompt = "/COPILOT_REFACTOR Write documentation for the selected code. The reply should be a codeblock containing the original code with the documentation added as comments. Use the most appropriate documentation style for the programming language used (e.g. JSDoc for JavaScript, docstrings for Python etc.",
+      prompt = funcLeaning
+        .. "Write documentation for the selected code. The reply should be a codeblock containing the original code with the documentation added as comments. Use the most appropriate documentation style for the programming language used (e.g. JSDoc for JavaScript, docstrings for Python etc.",
     },
+    Review = {
+      prompt = funcLeaning .. "Please review the following code and provide suggestions for improvement.",
+    },
+    Refactor = {
+      prompt = funcLeaning .. "Please refactor the following code to improve its clarity and readability.",
+    },
+    FixCode = {
+      prompt = funcLeaning .. "Please fix the following code to make it work as intended.",
+    },
+    FixError = {
+      prompt = funcLeaning .. "Please explain the error in the following text and provide a solution.",
+    },
+    BetterNamings = {
+      prompt = funcLeaning .. "Please provide better names for the following variables and functions.",
+    },
+    Documentation = {
+      prompt = funcLeaning .. "Please provide documentation for the following code.",
+    },
+    SwaggerApiDocs = {
+      prompt = funcLeaning .. "Please provide documentation for the following API using Swagger.",
+    },
+    SwaggerJsDocs = {
+      prompt = funcLeaning .. "Please write JSDoc for the following API using Swagger.",
+    },
+    -- Text related prompts
+    Summarize = { prompt = "Please summarize the following text." },
+    Spelling = { prompt = "Please correct any grammar and spelling errors in the following text." },
+    Wording = { prompt = "Please improve the grammar and wording of the following text." },
+    Concise = { prompt = "Please rewrite the following text to make it more concise." },
   },
 
   -- default window options
@@ -135,17 +145,15 @@ local getChatOpts = function()
       prompts = {
         FixDiagnostic = {
           prompt = "Please assist with the following diagnostic issue in file:",
-          selection = select.diagnostics,
+          selection = "context.diagnostics",
         },
         Commit = {
           prompt = "Write commit message for the change with commitizen convention. Make sure the title has maximum 50 characters and message is wrapped at 72 characters. Wrap the whole message in code block with language gitcommit.",
-          selection = select.gitdiff,
+          selection = "context.gitdiff",
         },
         CommitStaged = {
           prompt = "Write commit message for the change with commitizen convention. Make sure the title has maximum 50 characters and message is wrapped at 72 characters. Wrap the whole message in code block with language gitcommit.",
-          selection = function(source)
-            return select.gitdiff(source, true)
-          end,
+          selection = "context.gitdiff",
         },
       },
     })
