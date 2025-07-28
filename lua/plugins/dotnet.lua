@@ -1,10 +1,13 @@
 local util = require("config.util")
-return {
+local r = {
   {
     "MoaidHathot/dotnet.nvim",
-    dev = util.hasRepoWithName("dotnet.nvim"),
-    dir = util.getRepoWithName("dotnet.nvim"),
     cmd = "DotnetUI",
     opts = {},
   },
 }
+if util.hasRepoWithName("dotnet.nvim") then
+  r[1].dev = true
+  r[1].dir = util.getRepoWithName("dotnet.nvim")
+end
+return r
