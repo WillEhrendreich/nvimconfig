@@ -7,5 +7,8 @@ return {
   },
   opts = {
     automatic_installation = { exclude = { "markdownlint-cli2" } },
+    ensure_installed = {
+      "fsautocomplete",
+    },
   },
 }
