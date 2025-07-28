@@ -17,10 +17,8 @@ local util = require("config.util")
 ---@field settings lspconfig.settings.fsautocomplete
 ---
 
-return {
+local r = {
   "WillEhrendreich/Ionide-nvim",
-  dev = util.hasRepoWithName("Ionide-nvim"),
-  dir = util.getRepoWithName("Ionide-nvim"),
   dependencies = {
     {
       "williamboman/mason.nvim",
@@ -75,3 +73,9 @@ return {
     },
   },
 }
+
+if util.hasRepoWithName("Ionide-nvim") then
+  r.dir = util.getRepoWithName("Ionide-nvim")
+  r.dev = true
+end
+return r
