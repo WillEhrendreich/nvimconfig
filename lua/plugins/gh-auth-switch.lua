@@ -1,6 +1,6 @@
 local util = require("config.util")
 
-return {
+local r = {
   "WillEhrendreich/gh-auth-switch.nvim",
   dev = util.hasRepoWithName("gh-auth-switch"),
   dir = util.getRepoWithName("gh-auth-switch"),
@@ -16,3 +16,9 @@ return {
   },
   dependencies = {},
 }
+
+if util.hasRepoWithName("gh-auth-switch") then
+  r.dev = util.hasRepoWithName("gh-auth-switch")
+  r.dir = util.getRepoWithName("gh-auth-switch")
+end
+return r
