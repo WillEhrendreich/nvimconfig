@@ -3,7 +3,6 @@
 vim.g["sqlite_clib_path"] = "C:/ProgramData/chocolatey/lib/SQLite/tools/sqlite3.dll"
 return {
   "ibhagwan/fzf-lua",
-
   keys = {
 
     -- disable the keymap to grep files
