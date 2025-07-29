@@ -2,8 +2,6 @@ local util = require("config.util")
 
 local r = {
   "WillEhrendreich/gh-auth-switch.nvim",
-  dev = util.hasRepoWithName("gh-auth-switch"),
-  dir = util.getRepoWithName("gh-auth-switch"),
   opts = {
     dirs = {
       ["C:/Code/repos/Ionide-nvim/"] = "WillEhrendreich",
