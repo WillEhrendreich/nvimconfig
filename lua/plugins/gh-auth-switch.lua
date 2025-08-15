@@ -1,11 +1,11 @@
 local util = require("config.util")
 
 local r = {
-  "WillEhrendreich/gh-auth-switch.nvim",
+  "WillEhrendreich/gh-auth-switch",
   opts = {
     dirs = {
-      ["C:/Code/repos/Ionide-nvim/"] = "WillEhrendreich",
-      ["C:/Code/repos/gh-auth-switch"] = "WillEhrendreich",
+      -- ["C:/Code/repos/Ionide-nvim/"] = "WillEhrendreich",
+      -- ["C:/Code/repos/gh-auth-switch"] = "WillEhrendreich",
     },
   },
   dependencies = {},

@@ -1,6 +1,7 @@
 -- require("telescope").load_extension("macros")
-
-vim.g["sqlite_clib_path"] = "C:/ProgramData/chocolatey/lib/SQLite/tools/sqlite3.dll"
+if vim.fn.has("win32") then
+  vim.g["sqlite_clib_path"] = "C:/ProgramData/chocolatey/lib/SQLite/tools/sqlite3.dll"
+end
 return {
   "ibhagwan/fzf-lua",
   keys = {
