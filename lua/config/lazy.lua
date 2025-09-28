@@ -64,7 +64,11 @@ require("lazy").setup({
       if util.hasReposEnvironmentVarSet() then
         return util.getReposVariableIfSet()
       else
-        return "c:/code/repos"
+        if vim.fn.has("win32") == 1 then
+          return "c:/code/repos"
+        else
+          return "~/code/repos"
+        end
       end
     end)(),
     ---@type string[] plugins that match these patterns will use your local versions instead of being fetched from GitHub

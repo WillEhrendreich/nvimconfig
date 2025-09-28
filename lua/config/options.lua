@@ -43,3 +43,5 @@ if vim.opt.diff:get() == true then
   vim.cmd.colorscheme("tokyonight-night")
   vim.cmd("tokyonight-night")
 end
+
+opt.winborder = "rounded"

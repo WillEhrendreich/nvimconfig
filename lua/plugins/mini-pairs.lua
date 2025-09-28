@@ -1,6 +1,6 @@
 return {
 
-  "echasnovski/mini.pairs",
+  "nvim-mini/mini.pairs",
   enabled = false,
   -- In which modes mappings from this `config` should be created
   modes = { insert = false, command = false, terminal = false },

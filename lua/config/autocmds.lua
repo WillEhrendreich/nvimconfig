@@ -42,8 +42,8 @@ autocmd({ "BufNewFile", "BufReadPost", "FileType" }, {
   end,
 })
 
-autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
-  pattern = { "csproj", "*.fsproj", "cs_project", "fsharp_project" },
+autocmd({ "FileType" }, {
+  pattern = { "csproj", "fsproj", "cs_project", "fsharp_project" },
   group = grp("ProjAutocommand", { clear = true }),
   callback = function()
     vim.cmd("set commentstring=<!--%s-->")
@@ -76,9 +76,9 @@ autocmd("FileType", {
   end,
 })
 
-autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
+autocmd({ "FileType" }, {
   desc = "changes comment style, folding for xaml",
-  pattern = "*.axaml",
+  pattern = "axaml",
   group = grp("axamlCommands", { clear = true }),
   callback = function()
     vim.schedule_wrap(function()
@@ -92,23 +92,23 @@ autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   end,
 })
 
--- autocmd("BufReadPost", {
---   desc = "Make sure the filetype automatically is set to include comments.",
---   group = grp("MakeJsonFTJsonC", { clear = true }),
---   pattern = { "json", "*.json" },
---   callback = function(_)
---     -- vim.notify("im totally going to set this filetype to jsonc. dawg")
---     vim.schedule_wrap(function()
---       -- vim.notify("im totally going to set this filetype to jsonc. dawg")
---       vim.cmd("set filetype=jsonc")
---       vim.cmd("set syntax=jsonc")
---       -- vim.b[0].filetype("jsonc")
---       -- vim.notify(
---       --   "im totally going to set this filetype to " .. vim.opt.filetype .. " which by this point i hope is jsonc. dawg"
---       -- )
---     end)
---   end,
--- })
+autocmd({ "FileType"}, {
+  desc = "Make sure the filetype automatically is set to include comments.",
+  group = grp("MakeJsonFTJsonC", { clear = true }),
+  pattern = "json",
+  callback = function(_)
+    -- vim.notify("im totally going to set this filetype to jsonc. dawg")
+    vim.schedule_wrap(function()
+      vim.notify("im totally going to set this filetype to jsonc. dawg")
+      vim.cmd("set filetype=jsonc")
+      vim.cmd("set syntax=jsonc")
+      -- vim.b[0].filetype("jsonc")
+      -- vim.notify(
+      --   "im totally going to set this filetype to " .. vim.opt.filetype .. " which by this point i hope is jsonc. dawg"
+      -- )
+    end)
+  end,
+})
 
 autocmd({ "BufNewFile", "BufRead" }, {
   desc = "Make sure tex type automatically compiles ",
@@ -154,17 +154,17 @@ autocmd({ "BufReadPost", "FileType" }, {
   end,
 })
 
-autocmd({ "BufReadPost", "FileType" }, {
-  group = grp("workspace-diagnostics", { clear = true }),
-  pattern = { "*" },
-  desc = "Populate workspace diagnostics",
-  callback = function()
-    if LazyHas("workspace_diagnostics") then
-      require("workspace-diagnostics").populate_workspace_diagnostic()
-    end
-  end,
-})
-
+-- autocmd({ "BufReadPost", "FileType" }, {
+--   group = grp("workspace-diagnostics", { clear = true }),
+--   pattern = { "*" },
+--   desc = "Populate workspace diagnostics",
+--   callback = function()
+--     if LazyHas("workspace_diagnostics") then
+--       require("workspace-diagnostics").populate_workspace_diagnostic()
+--     end
+--   end,
+-- })
+--
 grp("CppCommands", { clear = true })
 autocmd({ "BufNewFile", "BufReadPre", "FileType" }, {
   desc = "changes comment string for cpp and similar files ",

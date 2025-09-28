@@ -933,19 +933,6 @@ local function pick_process(opts)
   end
 end
 
--- if vim.g.lsp_handlers_enabled then
--- vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
--- vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
--- end
--- --- Check if a buffer is valid
--- -- @param bufnr the buffer to check
--- -- @return true if the buffer is valid or false
--- function Lspis_valid_buffer(bufnr)
---   if not bufnr or bufnr < 1 then return false end
---   return vim.bo[bufnr].buflisted and vim.api.nvim_buf_is_valid(bufnr)
--- end
---
---
 local function get_dll()
   return coroutine.create(function(dap_run_co)
     local dllChoice = GetDotnetDllPath()
@@ -1221,21 +1208,21 @@ local function dapconfig(_, opts)
             },
           }
         end
-        dap.configurations.cs = { dotnetDapConfig }
-        dap.configurations.fsharp = { dotnetDapConfig }
-        dap.adapters.lldb = {
-          name = "codelldb",
-          type = "executable",
+        dap.configurations.cs = dotnetDapConfig
+        dap.configurations.fsharp = dotnetDapConfig
+        -- dap.adapters.lldb = {
+        --   name = "codelldb",
+        --   type = "executable",
 
-          -- command = vim.fs.normalize((vim.fs.find("codelldb.exe", { path = vim.fn.stdpath("data") }))[1]),
-          command = require("mason-registry").get_package("codelldb"):get_install_path()
-            .. "/extension/adapter/codelldb",
+        -- command = vim.fs.normalize((vim.fs.find("codelldb.exe", { path = vim.fn.stdpath("data") }))[1]),
+        -- command = require("mason-registry").get_package("codelldb"):get_install_path()
+        --   .. "/extension/adapter/codelldb",
 
-          --   executable = {
-          --     command = ,
-          --     args = { "--port", "${port}" },
-          --   },
-        }
+        --   executable = {
+        --     command = ,
+        --     args = { "--port", "${port}" },
+        --   },
+        -- }
         -- dap.adapters.codelldb = {
         --   name = "codelldb",
         --   type = "server",
@@ -1250,7 +1237,7 @@ local function dapconfig(_, opts)
         --   detatched = false,
         -- }
 
-        dap.adapters["coreclr"] = {
+        dap.adapters.coreclr = {
           name = "netCoreDbg",
           type = "executable",
           -- command = (vim.fs.find("netcoredbg.exe", { path = vim.fn.stdpath("data") }))[1],

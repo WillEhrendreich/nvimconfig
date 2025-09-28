@@ -495,7 +495,7 @@ function M.DisplayConfirmDialog(opts, callback)
     if not col_end then
       col_end = col_start + 1
     end
-    vim.api.nvim_buf_add_highlight(bufnr, ns, group, lnum - 1, col_start, col_end)
+    vim.hl.range(bufnr, ns, group, lnum - 1, col_start, col_end)
   end
 
   local height = M.calculate_height(#lines, M.confirm)

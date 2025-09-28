@@ -1,18 +1,26 @@
 local uc = vim.api.nvim_create_user_command
+local M = {}
+
 function Reload(m)
   vim.notify("attempting to reload " .. m, vim.log.levels.INFO)
   require("plenary.reload").reload_module(m)
   vim.notify("assuming reload was successful, you should now have the current version of " .. m, vim.log.levels.INFO)
 end
 
+M.reload = Reload
+
 function LazyHas(name)
   return require("lazyvim.util").has(name)
   -- require("lazyvim.util").has("easy-dotnet")
 end
 
+M.has = LazyHas
+
 function LazyHasI(name)
   vim.notify(vim.inspect(LazyHas(name)))
 end
+
+M.hasI = LazyHasI
 
 uc("Reload", function()
   vim.cmd.w()
@@ -21,7 +29,6 @@ end, {
   desc = "Reload module",
 })
 -- local lazyvim = require("lazyvim")
-local M = {}
 
 function M.stringContains(str, searchedForString)
   return string.match(str, searchedForString)
@@ -99,35 +106,6 @@ function M.getReposVariableIfSet()
   return M.getEnvVariableOrEmptyString("repos")
 end
 
--- Finds any files or directories given in {names} starting from {path}. If
--- {upward} is "true" then the search traverses upward through parent
--- directories; otherwise, the search traverses downward. Note that downward
--- searches are recursive and may search through many directories! If {stop}
--- is non-nil, then the search stops when the directory given in {stop} is
--- reached. The search terminates when {limit} (default 1) matches are found.
--- The search can be narrowed to find only files or only directories by
--- specifying {type} to be "file" or "directory", respectively.
---
--- Examples:
---
--- -- location of Cargo.toml from the current buffer's path
--- local cargo = vim.fs.find('Cargo.toml', {
---   upward = true,
---   stop = vim.loop.os_homedir(),
---   path = vim.fs.dirname(vim.api.nvim_buf_get_name(0)),
--- })
---
--- -- list all test directories under the runtime directory
--- local test_dirs = vim.fs.find(
---   {'test', 'tst', 'testdir'},
---   {limit = math.huge, type = 'directory', path = './runtime/'}
--- )
---
--- -- get all files ending with .cpp or .hpp inside lib/
--- local cpp_hpp = vim.fs.find(function(name, path)
---   return name:match('.*%.[ch]pp$') and path:match('[/\\\\]lib$')
--- end, {limit = math.huge, type = 'file'})
-
 function M.getRepoWithName(name)
   if M.hasReposEnvironmentVarSet() then
     return (
@@ -183,6 +161,7 @@ function Watch_file(fname)
     end)
   )
 end
+
 vim.api.nvim_command("command! -nargs=1 Watch call luaeval('Watch_file(_A)', expand('<args>'))")
 
 vim.api.nvim_create_user_command("WatchCurrentFile", function()
@@ -348,14 +327,6 @@ end
 --   M.scratch(arg)
 --   --local M = {}
 -- end, {})
-
----this is a test to see about structure and calling things
----@param s string
----@return string
-function M.StringAppendWithBLAH(s)
-  local result = s .. "BLAH"
-  return result
-end
 
 --- Merge extended options with a default table of options
 -- @param default the default table that you want to merge into

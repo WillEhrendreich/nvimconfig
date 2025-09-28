@@ -84,14 +84,14 @@ OnAttach =
       client.server_capabilities.foldingRangeProvider = false
     end
     if client.name == "ionide" then
-      client.server_capabilities.documentFormattingProvider = false
+      -- client.server_capabilities.documentFormattingProvider = false
     end
     if client.name == "sqls" then
       client.server_capabilities.documentFormattingProvider = false
-      require("sqls").on_attach(client, buffer)
+      require("sqls"):on_attach(buffer)
     end
     if client.name == "csharp_ls" or client.name == "roslyn" then
-      if client.supports_method(require("vim.lsp.protocol").Methods.textDocument_diagnostic) then
+      if client:supports_method(require("vim.lsp.protocol").Methods.textDocument_diagnostic) then
         vim.api.nvim_create_autocmd("BufEnter", {
           buffer = buffer,
           callback = function()
@@ -104,6 +104,8 @@ OnAttach =
       end
     end
   end
+
+vim.lsp.enable("ionide")
 
 return {
   "neovim/nvim-lspconfig",
@@ -120,11 +122,12 @@ return {
     keys[#keys + 1] = {
       "K",
       function()
-        if require("lazyvim.util").has("hover.nvim") then
-          require("hover").hover()
-        else
-          vim.lsp.buf.hover()
-        end
+        -- if require("lazyvim.util").has("hover.nvim") then
+        --   local hov= require("hover")
+        --   hov
+        -- else
+        vim.lsp.buf.hover()
+        -- end
       end,
       "Hover",
     }
@@ -307,6 +310,7 @@ return {
     servers = {
       msbuild_project_tools_server = {
         ft = { "csproj", "fsharp_project" },
+        filetypes = { "csproj", "fsharp_project" },
         cmd = { "dotnet", "c:/.local/share/language-servers/msbuild/MSBuildProjectTools.LanguageServer.Host.dll" },
         on_attach = function(client, bufnr)
           vim.notify("msbuild_project_tools_server attached")
@@ -329,12 +333,14 @@ return {
           },
         },
       },
+      -- ionide={},
     },
     -- you can do any additional lsp server setup here
     -- return true if you don't want this server to be setup with lspconfig
     ---@type table<string, fun(server:string, opts:_.lspconfig.options):boolean?>
     setup = {
       fsautocomplete = function(_, opts)
+        print("I should return true, this should under no circumstances enablell fsautocomplete")
         return true
       end,
       -- example to setup with typescript.nvim

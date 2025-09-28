@@ -21,11 +21,11 @@ return {
       },
       { "L3MON4D3/LuaSnip", version = "v2.*" },
     },
-
+    --
     ---@module 'blink.cmp'
     ---@type blink.cmp.Config
     opts = {
-      fuzzy = { implementation = "prefer_rust" },
+      -- fuzzy = { implementation = "prefer_rust" },
       snippets = {
         preset = "default",
       },
@@ -57,9 +57,9 @@ return {
           auto_show = true,
           -- auto_show_delay_ms = 200,
         },
-        ghost_text = {
-          enabled = vim.g.ai_cmp,
-        },
+        -- ghost_text = {
+        --   enabled = vim.g.ai_cmp,
+        -- },
         list = {
           selection = {
             preselect = false,
@@ -71,10 +71,10 @@ return {
       -- experimental signature help support
       signature = { enabled = true },
 
-      cmdline = {
-        sources = {},
-      },
-
+      -- cmdline = {
+      --   sources = {},
+      -- },
+      --
       sources = {
         -- adding any nvim-cmp sources here will enable them
         -- with blink.compat

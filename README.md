@@ -136,7 +136,7 @@ I've implemented a similar system in this my [pwsh profile](https://github.com/W
 
 ### lsp-installer
 
-- [williamboman/mason.nvim](https://dotfyle.com/plugins/williamboman/mason.nvim)
+- [mason-org/mason.nvim](https://dotfyle.com/plugins/mason-org/mason.nvim)
 
 ### lua-colorscheme
 

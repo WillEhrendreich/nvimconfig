@@ -1,7 +1,7 @@
 -- local path = require("plenary.path")
 return {
   -- {
-  --   "echasnovski/mini.test",
+  --   "nvim-mini/mini.test",
   --   config = function()
   --     require("mini.test").setup({})
   --   end,

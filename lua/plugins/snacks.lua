@@ -13,7 +13,8 @@ return {
       duration = { total = 50 }, -- ms per step
       easing = "linear",
       -- easing = "inCirc",
-      fps = 144, -- frames per second. Global setting for all animations
+      -- fps = 144, -- frames per second. Global setting for all animations
+      fps = 30, -- frames per second. Global setting for all animations
     },
     image = {},
   },
