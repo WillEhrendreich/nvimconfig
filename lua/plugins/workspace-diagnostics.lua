@@ -1,1 +1,2 @@
-return { "artemave/workspace-diagnostics.nvim" }
+return {}
+-- return { "artemave/workspace-diagnostics.nvim" }

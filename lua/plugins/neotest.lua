@@ -16,7 +16,6 @@ return {
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
       "WillEhrendreich/neotest-dotnet",
-      "antoinemadec/FixCursorHold.nvim",
       "nvim-neotest/neotest-plenary",
       "nvim-neotest/neotest-vim-test",
     },

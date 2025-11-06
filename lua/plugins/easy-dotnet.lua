@@ -57,6 +57,7 @@ return {
         run_all = { lhs = "<leader>R", desc = "run all tests" },
         run = { lhs = "<leader>r", desc = "run test" },
         peek_stacktrace = { lhs = "<leader>p", desc = "peek stacktrace of failed test" },
+        peek_stack_trace_from_buffer = { lhs = "<leader>stb", desc = "peek stacktrace of failed test from buffer" },
         expand = { lhs = "l", desc = "expand" },
         expand_node = { lhs = "E", desc = "expand node" },
         expand_all = { lhs = "-", desc = "expand all" },

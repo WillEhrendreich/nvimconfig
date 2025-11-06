@@ -1,3 +1,3 @@
 return {
-"KostkaBrukowa/definition-or-references.nvim"
-} 
+  "KostkaBrukowa/definition-or-references.nvim",
+}
