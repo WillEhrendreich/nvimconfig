@@ -1,3 +1,0 @@
-return {
-  "rafcamlet/nvim-luapad",
-}

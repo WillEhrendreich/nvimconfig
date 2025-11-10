@@ -1,11 +1,6 @@
 -- Keymaps are automatically loaded on the VeryLazy event
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
-
--- below is a way to test the lazyvim util has name
--- vim.notify(vim.inspect(require("lazyvim.util").has("nvim-luadev")))
---
-
-local LazyVimUtil = require("lazyvim.util")
+-- Add any additional keymaps here
 local lazyutil = require("lazy.util")
 
 local function map(mode, lhs, rhs, opts)
@@ -22,36 +17,6 @@ local function map(mode, lhs, rhs, opts)
   else
     vim.keymap.set(mode, lhs, rhs, opts)
   end
-end
--- must delete these or strange things occur
--- vim.api.nvim_del_keymap("n", "<leader>w")
---vim.api.nvim_del_keymap("n", "<leader>ww")
---vim.api.nvim_del_keymap("n", "<leader>wd")
--- vim.api.nvim_del_keymap("n", "<leader>w-")
--- vim.api.nvim_del_keymap("n", "<leader>w|")
--- vim.api.nvim_del_keymap("n", "grn")
---vim.api.nvim_del_keymap("n", "gra")
--- vim.api.nvim_del_keymap("n", "grr")
-
-local function InDotnetBuffer(bufnr)
-  local easy = require("easy-dotnet")
-  return easy.is_dotnet_project()
-  -- local ft = vim.bo[bufnr].filetype
-  -- local isDotnet = ft == "csx"
-  --
-  --   or ft == "cs"
-  --   or ft == "csproj"
-  --   or ft == "cs_project"
-  --   or ft == "razor"
-  --   or ft == "cshtml"
-  --   or ft == "vb"
-  --   or ft == "cs"
-  --   or ft == "fsharp"
-  --   or ft == "fsharp_project"
-end
-
-local function compare_paths(path1, path2)
-  return vim.fs.normalize(path1):lower() == vim.fs.normalize(path2):lower()
 end
 
 if require("lazyvim.util").has("csvToMdTable") then
@@ -104,7 +69,7 @@ end
 map("n", "<C-ScrollWheelUp>", ":set guifont=+<CR>", "Font Size +")
 map("n", "<C-ScrollWheelDown>", ":set guifont=-<CR>", "Font Size -")
 
-if LazyHas("text-case.nvim") then
+if require("lazyvim.util").has("text-case.nvim") then
   map("v", "<leader>`", "<cmd>TextCaseOpenTelescope<CR>", "Neotree Toggle")
 end
 
@@ -117,7 +82,13 @@ if require("lazyvim.util").has("dotnet.nvim") then
   map("n", "<leader>npj", "<cmd>:DotnetUI project package remove<CR>", ".NET remove project package")
 end
 
-if LazyVimUtil.has("neo-tree.nvim") then
+if require("lazyvim.util").has("snacks.nvim") then
+  map("n", "<leader>o", function()
+    Snacks.explorer()
+  end, "Snacks Explorer Toggle")
+end
+
+if require("lazyvim.util").has("neo-tree.nvim") then
   map("n", "<leader>o", "<cmd>Neotree toggle<cr>", "Neotree Toggle")
 end
 
@@ -127,7 +98,7 @@ if require("lazyvim.util").has("treesj") then
   map("n", "<leader><leader>s, require('treesj').split()", "Split")
 end
 
-if LazyVimUtil.has("NeoComposer.nvim") then
+if require("lazyvim.util").has("NeoComposer.nvim") then
   map("n", "<leader>me", function()
     require("NeoComposer.ui").edit_macros()
   end, "Edit Macros")
@@ -200,7 +171,7 @@ map({ "n" }, "gx", function()
       vim.notify("trying to open " .. stringToOpen)
       lazyutil.open(stringToOpen)
     else
-      if LazyVimUtil.has("lsplinks.nvim") then
+      if require("lazyvim.util").has("lsplinks.nvim") then
         map("n", "gx", function()
           vim.notify("I have lsplinks")
           require("lsplinks").gx()
@@ -225,7 +196,7 @@ map({ "v" }, "gx", function()
   end
 end, "open selection if possible")
 
-if LazyVimUtil.has("snacks.nvim") then
+if require("lazyvim.util").has("snacks.nvim") then
   map("n", "<leader>ST", function()
     Snacks.scratch()
   end, "toggle snack scratch buffer")
@@ -234,7 +205,7 @@ if LazyVimUtil.has("snacks.nvim") then
   end, "select snack scratch buffer")
 end
 
-if LazyVimUtil.has("mini.comment") then
+if require("lazyvim.util").has("mini.comment") then
   map("n", "<leader>/", 'v:lua.MiniComment.operator() . "_"', { expr = true, desc = "Comment line" })
   map(
     "x",
@@ -252,13 +223,13 @@ map({ "v", "x" }, "<M-CR>", function()
   local lua_ls = vim.lsp.get_clients({ name = "lua_ls" })[1]
 
   if lua_ls then
-    if LazyVimUtil.has("nvim-luadev") then
+    if require("lazyvim.util").has("nvim-luadev") then
       local text = vim.fn.join(require("config.util").GetVisualSelection(), "\n")
       require("luadev").exec(text)
     end
   ---@type vim.lsp.Client
   else
-    local ionide = vim.lsp.get_clients({ name = "ionide" })[1]
+    local ionide = vim.lsp.get_clients({ name = "fsautocomplete" })[1]
     if ionide then
       local sendFunc = require("ionide").SendSelectionToFsi
       if sendFunc then
@@ -272,7 +243,7 @@ map("n", "<M-CR>", function()
   ---@type vim.lsp.Client
   local lua_ls = vim.lsp.get_clients({ name = "lua_ls" })[1]
   if lua_ls then
-    if LazyVimUtil.has("nvim-luadev") then
+    if require("lazyvim.util").has("nvim-luadev") then
       require("luadev").exec(vim.api.nvim_get_current_line())
     end
   end
@@ -405,7 +376,7 @@ map("x", "<leader>/", function()
   -- local pos = unpack(vim.fn.getpos(">"), 2)
   -- local mc = require("mini.comment").MiniComment
   local s, e = GetVisualStartAndEndLineNumbers(false, true, false)
-  if LazyVimUtil.has("mini.comment") then
+  if require("lazyvim.util").has("mini.comment") then
     require("mini.comment").toggle_lines(s, e)
   else
     vim.notify("no mini.comment found, please install it or change this mapping to point to something else")
@@ -490,7 +461,7 @@ map("n", "<leader>.", function()
   vim.notify("CWD set to: " .. here)
 end, "Set CWD to here")
 
-if LazyVimUtil.has("nvim-treesitter") then
+if require("lazyvim.util").has("nvim-treesitter") then
   map("n", "<leader><leader>l", function()
     vim.cmd("TSTextobjectSwapNext @parameter.inner")
   end, "swap param next")
@@ -504,7 +475,7 @@ map("n", "<leader><leader>x", function()
   vim.cmd("source %")
 end, "save and source current file")
 map("n", "<leader><leader>i", function()
-  if LazyVimUtil.has("nvim-toggler") then
+  if require("lazyvim.util").has("nvim-toggler") then
     require("nvim-toggler").toggle()
   else
     print("not implemented yet")
@@ -534,7 +505,7 @@ map("n", "<K>", function()
   end
 end, "Hover")
 
-if LazyVimUtil.has("telescope.nvim") then -- setup telescope mappings if available
+if require("lazyvim.util").has("telescope.nvim") then -- setup telescope mappings if available
   map("n", "<leader>ft", function()
     require("telescope.builtin").builtin()
   end, "Telescope") -- map("n","<leader>gd", function()
@@ -549,13 +520,13 @@ if LazyVimUtil.has("telescope.nvim") then -- setup telescope mappings if availab
   end, "Telescope lsp workspace symbols")
 end
 
-if LazyVimUtil.has("definition-or-references.nvim") then
+if require("lazyvim.util").has("definition-or-references.nvim") then
   map("n", "gd", function()
     require("definition-or-references").definition_or_references()
   end, "Go to definition or references")
 end
 
-if LazyVimUtil.has("toggleterm.nvim") then
+if require("lazyvim.util").has("toggleterm.nvim") then
   --if fn.executable "lazygit" == 1 then
 
   -- term_details can be either a string for just a command or
@@ -797,7 +768,7 @@ if require("lazyvim.util").has("nvim-dap") and vim.opt.diff:get() == false then
     end, "Debugger Hover")
   end
 
-  if LazyVimUtil.has("hydra.nvim") then
+  if require("lazyvim.util").has("hydra.nvim") then
     map("n", "<leader>dh", function()
       -- if vim.cmd.PreDebugTask() then
       ---@type Hydra
@@ -837,249 +808,4 @@ if require("lazyvim.util").has("nvim-dap") and vim.opt.diff:get() == false then
     end, "Dbee Yank All As Table")
   end
 end
-
---   n = {
---     ["<leader>"] = {
---       -- b = { "<cmd>read !getbib -c<cr>", "Get Bib" },
---       d = {
---         name = "Duck...",
---         -- popular candidates: 🦆 ඞ 🦀 🐈 🐎 🦖 🐤
---         -- d = { function() require("duck").hatch("🦆", 10) end },
---         -- c = { function() require("duck").hatch("🐈", 0.80) end },
---         -- k = { function() require("duck").cook() end },
---       },
 --
---       I = {
---         name = "Invert Word under Cursor",
---       },
---       -- r = { "<cmd>SendHere<cr>", "Set REPL" },
---       N = { "<cmd>tabnew<cr>", "New Buffer" },
---       -- ["<cr>"] = { '<esc>/<++><cr>"_c4l', "Next Template" },
---       ["."] = { "<cmd>cd %:p:h<cr>", "Set CWD" },
---
---       -- a = {
---       --   name = "Annotate",
---       --   ["<cr>"] = { function() require("neogen").generate() end, "Current" },
---       --   c = { function() require("neogen").generate { type = "class" } end, "Class" },
---       --   f = { function() require("neogen").generate { type = "func" } end, "Function" },
---       --   t = { function() require("neogen").generate { type = "type" } end, "Type" },
---       --   F = { function() require("neogen").generate { type = "file" } end, "File" },
---       -- },
---       --
---       f = {
---         name = "Telescope",
---         ["?"] = { "<cmd>Telescope help_tags<cr>", "Find Help" },
---         ["'"] = { "<cmd>Telescope marks<cr>", "Marks" },
---         -- B = { "<cmd>Telescope bibtex<cr>", "BibTeX" },
---         e = { "<cmd>Telescope file_browser<cr>", "Explorer" },
---         h = { "<cmd>Telescope oldfiles<cr>", "History" },
---         --a        h = { function() require("telescope").load_extension "file_browser" end, "History" },
---         k = { "<cmd>Telescope keymaps<cr>", "Keymaps" },
---         m = { "<cmd>Telescope man_pages<cr>", "Man Pages" },
---         M = { "<cmd>Telescope media_files<cr>", "Media" },
---         n = { "<cmd>Telescope notify<cr>", "Notifications" },
---         p = { "<cmd>Telescope project<cr>", "Projects" },
---         r = { "<cmd>Telescope registers<cr>", "Registers" },
---         t = { "<cmd>Telescope colorscheme<cr>", "Themes" },
---       },
---
---       m = {
---         name = "Compiler",
---         -- k = {
---         --   function()
---         --     vim.cmd "silent! write"
---         --     local filename = vim.fn.expand "%:t"
---         --     utils.async_run(
---         --       { "compiler", vim.fn.expand "%:p" },
---         --       function() utils.quick_notification("Compiled " .. filename) end
---         --     )
---         --   end,
---         --   "Compile",
---         -- },
---         -- a = {
---         --   function()
---         --     vim.notify "Autocompile Started"
---         --     utils.async_run(
---         --       { "autocomp", vim.fn.expand "%:p" },
---         --       function() utils.quick_notification "Autocompile stopped" end
---         --     )
---         --   end,
---         --   "Auto Compile",
---         -- },
---         v = { function() vim.fn.jobstart { "opout", vim.fn.expand "%:p" } end, "View Output" },
---         -- b = {
---         --   function()
---         --     local filename = vim.fn.expand "%:t"
---         --     utils.async_run({
---         --       "pandoc",
---         --       vim.fn.expand "%",
---         --       "--pdf-engine=xelatex",
---         --       "--variable",
---         --       "urlcolor=blue",
---         --       "-t",
---         --       "beamer",
---         --       "-o",
---         --       vim.fn.expand "%:r" .. ".pdf",
---         --     }, function() utils.quick_notification("Compiled " .. filename) end)
---         --   end,
---         --   "Compile Beamer",
---         -- },
---         b = {
---           function()
---             local isDotnet = function()
---               for k, v in pairs(vim.lsp.get_active_clients()) do
---                 if v.name == "omnisharp" or v.name == "ionide" or v.name == "fsautocomlete" then return true end
---                 return false
---               end
---             end
---             if isDotnet() then
---               local proj = vim.g.dotnet_get_project_path()
---               local build = function()
---                 vim.cmd("w " .. vim.fn.expand "%")
---                 print("attempting to build " .. proj)
---                 -- utils.async_run {
---                 return vim.g.dotnet_build_project(proj)
---                 -- }
---               end
---               local bok, b = pcall(build)
---
---               if bok then
---                 if b == 0 then
---                   if vim.fn.confirm("Build Successful, run now?", "&yes\n&no", 2) == 1 then
---                     vim.g.dotnet_run(proj, "release")
---                   end
---                 else
---                   print "Build Not Successful.. check log."
---                 end
---               end
---             end
---           end,
---           "Build Dotnet project",
---         },
---         -- p = {
---         --   function()
---         --     local pdf_path = vim.fn.expand "%:r" .. ".pdf"
---         --     if vim.fn.filereadable(pdf_path) == 1 then vim.fn.jobstart { "pdfpc", pdf_path } end
---         --   end,
---         --   "Present Output",
---         -- },
---         l = { function() utils.toggle_qf() end, "Logs" },
---         -- t = { "<cmd>TexlabBuild<cr>", "LaTeX" },
---         -- f = { "<cmd>TexlabForward<cr>", "Forward Search" },
---       },
---
---       s = {
---         name = "Surf",
---         s = { function() require("syntax-tree-surfer").select() end, "Surf" },
---         S = { function() require("syntax-tree-surfer").select_current_node() end, "Surf Node" },
---       },
---
---       x = {
---         name = "Debugger",
---         b = { function() require("dap").toggle_breakpoint() end, "Toggle Breakpoint" },
---         B = { function() require("dap").clear_breakpoints() end, "Clear Breakpoints" },
---         c = { function() require("dap").continue() end, "Continue" },
---         i = { function() require("dap").step_into() end, "Step Into" },
---         l = { function() require("dapui").float_element "breakpoints" end, "List Breakpoints" },
---         o = { function() require("dap").step_over() end, "Step Over" },
---         q = { function() require("dap").close() end, "Close Session" },
---         Q = { function() require("dap").terminate() end, "Terminate" },
---         r = { function() require("dap").repl.toggle() end, "REPL" },
---         s = { function() require("dapui").float_element "scopes" end, "Scopes" },
---         t = { function() require("dapui").float_element "stacks" end, "Threads" },
---         u = { function() require("dapui").toggle() end, "Toggle Debugger UI" },
---         w = { function() require("dapui").float_element "watches" end, "Watches" },
---         x = { function() require("dap.ui.widgets").hover() end, "Inspect" },
---       },
---       t = {
---         name = "Tests",
---         s = { function() require("neotest").summary.toggle() end, "Neotest: Open test summary window" },
---         f = { function() require("neotest").run.run(vim.fn.expand "%") end, "Neotest: Run tests in file" },
---         n = { function() require("neotest").run.run() end, "Neotest: Run nearest test" },
---         d = { function() require("neotest").run.run { strategy = "dap" } end, "Neotest: Debug nearest test" },
---       },
---     },
---     ["]"] = {
---       f = "Next function start",
---       x = "Next class start",
---       F = "Next function end",
---       X = "Next class end",
---     },
---     ["["] = {
---       f = "Previous function start",
---       x = "Previous class start",
---       F = "Previous function end",
---       X = "Previous class end",
---     },
---     g = {
---       t = {
---         name = "Treesitter",
---         v = {
---           function() require("syntax-tree-surfer").targeted_jump { "variable_declaration" } end,
---           "Go to Variables",
---         },
---         f = {
---           function() require("syntax-tree-surfer").targeted_jump { "function" } end,
---           "Go to Functions",
---         },
---         i = {
---           function()
---             require("syntax-tree-surfer").targeted_jump {
---               "if_statement",
---               "else_clause",
---               "else_statement",
---               "elseif_statement",
---             }
---           end,
---           "Go to If Statements",
---         },
---         r = {
---           function() require("syntax-tree-surfer").targeted_jump { "for_statement" } end,
---           "Go to If Statements",
---         },
---         w = {
---           function() require("syntax-tree-surfer").targeted_jump { "white_statement" } end,
---           "Go to While Statements",
---         },
---         s = {
---           function() require("syntax-tree-surfer").targeted_jump { "switch_statement" } end,
---           "Go to Switch Statements",
---         },
---         t = {
---           function()
---             require("syntax-tree-surfer").targeted_jump {
---               "function",
---               "if_statement",
---               "else_clause",
---               "else_statement",
---               "elseif_statement",
---               "for_statement",
---               "while_statement",
---               "switch_statement",
---             }
---           end,
---           "Go to Statement",
---         },
---       },
---       n = {},
---     },
---   },
---   i = {
---     ["<c-d>"] = {
---       n = { "<c-r>=strftime('%Y-%m-%d')<cr>", "Y-m-d" },
---       x = { "<c-r>=strftime('%m/%d/%y')<cr>", "m/d/y" },
---       f = { "<c-r>=strftime('%B %d, %Y')<cr>", "B d, Y" },
---       X = { "<c-r>=strftime('%H:%M')<cr>", "H:M" },
---       F = { "<c-r>=strftime('%H:%M:%S')<cr>", "H:M:S" },
---       d = { "<c-r>=strftime('%Y/%m/%d %H:%M:%S -')<cr>", "Y/m/d H:M:S -" },
---     },
---   },
---   v = {
---     ["<leader>"] = {
---       x = {
---         name = "Debugger",
---         e = { function() require("dapui").eval() end, "Evaluate Line" },
---       },
---     },
---   },
--- }
