@@ -16,13 +16,7 @@ return {
     "mason.nvim",
     { "mason-org/mason-lspconfig.nvim", config = function() end },
     ---@type LazyPluginSpec
-    setDevIfIonideIsLocal({
-      "WillEhrendreich/Ionide-nvim",
-      -- config = function()
-      --   vim.notify("Setting DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 for Ionide")
-      --   vim.uv.os_setenv("DOTNET_ROLL_FORWARD_TO_PRERELEASE", "1")
-      -- end,
-    }),
+    setDevIfIonideIsLocal({ "WillEhrendreich/Ionide-nvim" }),
   },
   opts_extend = { "servers.*.keys" },
   opts = function()

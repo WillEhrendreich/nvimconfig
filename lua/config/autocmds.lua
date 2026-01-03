@@ -19,6 +19,14 @@ autocmd({ "BufNewFile", "BufReadPost", "FileType" }, {
   desc = "sets commentstring for cs files",
 })
 
+autocmd({ "FileType" }, {
+  pattern = { "fsharp" },
+  group = grp("fsharpAutoFormatAutoCommand", { clear = true }),
+  callback = function(event)
+    vim.b.autoformat = false -- buffer-local
+  end,
+  desc = "stops autoformat for fsharp buffers",
+})
 autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
   pattern = { "markdown" },
   group = grp("mdAutoCommand", { clear = true }),
@@ -69,6 +77,19 @@ autocmd({ "FileType" }, {
 --   end,
 --   desc = "",
 -- })
+
+autocmd("BufWritePost", {
+  desc = "odin build on save",
+  group = grp("OdinBuildOnSave", { clear = true }),
+  pattern = { "*.odin" },
+  callback = function(event)
+    local name = vim.api.nvim_buf_get_name(event.buf)
+    vim.notify("Building odin file: " .. name)
+    vim.cmd("!./build_hot_reload.bat")
+
+    -- vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = event.buf, silent = true, nowait = true })
+  end,
+})
 
 autocmd("FileType", {
   desc = "odin load overseer",

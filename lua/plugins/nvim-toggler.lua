@@ -1,0 +1,42 @@
+return {
+
+  "nguyenvukhang/nvim-toggler",
+  config = function()
+    require("nvim-toggler").setup({
+      inverses = {
+        ["bad"] = "good",
+        ["Bad"] = "Good",
+        ["and"] = "or",
+        ["AND"] = "OR",
+        ["And"] = "Or",
+        ["horizontal"] = "vertical",
+        ["Horizontal"] = "Vertical",
+        ["before"] = "after",
+        ["up"] = "down",
+        ["left"] = "right",
+        ["Up"] = "Down",
+        ["Left"] = "Right",
+        ["UP"] = "DOWN",
+        ["LEFT"] = "RIGHT",
+        ["x"] = "y",
+        ["X"] = "Y",
+        ["1"] = "0",
+        [">"] = "<",
+        [">="] = "<=",
+        ["=="] = "!=",
+        ["++"] = "--",
+        ["yes"] = "no",
+        ["Yes"] = "No",
+        ["Some"] = "None",
+        ["IsSome"] = "IsNone",
+        ["start"] = "stop",
+        ["Start"] = "Stop",
+        ["Ok"] = "Error",
+        ["public"] = "private",
+        ["/"] = "\\",
+        ["- [ ]"] = "- [x]",
+      },
+      remove_default_keybinds = true,
+    })
+  end,
+}

@@ -231,9 +231,14 @@ map({ "v", "x" }, "<M-CR>", function()
   else
     local ionide = vim.lsp.get_clients({ name = "fsautocomplete" })[1]
     if ionide then
-      local sendFunc = require("ionide").SendSelectionToFsi
-      if sendFunc then
-        sendFunc()
+      -- Use FsiMcp if available (works with fsix daemon directly)
+      if _G.FsiMcp then
+        _G.FsiMcp.send_selection_to_fsi()
+      else
+        local sendFunc = require("ionide").SendSelectionToFsi
+        if sendFunc then
+          SendFunc()
+        end
       end
     end
   end
@@ -248,11 +253,16 @@ map("n", "<M-CR>", function()
     end
   end
   ---@type vim.lsp.Client
-  local ionide = vim.lsp.get_clients({ name = "ionide" })[1]
+  local ionide = vim.lsp.get_clients({ name = "fsautocomplete" })[1]
   if ionide then
-    local sendFunc = require("ionide").SendLineToFsi
-    if sendFunc then
-      sendFunc()
+    -- Use FsiMcp if available (works with fsix daemon directly)
+    if _G.FsiMcp then
+      _G.FsiMcp.send_line_to_fsi()
+    else
+      local sendFunc = require("ionide").SendLineToFsi
+      if sendFunc then
+        sendFunc()
+      end
     end
   end
 end, "Send to Repl")
