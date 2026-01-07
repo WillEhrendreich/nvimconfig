@@ -264,6 +264,11 @@ map("n", "<M-CR>", function()
         sendFunc()
       end
     end
+  elseif not lua_ls then
+    -- No LSP detected, try FsiMcp anyway (for F# files without LSP)
+    if _G.FsiMcp then
+      _G.FsiMcp.send_line_to_fsi()
+    end
   end
 end, "Send to Repl")
 
