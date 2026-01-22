@@ -41,8 +41,10 @@ vim.o.pumblend = 0
 
 if vim.opt.diff:get() == true then
   opt.wrap = true
-  vim.cmd.colorscheme("tokyonight-night")
-  vim.cmd("tokyonight-night")
+  -- Try preferred colorscheme, fall back to built-in if not available
+  if not pcall(vim.cmd.colorscheme, "tokyonight-night") then
+    vim.cmd.colorscheme("habamax") -- Built-in colorscheme, always available
+  end
 end
 
 opt.winborder = "rounded"

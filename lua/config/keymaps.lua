@@ -240,6 +240,11 @@ map({ "v", "x" }, "<M-CR>", function()
           SendFunc()
         end
       end
+    elseif not lua_ls then
+      -- No LSP detected, try FsiMcp anyway (for F# files without LSP)
+      if _G.FsiMcp then
+        _G.FsiMcp.send_selection_to_fsi()
+      end
     end
   end
 end, "Send Lines to Repl")
@@ -696,7 +701,7 @@ if vim.opt.diff:get() == true then
   end, "diffput")
   map("n", "<leader>dg", function()
     vim.defer_fn(function()
-      vim.cmd("1,$ diffGet")
+      vim.cmd("1,$ diffget")
       vim.cmd["wall"]()
       vim.cmd["qall"]()
     end, 100)
