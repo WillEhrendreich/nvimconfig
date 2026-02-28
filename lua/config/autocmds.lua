@@ -60,6 +60,8 @@ autocmd({ "FileType" }, {
   callback = function()
     vim.cmd("set commentstring=<!--%s-->")
     vim.bo.syntax = "xml"
+    -- Disable autoformat for project/solution files to avoid LSP formatting attempts
+    vim.b.autoformat = false
   end,
   desc = "",
 })
@@ -212,3 +214,41 @@ autocmd("FileType", {
     vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = event.buf, silent = true, nowait = true })
   end,
 })
+
+-- Strip ANSI escape codes and terminal control sequences from buffer content.
+-- Handles: color codes (\x1b[...m), cursor movement (\x1b[1000D, \x1b[?25h),
+-- and replaces common UTF-8 arrow sequences (→) with readable text.
+vim.api.nvim_create_user_command("StripAnsi", function(opts)
+  local buf = vim.api.nvim_get_current_buf()
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local cleaned = {}
+  for _, line in ipairs(lines) do
+    -- Strip all ANSI CSI sequences: ESC[ ... (any params) final byte
+    line = line:gsub("\27%[%??[%d;]*[A-Za-z]", "")
+    -- Strip bare ESC followed by other patterns
+    line = line:gsub("\27%][^\27]*\27\\", "")
+    -- Strip any remaining lone ESC chars
+    line = line:gsub("\27", "")
+    -- Replace UTF-8 arrow → (U+2192, encoded as \xe2\x86\x92 but sometimes
+    -- appears as multi-byte \xce\x93\xc3\xa5\xc3\x86 from encoding issues)
+    line = line:gsub("\xce\x93\xc3\xa5\xc3\x86", " -> ")
+    line = line:gsub("\xe2\x86\x92", " -> ")
+    -- Collapse runs of spaces into single space
+    line = line:gsub("  +", " ")
+    -- Trim leading/trailing whitespace
+    line = line:gsub("^%s+", ""):gsub("%s+$", "")
+    table.insert(cleaned, line)
+  end
+  -- Remove consecutive duplicate blank lines
+  local result = {}
+  local prev_blank = false
+  for _, line in ipairs(cleaned) do
+    local is_blank = line == ""
+    if not (is_blank and prev_blank) then
+      table.insert(result, line)
+    end
+    prev_blank = is_blank
+  end
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, result)
+  vim.notify(("Stripped ANSI from %d lines -> %d lines"):format(#lines, #result))
+end, { desc = "Strip ANSI escape codes and terminal junk from current buffer" })

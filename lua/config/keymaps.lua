@@ -219,6 +219,13 @@ if require("lazyvim.util").has("mini.comment") then
 end
 
 map({ "v", "x" }, "<M-CR>", function()
+  -- SageFs wins over Ionide for F# evaluation
+  local has_sagefs, sagefs = pcall(require, "sagefs")
+  if has_sagefs and sagefs.eval_selection then
+    sagefs.eval_selection()
+    return
+  end
+
   ---@type vim.lsp.Client
   local lua_ls = vim.lsp.get_clients({ name = "lua_ls" })[1]
 
@@ -227,21 +234,18 @@ map({ "v", "x" }, "<M-CR>", function()
       local text = vim.fn.join(require("config.util").GetVisualSelection(), "\n")
       require("luadev").exec(text)
     end
-  ---@type vim.lsp.Client
   else
     local ionide = vim.lsp.get_clients({ name = "fsautocomplete" })[1]
     if ionide then
-      -- Use FsiMcp if available (works with fsix daemon directly)
       if _G.FsiMcp then
         _G.FsiMcp.send_selection_to_fsi()
       else
         local sendFunc = require("ionide").SendSelectionToFsi
         if sendFunc then
-          SendFunc()
+          sendFunc()
         end
       end
     elseif not lua_ls then
-      -- No LSP detected, try FsiMcp anyway (for F# files without LSP)
       if _G.FsiMcp then
         _G.FsiMcp.send_selection_to_fsi()
       end
@@ -250,6 +254,16 @@ map({ "v", "x" }, "<M-CR>", function()
 end, "Send Lines to Repl")
 
 map("n", "<M-CR>", function()
+  -- SageFs wins over Ionide for F# evaluation
+  local has_sagefs, sagefs = pcall(require, "sagefs")
+  if has_sagefs and sagefs.eval_cell then
+    local ft = vim.bo.filetype
+    if ft == "fsharp" or vim.fn.expand("%:e") == "fsx" or vim.fn.expand("%:e") == "fs" then
+      sagefs.eval_cell()
+      return
+    end
+  end
+
   ---@type vim.lsp.Client
   local lua_ls = vim.lsp.get_clients({ name = "lua_ls" })[1]
   if lua_ls then
@@ -257,10 +271,8 @@ map("n", "<M-CR>", function()
       require("luadev").exec(vim.api.nvim_get_current_line())
     end
   end
-  ---@type vim.lsp.Client
   local ionide = vim.lsp.get_clients({ name = "fsautocomplete" })[1]
   if ionide then
-    -- Use FsiMcp if available (works with fsix daemon directly)
     if _G.FsiMcp then
       _G.FsiMcp.send_line_to_fsi()
     else
@@ -270,7 +282,6 @@ map("n", "<M-CR>", function()
       end
     end
   elseif not lua_ls then
-    -- No LSP detected, try FsiMcp anyway (for F# files without LSP)
     if _G.FsiMcp then
       _G.FsiMcp.send_line_to_fsi()
     end

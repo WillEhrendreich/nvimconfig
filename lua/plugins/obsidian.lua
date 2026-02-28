@@ -14,6 +14,7 @@ return {
     -- Required.
     "nvim-lua/plenary.nvim",
     "MeanderingProgrammer/render-markdown.nvim",
+    "ibhagwan/fzf-lua",
     "saghen/blink.cmp",
   },
   opts = {

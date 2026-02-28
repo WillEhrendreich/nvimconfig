@@ -767,4 +767,22 @@ function M.debounce(fn, ms)
   end
 end
 
+-- Ensure common tool paths are in PATH for Neovim (fixes Fantomas detection)
+do
+  local uv = vim.loop
+  local is_windows = uv.os_uname().version:match("Windows") ~= nil
+  local pathsep = is_windows and ";" or ":"
+  local mason_bin = vim.fn.stdpath("data") .. (is_windows and "\\mason\\bin" or "/mason/bin")
+  local dotnet_tools = uv.os_homedir() .. (is_windows and "\\.dotnet\\tools" or "/.dotnet/tools")
+  local p = vim.env.PATH or ""
+  local function add(pat)
+    if pat and pat ~= "" and not p:match(pat:gsub("%\\","\\\\")) and vim.loop.fs_stat(pat) then
+      p = pat .. pathsep .. p
+    end
+  end
+  add(mason_bin)
+  add(dotnet_tools)
+  vim.env.PATH = p
+end
+
 return M

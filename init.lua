@@ -1,3 +1,21 @@
+-- start in server listening mode so neovim mcp can connect.
+-- Try numbered pipes 1-10 first, then fall back to PID-based
+local pipe_started = false
+for i = 1, 10 do
+  local pipe_name = "\\\\.\\pipe\\nvim-" .. i
+  local ok = pcall(vim.fn.serverstart, pipe_name)
+  if ok then
+    pipe_started = true
+    break
+  end
+end
+-- Fallback to PID-based pipe if all numbered pipes are taken
+if not pipe_started then
+  vim.fn.serverstart("\\\\.\\pipe\\nvim-" .. vim.fn.getpid())
+end
+
+--
+--
 -- bootstrap lazy.nvim, LazyVim and your plugins
 
 vim.opt.runtimepath:append("c:/.local/share/nvim-data/site/")
