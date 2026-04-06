@@ -1,3 +1,16 @@
+-- Add the Crashdummyy custom Mason registry so that :MasonInstall roslyn works,
+-- and ensure roslyn is always installed.
+local mason_extra = {
+  "mason-org/mason.nvim",
+  opts = {
+    ensure_installed = { "roslyn" },
+    registries = {
+      "github:mason-org/mason-registry",
+      "github:Crashdummyy/mason-registry",
+    },
+  },
+}
+
 ---@param spec LazyPluginSpec
 ---returns LazyPluginSpec
 local function setDevIfIonideIsLocal(spec)
@@ -10,6 +23,8 @@ local function setDevIfIonideIsLocal(spec)
   end
 end
 return {
+  mason_extra,
+  {
   "neovim/nvim-lspconfig",
   event = "LazyFile",
   dependencies = {
@@ -93,7 +108,27 @@ return {
             { "gI", vim.lsp.buf.implementation, desc = "Goto Implementation" },
             { "gy", vim.lsp.buf.type_definition, desc = "Goto T[y]pe Definition" },
             { "gD", vim.lsp.buf.declaration, desc = "Goto Declaration" },
-            { "K", function() return vim.lsp.buf.hover() end, desc = "Hover" },
+            {
+              "K",
+              function()
+                local ft = vim.bo.filetype
+                local clients = vim.lsp.get_clients({ bufnr = 0 })
+                local has_fsac = false
+                for _, client in ipairs(clients) do
+                  if client.name == "fsautocomplete" or client.name == "ionide" then
+                    has_fsac = true
+                    break
+                  end
+                end
+
+                if (ft == "fsharp" or ft == "fsharp_project") and has_fsac then
+                  return require("ionide").ShowDocumentationHover()
+                end
+
+                return vim.lsp.buf.hover()
+              end,
+              desc = "Hover",
+            },
             { "gK", function() return vim.lsp.buf.signature_help() end, desc = "Signature Help", has = "signatureHelp" },
             { "<c-k>", function() return vim.lsp.buf.signature_help() end, mode = "i", desc = "Signature Help", has = "signatureHelp" },
             { "<leader>ca", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "x" }, has = "codeAction" },
@@ -144,7 +179,15 @@ return {
             },
           },
         },
-        fsautocomplete = require("ionide").setup({}),
+        fsautocomplete = require("ionide").setup({
+          IonideNvimSettings = {
+            FsautocompleteCommand = {
+              "dotnet",
+              "C:/Code/Repos/fsautocomplete/src/FsAutoComplete/bin/Debug/net8.0/fsautocomplete.dll",
+            },
+            UseIonideDocumentationHover = true,
+          },
+        }),
       },
       -- you can do any additional lsp server setup here
       -- return true if you don't want this server to be setup with lspconfig
@@ -276,4 +319,5 @@ return {
       })
     end
   end),
+  },
 }

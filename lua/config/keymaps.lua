@@ -522,7 +522,22 @@ end, "LSP Info")
 map("n", "<leader>lk", function()
   vim.fn.writefile({}, vim.lsp.get_log_path())
 end, "reset LSP log")
-map("n", "<K>", function()
+map("n", "K", function()
+  local ft = vim.bo.filetype
+  local clients = vim.lsp.get_clients({ bufnr = 0 })
+  local has_fsac = false
+  for _, client in ipairs(clients) do
+    if client.name == "fsautocomplete" or client.name == "ionide" then
+      has_fsac = true
+      break
+    end
+  end
+
+  if (ft == "fsharp" or ft == "fsharp_project") and has_fsac then
+    require("ionide").ShowDocumentationHover()
+    return
+  end
+
   if require("lazyvim.util").has("hover.nvim") then
     local api = vim.api
     local hover_win = vim.b.hover_preview

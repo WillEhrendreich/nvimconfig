@@ -70,8 +70,8 @@ return {
       -- The default folder to place images in via `:ObsidianPasteImg`.
       -- If this is a relative path it will be interpreted as relative to the vault root.
       -- You can always override this per image by passing a full path to the command instead of just a filename.
-      -- img_folder = "assets/imgs", -- This is the default
-      img_folder = "resources", -- This is the default
+      -- folder = "assets/imgs", -- This is the default
+      folder = "resources",
 
       -- Optional, customize the default name or prefix when pasting images via `:ObsidianPasteImg`.
       ---@return string
@@ -91,14 +91,8 @@ return {
         return string.format("![%s](%s)", path.name, path)
       end,
     },
-    -- Optional, by default when you use `:ObsidianFollowLink` on a link to an external
-    -- URL it will be ignored but you can customize this behavior here.
-    ---@param url string
-    follow_url_func = function(url)
-      -- Open the URL in the default web browser.
-      vim.notify("trying to open " .. url)
-      vim.ui.open(url) -- need Neovim 0.10.0+
-    end,
+    -- obsidian.nvim now uses vim.ui.open natively; follow_url_func is deprecated.
+    -- url_handler left unset to use the built-in vim.ui.open behavior.
 
     -- Optional, for templates (see below).
     templates = {
@@ -162,6 +156,9 @@ return {
         path = "~/work",
       },
     },
+
+    -- Disable legacy commands (ObsidianBacklinks etc.) in favour of `Obsidian backlinks` style.
+    legacy_commands = false,
 
     -- see below for full list of options 👇
   },
