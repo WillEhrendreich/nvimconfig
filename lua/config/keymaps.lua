@@ -522,8 +522,10 @@ end, "LSP Info")
 map("n", "<leader>lk", function()
   vim.fn.writefile({}, vim.lsp.get_log_path())
 end, "reset LSP log")
-map("n", "K", function()
+
+map("n", "<S-K>", function()
   local ft = vim.bo.filetype
+
   local clients = vim.lsp.get_clients({ bufnr = 0 })
   local has_fsac = false
   for _, client in ipairs(clients) do
@@ -533,6 +535,11 @@ map("n", "K", function()
     end
   end
 
+  if ft == "vb" then
+    vim.notify("vb filetype detected")
+    vim.lsp.buf.hover() -- still try to hover, maybe something will work
+    return
+  end
   if (ft == "fsharp" or ft == "fsharp_project") and has_fsac then
     require("ionide").ShowDocumentationHover()
     return

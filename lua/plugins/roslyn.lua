@@ -143,11 +143,14 @@ return {
       --   6. .csproj search → on_init.project (upstream 143-146).
       --   7. selected_solution fallback → on_init.sln (upstream 148-150).
       local combined_on_init = function(client)
-        -- 1. Roslyn advertises prepareRename but cohosted Razor doesn't support it.
-        client.server_capabilities.renameProvider = true
+         -- 1. Roslyn advertises prepareRename but cohosted Razor doesn't support it.
+         client.server_capabilities.renameProvider = true
 
-        -- 2. Semantic tokens /full is unsupported for Razor files on nvim < 0.12.
-        if vim.fn.has("nvim-0.12") == 0 then
+         -- 1b. Disable codelens to prevent duplicate displays from both Roslyn and Neovim's builtin handler
+         client.server_capabilities.codeLensProvider = nil
+
+         -- 2. Semantic tokens /full is unsupported for Razor files on nvim < 0.12.
+         if vim.fn.has("nvim-0.12") == 0 then
           vim.api.nvim_create_autocmd("LspAttach", {
             callback = function(args)
               if vim.api.nvim_get_option_value("filetype", { buf = args.buf }) == "razor" then
