@@ -35,6 +35,7 @@ return {
   },
   opts_extend = { "servers.*.keys" },
   opts = function()
+    require("ionide").setup({})
     ---@class PluginLspOpts
     local ret = {
       -- options for vim.diagnostic.config()
@@ -108,27 +109,7 @@ return {
             { "gI", vim.lsp.buf.implementation, desc = "Goto Implementation" },
             { "gy", vim.lsp.buf.type_definition, desc = "Goto T[y]pe Definition" },
             { "gD", vim.lsp.buf.declaration, desc = "Goto Declaration" },
-            {
-              "K",
-              function()
-                local ft = vim.bo.filetype
-                local clients = vim.lsp.get_clients({ bufnr = 0 })
-                local has_fsac = false
-                for _, client in ipairs(clients) do
-                  if client.name == "fsautocomplete" or client.name == "ionide" then
-                    has_fsac = true
-                    break
-                  end
-                end
-
-                if (ft == "fsharp" or ft == "fsharp_project") and has_fsac then
-                  return require("ionide").ShowDocumentationHover()
-                end
-
-                return vim.lsp.buf.hover()
-              end,
-              desc = "Hover",
-            },
+            { "K", function() return vim.lsp.buf.hover() end, desc = "Hover" },
             { "gK", function() return vim.lsp.buf.signature_help() end, desc = "Signature Help", has = "signatureHelp" },
             { "<c-k>", function() return vim.lsp.buf.signature_help() end, mode = "i", desc = "Signature Help", has = "signatureHelp" },
             { "<leader>ca", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "x" }, has = "codeAction" },
@@ -148,6 +129,7 @@ return {
           },
         },
         stylua = { enabled = false },
+        fsautocomplete = {},
         lua_ls = {
           -- mason = false, -- set to false if you don't want this server to be installed with mason
           -- Use this to add any additional keymaps
@@ -179,21 +161,14 @@ return {
             },
           },
         },
-        fsautocomplete = require("ionide").setup({
-          IonideNvimSettings = {
-            FsautocompleteCommand = {
-              "dotnet",
-              "C:/Code/Repos/fsautocomplete/src/FsAutoComplete/bin/Debug/net8.0/fsautocomplete.dll",
-            },
-            UseIonideDocumentationHover = true,
-          },
-        }),
       },
       -- you can do any additional lsp server setup here
       -- return true if you don't want this server to be setup with lspconfig
       ---@type table<string, fun(server:string, opts: vim.lsp.Config):boolean?>
       setup = {
-        -- example to setup with typescript.nvim
+        fsautocomplete = function(server, opts)
+          return true  -- Don't setup, let Ionide handle it
+        end,
         -- tsserver = function(_, opts)
         --   require("typescript").setup({ server = opts })
         --   return true
