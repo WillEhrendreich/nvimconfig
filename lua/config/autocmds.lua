@@ -27,6 +27,19 @@ autocmd({ "FileType" }, {
   end,
   desc = "stops autoformat for fsharp buffers",
 })
+-- autocmd("FileChangedShell", {
+--   pattern = { "*.vb" },
+--   group = grp("vbFileChangedShell", { clear = true }),
+--   callback = function()
+--     -- vbnet-ls writes a formatted version of the file to disk as a side
+--     -- effect of its analysis (likely on textDocument/didSave).  This fires
+--     -- "file changed since reading it" every time the user saves.  Setting
+--     -- v:fcs_choice = "reload" tells Neovim to silently reload the buffer,
+--     -- preserving the formatted result without prompting the user.
+--     vim.v.fcs_choice = "reload"
+--   end,
+--   desc = "silently reload VB buffers when vbnet-ls writes formatted content to disk",
+-- })
 autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
   pattern = { "markdown" },
   group = grp("mdAutoCommand", { clear = true }),
@@ -55,7 +68,7 @@ autocmd({ "BufNewFile", "BufReadPost", "FileType" }, {
 })
 
 autocmd({ "FileType" }, {
-  pattern = { "csproj", "fsproj", "cs_project", "fsharp_project" },
+  pattern = { "vbproj","csproj", "fsproj", "cs_project", "fsharp_project" },
   group = grp("ProjAutocommand", { clear = true }),
   callback = function()
     vim.cmd("set commentstring=<!--%s-->")
