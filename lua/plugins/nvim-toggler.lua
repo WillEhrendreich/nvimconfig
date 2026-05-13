@@ -33,6 +33,7 @@ return {
         ["Start"] = "Stop",
         ["Ok"] = "Error",
         ["public"] = "private",
+        ["Public"] = "Private",
         ["/"] = "\\",
         ["- [ ]"] = "- [x]",
       },

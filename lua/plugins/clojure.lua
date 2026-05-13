@@ -23,7 +23,7 @@ return {
 
   -- Mason auto-install for clojure-lsp
   {
-    "williamboman/mason.nvim",
+    "mason-org/mason.nvim",
     opts = {
       ensure_installed = { "clojure-lsp" },
     },
@@ -89,7 +89,7 @@ return {
 
   -- cmp-conjure for completions from REPL
   {
-    "PxHu/cmp-conjure",
+    "PaterJason/cmp-conjure",
     ft = { "clojure", "scheme" },
   },
 }
