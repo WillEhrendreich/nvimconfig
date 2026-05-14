@@ -27,19 +27,40 @@ autocmd({ "FileType" }, {
   end,
   desc = "stops autoformat for fsharp buffers",
 })
--- autocmd("FileChangedShell", {
---   pattern = { "*.vb" },
---   group = grp("vbFileChangedShell", { clear = true }),
---   callback = function()
---     -- vbnet-ls writes a formatted version of the file to disk as a side
---     -- effect of its analysis (likely on textDocument/didSave).  This fires
---     -- "file changed since reading it" every time the user saves.  Setting
---     -- v:fcs_choice = "reload" tells Neovim to silently reload the buffer,
---     -- preserving the formatted result without prompting the user.
---     vim.v.fcs_choice = "reload"
---   end,
---   desc = "silently reload VB buffers when vbnet-ls writes formatted content to disk",
--- })
+autocmd("FileChangedShell", {
+  pattern = { "*.vb" },
+  group = grp("vbFileChangedShell", { clear = true }),
+  callback = function()
+    vim.v.fcs_choice = "reload"
+  end,
+  desc = "silently reload VB buffers when vbnet-ls writes formatted content to disk",
+})
+
+autocmd("BufWritePre", {
+  pattern = { "*.vb" },
+  group = grp("vbChecktimeBeforeWrite", { clear = true }),
+  callback = function()
+    vim.cmd("silent! checktime")
+  end,
+  desc = "refresh VB buffer from disk before write if vbnet-ls changed file",
+})
+
+autocmd("DiagnosticChanged", {
+  pattern = { "*" },
+  group = grp("vbDiagnosticDedup", { clear = true }),
+  callback = function(args)
+    if vim.bo[args.buf].filetype ~= "vb" then
+      return
+    end
+    for ns_id, meta in pairs(vim.diagnostic.get_namespaces()) do
+      local name = meta.name or ""
+      if name:match("^nvim%.lsp%.vbnet_lsp%.%d+%.vbnet$") then
+        vim.diagnostic.enable(false, { bufnr = args.buf, ns_id = ns_id })
+      end
+    end
+  end,
+  desc = "disable duplicate vbnet-lsp diagnostic namespace",
+})
 autocmd({ "BufNewFile", "BufReadPre", "BufReadPost", "FileType" }, {
   pattern = { "markdown" },
   group = grp("mdAutoCommand", { clear = true }),

@@ -15,7 +15,7 @@ else
   opt.cmdheight = 0
 end
 opt.shortmess = "TtlFfOoCcIiWsxnq"
-
+opt.confirm = true
 opt.commentstring = "// %s"
 opt.foldlevelstart = 99
 opt.foldenable = true

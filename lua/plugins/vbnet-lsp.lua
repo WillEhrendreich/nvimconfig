@@ -39,6 +39,27 @@ return {
         return marker and vim.fs.dirname(marker) or vim.fn.getcwd()
       end
 
+      local diagnostic_group = vim.api.nvim_create_augroup("vbnet_lsp_diagnostics", { clear = true })
+
+      local function disable_duplicate_vbnet_namespace(client, bufnr)
+        local function disable_now()
+          local duplicate_name = string.format("nvim.lsp.%s.%d.vbnet", client.name, client.id)
+          for ns_id, meta in pairs(vim.diagnostic.get_namespaces()) do
+            if meta.name == duplicate_name then
+              vim.diagnostic.enable(false, { bufnr = bufnr, ns_id = ns_id })
+            end
+          end
+        end
+
+        disable_now()
+        vim.api.nvim_create_autocmd("DiagnosticChanged", {
+          group = diagnostic_group,
+          buffer = bufnr,
+          callback = disable_now,
+          desc = "Disable duplicate vbnet-lsp diagnostic namespace for this buffer",
+        })
+      end
+
       -- Start (or reuse) a vbnet-ls client for the given buffer.
       -- Each unique root_dir gets its own client instance; buffers sharing
       -- the same root reuse the existing client (upstream reuse_client logic).
@@ -58,6 +79,9 @@ return {
           cmd      = { "vbnet-ls", "--stdio" },
           root_dir = root,
           filetypes = { "vb" },
+          on_attach = function(client, attached_bufnr)
+            disable_duplicate_vbnet_namespace(client, attached_bufnr)
+          end,
           -- Reuse an existing vbnet-ls client for the same root_dir.
           reuse_client = function(client, cfg)
             return client.name == cfg.name

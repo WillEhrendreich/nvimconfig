@@ -61,14 +61,21 @@ return {
     end,
   },
 
-  -- Treesitter for Clojure
+  -- Treesitter for Clojure and Scheme
   {
     "nvim-treesitter/nvim-treesitter",
     opts = function(_, opts)
       opts.ensure_installed = opts.ensure_installed or {}
-      vim.list_extend(opts.ensure_installed, { "clojure", "scheme" })
+      -- Add clojure and scheme to the ensure_installed list
+      local langs = { "clojure", "scheme" }
+      for _, lang in ipairs(langs) do
+        if not vim.tbl_contains(opts.ensure_installed, lang) then
+          table.insert(opts.ensure_installed, lang)
+        end
+      end
       return opts
     end,
+    build = ":TSUpdate",
   },
 
   -- Optional: vim-sexp for s-expression manipulation
@@ -86,10 +93,5 @@ return {
       vim.keymap.set("n", "<M-h>", ":SexpMoveToPrev<CR>", opts)
     end,
   },
-
-  -- cmp-conjure for completions from REPL
-  {
-    "PaterJason/cmp-conjure",
-    ft = { "clojure", "scheme" },
-  },
 }
+
