@@ -235,7 +235,8 @@ map({ "v", "x" }, "<M-CR>", function()
       require("luadev").exec(text)
     end
   else
-    local ionide = vim.lsp.get_clients({ name = "fsautocomplete" })[1]
+    local ionide = vim.lsp.get_clients({ name = "ionide" })[1]
+        or vim.lsp.get_clients({ name = "fsautocomplete" })[1]
     if ionide then
       if _G.FsiMcp then
         _G.FsiMcp.send_selection_to_fsi()
@@ -271,7 +272,8 @@ map("n", "<M-CR>", function()
       require("luadev").exec(vim.api.nvim_get_current_line())
     end
   end
-  local ionide = vim.lsp.get_clients({ name = "fsautocomplete" })[1]
+  local ionide = vim.lsp.get_clients({ name = "ionide" })[1]
+      or vim.lsp.get_clients({ name = "fsautocomplete" })[1]
   if ionide then
     if _G.FsiMcp then
       _G.FsiMcp.send_line_to_fsi()

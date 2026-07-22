@@ -1,3 +1,36 @@
+local function clamp_vbnet_lsp_completion_ranges(ctx, items)
+  if vim.bo.filetype ~= "vb" then
+    return items
+  end
+
+  local cursor_line = ctx.cursor[1] - 1
+  local cursor_col = ctx.cursor[2]
+
+  for _, item in ipairs(items) do
+    if item.client_name == "vbnet_lsp" and item.textEdit ~= nil then
+      local edit = item.textEdit
+
+      -- vbnet-ls can return replace ranges that extend into the next word.
+      -- Treat VB completions as insert-only so accepting an item cannot eat
+      -- text to the right of the cursor.
+      if edit.insert ~= nil then
+        edit.range = vim.deepcopy(edit.insert)
+        edit.insert = nil
+        edit.replace = nil
+      elseif edit.range ~= nil then
+        if edit.range["end"].line > cursor_line then
+          edit.range["end"].line = cursor_line
+          edit.range["end"].character = cursor_col
+        elseif edit.range["end"].line == cursor_line and edit.range["end"].character > cursor_col then
+          edit.range["end"].character = cursor_col
+        end
+      end
+    end
+  end
+
+  return items
+end
+
 return {
   -- add blink.compat
   {
@@ -106,6 +139,9 @@ return {
           --   name = "obsidian_tags",
           --   module = "blink.compat.source",
           -- },
+          lsp = {
+            transform_items = clamp_vbnet_lsp_completion_ranges,
+          },
           lazydev = {
             name = "LazyDev",
             module = "lazydev.integrations.blink",

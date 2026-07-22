@@ -21,6 +21,7 @@ opt.foldlevelstart = 99
 opt.foldenable = true
 opt.foldcolumn = "auto"
 vim.o.fillchars = [[eob: ,fold:,foldopen:,foldsep:│,foldclose:]]
+opt.fileformats = { "unix", "dos" }
 
 -- vim.o.listchars = [[ tab = "│→", extends = "⟩", precedes = "⟨", trail = "·", nbsp = "␣" ]]
 -- opt.completeopt = { "menu", "menuone", "preview" }
