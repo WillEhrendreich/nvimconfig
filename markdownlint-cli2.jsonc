@@ -1,0 +1,40 @@
+// Fallback markdownlint rules, used by Neovim (see lua/plugins/lint.lua) for any
+// markdown file that has no project-level markdownlint config of its own.
+//
+// Everything disabled here is cosmetic: line width, blank-line placement,
+// bullet/emphasis/fence style, tables. Prettier already formats those, so
+// flagging them only buries the rules worth reading — broken link syntax,
+// heading structure, reference/fragment validity, missing image alt text.
+{
+  "config": {
+    "MD003": false, // heading style (atx vs setext)
+    "MD004": false, // unordered list bullet style
+    "MD007": false, // unordered list indentation
+    "MD009": false, // trailing spaces (two of them mean <br>)
+    "MD012": false, // multiple consecutive blank lines
+    "MD013": false, // line length
+    "MD022": false, // blank lines around headings
+    "MD024": false, // duplicate heading text
+    "MD026": false, // trailing punctuation in heading
+    "MD029": false, // ordered list numbering style
+    "MD030": false, // spaces after list markers
+    "MD031": false, // blank lines around fenced code
+    "MD032": false, // blank lines around lists
+    "MD033": false, // inline HTML
+    "MD035": false, // horizontal rule style
+    "MD036": false, // emphasis used instead of a heading
+    "MD037": false, // spaces inside emphasis markers
+    "MD040": false, // language on fenced code blocks
+    "MD041": false, // first line must be a top-level heading
+    "MD046": false, // code block style
+    "MD047": false, // file should end with a newline
+    "MD048": false, // code fence style
+    "MD049": false, // emphasis style
+    "MD050": false, // strong style
+    "MD055": false, // table pipe style
+    "MD056": false, // table column count
+    "MD058": false, // blank lines around tables
+    "MD059": false, // descriptive link text
+    "MD060": false // table column style
+  }
+}

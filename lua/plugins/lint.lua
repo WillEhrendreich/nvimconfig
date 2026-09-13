@@ -1,7 +1,7 @@
 -- markdownlint-cli2 only discovers config files from the linted file's directory
--- upward to the working directory, so a global one in $HOME never applies and
--- every markdown buffer arrives with the full default ruleset. Point it at the
--- repo's own config when there is one, and at ~/.markdownlint-cli2.jsonc otherwise.
+-- upward to the working directory, so a global one never applies and every
+-- markdown buffer arrives with the full default ruleset. Point it at the repo's
+-- own config when there is one, and at the one shipped beside this config otherwise.
 local project_config_names = {
   ".markdownlint-cli2.jsonc",
   ".markdownlint-cli2.yaml",
@@ -20,7 +20,7 @@ local function markdownlint_config()
       return found
     end
   end
-  return vim.fs.normalize("~/.markdownlint-cli2.jsonc")
+  return vim.fs.joinpath(vim.fn.stdpath("config"), "markdownlint-cli2.jsonc")
 end
 
 return {
