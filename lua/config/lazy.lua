@@ -14,7 +14,10 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-vim.opt.rtp:prepend("C:/Code/Repos/")
+local reposDir = require("config.util").getReposDir()
+if reposDir ~= "" then
+  vim.opt.rtp:prepend(reposDir)
+end
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
@@ -35,7 +38,7 @@ require("lazy").setup({
     -- Directory where you store your local plugin projects. If a function is used,
     -- the plugin directory (e.g. `~/projects/plugin-name`) must be returned.
     ---@type string | fun(plugin: LazyPlugin): string
-    path = "C:/Code/Repos",
+    path = reposDir ~= "" and reposDir or "~/projects",
     ---@type string[] plugins that match these patterns will use your local versions instead of being fetched from GitHub
     patterns = {}, -- For example {"folke"}
     fallback = false, -- Fallback to git when local plugin doesn't exist

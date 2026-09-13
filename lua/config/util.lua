@@ -106,27 +106,34 @@ function M.getReposVariableIfSet()
   return M.getEnvVariableOrEmptyString("repos")
 end
 
+--- Where local clones live, per machine: the `repos` environment variable when
+--- set, otherwise the first of these that exists.
+M.reposDirCandidates = {
+  vim.fs.normalize("~/Work"),
+  "C:/Code/Repos",
+}
+
+---@return string # the repos directory, or "" when none of the candidates exist
+function M.getReposDir()
+  local candidates = vim.list_extend({ M.getReposVariableIfSet() }, M.reposDirCandidates)
+  for _, dir in ipairs(candidates) do
+    if dir ~= "" and vim.fn.isdirectory(dir) == 1 then
+      return vim.fs.normalize(dir)
+    end
+  end
+  return ""
+end
+
 function M.getRepoWithName(name)
-  if M.hasReposEnvironmentVarSet() then
-    return (
-      vim.fs.find(name, { upward = false, limit = 1, path = M.getReposVariableIfSet(), type = "directory" })[1] or ""
-    )
-  else
+  local repos = M.getReposDir()
+  if repos == "" then
     return ""
   end
+  return (vim.fs.find(name, { upward = false, limit = 1, path = repos, type = "directory" })[1] or "")
 end
 
 function M.hasRepoWithName(name)
-  if M.hasReposEnvironmentVarSet() then
-    local repoWithName = M.getRepoWithName(name)
-    if repoWithName == "" then
-      return false
-    else
-      return true
-    end
-  else
-    return false
-  end
+  return M.getRepoWithName(name) ~= ""
 end
 
 ---tries to get an environment variable's value, and if it's not found or empty returns the default value, or an empty string
