@@ -108,12 +108,9 @@ return {
     --  * "notes_subdir" - put new notes in the default notes subdirectory.
     new_notes_location = "current_dir",
 
-    -- Optional, completion of wiki links, local markdown links, and tags using nvim-cmp.
+    -- Completion of wiki links, local markdown links and tags now comes from the
+    -- built-in obsidian-ls LSP server; the nvim_cmp/blink switches are deprecated.
     completion = {
-      -- Enables completion using nvim_cmp
-      nvim_cmp = false,
-      -- Enables completion using blink.cmp
-      blink = true,
       -- Trigger completion at 2 chars.
       min_chars = 2,
     },
@@ -153,7 +150,10 @@ return {
     workspaces = {
       {
         name = "work",
-        path = "~/work",
+        -- Case matters here: on Linux ~/work does not exist, and a workspace
+        -- whose path is missing leaves obsidian.nvim with none, which it treats
+        -- as a fatal config error on every markdown buffer.
+        path = "~/Work",
       },
     },
 
