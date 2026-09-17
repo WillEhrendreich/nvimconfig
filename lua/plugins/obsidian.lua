@@ -18,25 +18,22 @@ return {
     "saghen/blink.cmp",
   },
   opts = {
-    -- Optional, configure additional syntax highlighting / extmarks.
-    -- This requires you have `conceallevel` set to 1 or 2. See `:help conceallevel` for more details.
+    -- `checkbox.order` is the toggle *cycle*: a plain list of state characters,
+    -- and nothing else. It used to hold a char/highlight spec keyed by state,
+    -- which obsidian.nvim now rejects outright ("checkbox.order: expected list,
+    -- got table") -- aborting setup and erroring on every markdown buffer. That
+    -- spec belongs under `ui` (see the note there).
     checkbox = {
-
-      order = {
-        -- NOTE: the 'char' value has to be a single character, and the highlight groups are defined below.
-        [" "] = { char = "󰄱", hl_group = "ObsidianTodo" },
-        ["x"] = { char = "", hl_group = "ObsidianDone" },
-        -- [">"] = { char = "", hl_group = "ObsidianRightArrow" },
-        -- ["~"] = { char = "󰰱", hl_group = "ObsidianTilde" },
-        -- ["!"] = { char = "", hl_group = "ObsidianImportant" },
-        -- Replace the above with this if you don't have a patched font:
-        -- [" "] = { char = "☐", hl_group = "ObsidianTodo" },
-        -- ["x"] = { char = "✔", hl_group = "ObsidianDone" },
-
-        -- You can also add more custom ones...
-      },
+      order = { " ", "x" },
     },
     ui = {
+      -- `ui.checkboxes` (the per-state char + highlight group) is deliberately
+      -- left at obsidian.nvim's defaults. Naming the key at all trips a warning
+      -- on every session -- the plugin wants you to know that ordering moved to
+      -- `checkbox.order` -- and its defaults already render ' ' and 'x' with the
+      -- very glyphs that were spelled out here by hand. Colours still come from
+      -- `hl_groups` below: the defaults point at `obsidiantodo` / `obsidiandone`,
+      -- and Vim highlight group names are case-insensitive.
       enable = true, -- set to false to disable all additional syntax features
       update_debounce = 200, -- update delay after a text change (in milliseconds)
       max_file_length = 5000, -- disable UI features for files with more than this many lines
