@@ -1,24 +1,66 @@
 -- start in server listening mode so neovim mcp can connect.
--- Try numbered pipes 1-10 first, then fall back to PID-based
+-- Try numbered addresses 1-10 first, then fall back to PID-based.
+-- Windows uses named pipes; everywhere else a unix socket under a runtime dir.
+-- (Using the Windows "\\.\pipe\..." form on Linux makes nvim create a literal
+-- socket file by that name in the current working directory.)
+local is_windows = vim.uv.os_uname().sysname:find("Windows") ~= nil
+
+local function server_address(suffix)
+  if is_windows then
+    return "\\\\.\\pipe\\nvim-" .. suffix
+  end
+  local dir = vim.env.XDG_RUNTIME_DIR or vim.fn.stdpath("run")
+  if type(dir) == "table" then
+    dir = dir[1]
+  end
+  vim.fn.mkdir(dir, "p")
+  return dir .. "/nvim-" .. suffix
+end
+
+-- A unix socket left behind by a crashed nvim still blocks bind(), so drop it
+-- if nothing is actually listening on it.
+local function clear_stale(addr)
+  if is_windows or vim.fn.getftype(addr) == "" then
+    return
+  end
+  local chan = 0
+  pcall(function()
+    chan = vim.fn.sockconnect("pipe", addr, { rpc = true })
+  end)
+  if chan ~= 0 then
+    pcall(vim.fn.chanclose, chan)
+  else
+    pcall(vim.fn.delete, addr)
+  end
+end
+
 local pipe_started = false
 for i = 1, 10 do
-  local pipe_name = "\\\\.\\pipe\\nvim-" .. i
-  local ok = pcall(vim.fn.serverstart, pipe_name)
+  local addr = server_address(i)
+  local ok = pcall(vim.fn.serverstart, addr)
+  if not ok then
+    clear_stale(addr)
+    ok = pcall(vim.fn.serverstart, addr)
+  end
   if ok then
     pipe_started = true
     break
   end
 end
--- Fallback to PID-based pipe if all numbered pipes are taken
+-- Fallback to PID-based address if all numbered ones are taken
 if not pipe_started then
-  vim.fn.serverstart("\\\\.\\pipe\\nvim-" .. vim.fn.getpid())
+  pcall(vim.fn.serverstart, server_address(vim.fn.getpid()))
 end
 
 --
 --
 -- bootstrap lazy.nvim, LazyVim and your plugins
 
-vim.opt.runtimepath:append("c:/.local/share/nvim-data/site/")
+-- Windows-only extra runtimepath; the drive-letter path is meaningless on unix
+-- (it would resolve as a relative "c:" directory under the cwd).
+if is_windows then
+  vim.opt.runtimepath:append("c:/.local/share/nvim-data/site/")
+end
 local function fileExists(filePath)
   local file = io.open(filePath, "r")
   if file then

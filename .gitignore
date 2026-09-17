@@ -6,3 +6,8 @@ debug
 foo.*
 *.log
 data
+
+# Windows NUL redirection leftovers
+_nul
+NUL
+nul
