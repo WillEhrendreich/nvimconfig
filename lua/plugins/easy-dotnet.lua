@@ -14,6 +14,21 @@ return {
       local sdk_path = vim.fs.joinpath(base, sdk_version):gsub("Program Files", '"Program Files"')
       return sdk_path
     end,
+    -- easy-dotnet ships its own Roslyn client, named `easy_dotnet`, and starts it
+    -- by default. C# here is served by roslyn_ls (see nvim-lspconfig.lua and
+    -- roslyn.lua), so both attach to every .cs buffer and each renders its own
+    -- code lens line -- hence the two stacked, identical "N references" rows.
+    -- roslyn_ls is the richer of the two: easy_dotnet's client hard-sets
+    -- `dotnet_enable_tests_code_lens = false` (roslyn/lsp.lua), so it emits
+    -- reference lenses only, while roslyn_ls also emits Run/Debug Test. Keep
+    -- roslyn_ls; turn this one off.
+    --
+    -- This also switches off easy-dotnet's in-process "import missing namespaces"
+    -- code action, which only ever worked against its own Roslyn client. Everything
+    -- else here (test runner, secrets, nuget, DAP, completion source) is driven by
+    -- the easy-dotnet RPC server and is unaffected.
+    lsp = { enabled = false },
+
     ---@type TestRunnerOptions
     test_runner = {
       ---@type "split" | "float" | "buf"

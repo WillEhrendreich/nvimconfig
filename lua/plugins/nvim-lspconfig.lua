@@ -129,6 +129,22 @@ return {
           stylua = { enabled = false },
           fsautocomplete = {},
           ionide = {},
+          -- Built into nvim-lspconfig (lsp/roslyn_ls.lua). Talks to the mason "roslyn"
+          -- package's `roslyn-language-server` binary (self-contained, no dotnet needed).
+          -- Simpler than seblyng/roslyn.nvim (see roslyn.lua) at the cost of no Razor
+          -- support and no fancy solution-target picking, neither of which we need.
+          roslyn_ls = {
+            commands = {
+              -- roslyn_ls emits "Run Test" / "Debug Test" code lenses but ships no
+              -- client-side handler for the `dotnet.test.run` command they invoke, so
+              -- running one only ever produced "Language server does not support
+              -- command". Route it to easy-dotnet, which already owns test discovery,
+              -- the result signs in the gutter and the netcoredbg wiring.
+              ["dotnet.test.run"] = function(command, ctx)
+                require("config.dotnet-test-lens").run(command, ctx)
+              end,
+            },
+          },
           lua_ls = {
             -- mason = false, -- set to false if you don't want this server to be installed with mason
             -- Use this to add any additional keymaps
@@ -171,6 +187,17 @@ return {
           -- Specify * to use this function as a fallback for any server
           -- ["*"] = function(server, opts) end,
           fsautocomplete = function(server, opts)
+            return true
+          end,
+          -- mason-lspconfig's own "roslyn-language-server" package (NuGet-based,
+          -- maps to lspconfig name roslyn_ls) collides on the `roslyn-language-server`
+          -- bin name with the Crashdummyy "roslyn" package we already install
+          -- (self-contained, no NuGet/dotnet-tool round trip needed). Enable
+          -- roslyn_ls directly against whatever's already on PATH instead of
+          -- letting mason-lspconfig try to install its own copy.
+          roslyn_ls = function(server, opts)
+            vim.lsp.config(server, opts)
+            vim.lsp.enable(server)
             return true
           end,
           ionide = function(server, opts)
@@ -224,6 +251,8 @@ return {
 
       -- code lens
       vim.lsp.codelens.enable(true)
+      -- ...drawn above the code it annotates rather than out to the right of it.
+      require("config.codelens-align").setup()
 
       -- diagnostics
       if type(opts.diagnostics.virtual_text) == "table" and opts.diagnostics.virtual_text.prefix == "icons" then
