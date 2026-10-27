@@ -129,7 +129,13 @@ function M.getRepoWithName(name)
   if repos == "" then
     return ""
   end
-  return (vim.fs.find(name, { upward = false, limit = 1, path = repos, type = "directory" })[1] or "")
+  -- Direct child only. A recursive vim.fs.find here walks all of ~/Work
+  -- (227G in this tree) when the name is absent, which cost ~20s at startup.
+  local candidate = repos .. "/" .. name
+  if vim.fn.isdirectory(candidate) == 1 then
+    return vim.fs.normalize(candidate)
+  end
+  return ""
 end
 
 function M.hasRepoWithName(name)
